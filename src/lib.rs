@@ -2210,6 +2210,10 @@ where
             _ => 1.0,
         };
         let effective_font_size = paint.text.font_size * effective_scale;
+        let atlas_positioning = match rasterization {
+            Rasterization::Atlas => text::AtlasGlyphPositioning::PixelAligned,
+            _ => text::AtlasGlyphPositioning::Subpixel,
+        };
 
         // Everything measured in user text space crosses into the rasterizer's
         // space through `effective_scale`, exactly once, right here: font size,
@@ -2282,6 +2286,7 @@ where
                 stroke.line_width,
                 render_mode,
                 normalized_coords,
+                atlas_positioning,
             )?
         };
 
@@ -2309,6 +2314,7 @@ where
                         stroke.line_width,
                         render_mode,
                         normalized_coords,
+                        atlas_positioning,
                     )?
                 } else {
                     atlas.render_atlas(
@@ -2321,6 +2327,7 @@ where
                         stroke.line_width,
                         render_mode,
                         normalized_coords,
+                        atlas_positioning,
                     )?
                 }
             };
