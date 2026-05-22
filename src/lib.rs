@@ -815,6 +815,7 @@ where
     /// scissor or when the previous clip is a containing rectangle with the same
     /// transform. Other intersections fall back to rectangular scissoring.
     pub fn intersect_rounded_scissor(&mut self, x: f32, y: f32, w: f32, h: f32, r: f32) {
+        let tolerance = self.dist_tol;
         let state = self.state_mut();
 
         // If no previous scissor has been set, set the scissor as current scissor.
@@ -840,7 +841,6 @@ where
         let res = rect.intersect(Rect::new(x, y, w, h));
 
         let requested = Rect::new(x, y, w, h);
-        let tolerance = 1e-3;
         let requested_contains_existing = requested.x <= rect.x + tolerance
             && requested.y <= rect.y + tolerance
             && rect.x + rect.w <= requested.x + requested.w + tolerance
@@ -870,7 +870,7 @@ where
                 } else {
                     0.0
                 };
-                dx * dx + dy * dy <= radius * radius + tolerance
+                dx * dx + dy * dy <= (radius + tolerance) * (radius + tolerance)
             };
             let rounded_contains_requested = contains_point(requested.x, requested.y)
                 && contains_point(requested.x + requested.w, requested.y)
