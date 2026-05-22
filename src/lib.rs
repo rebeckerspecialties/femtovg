@@ -1641,6 +1641,11 @@ where
             _ => 1.0,
         };
         let effective_font_size = paint.text.font_size * effective_scale;
+        let atlas_positioning = match rasterization {
+            Rasterization::ScaledAtlas { .. } => text::AtlasGlyphPositioning::Subpixel,
+            _ if self.state().transform.is_pure_translation(1e-3) => text::AtlasGlyphPositioning::PixelAligned,
+            _ => text::AtlasGlyphPositioning::Subpixel,
+        };
 
         let Some(font) = text_context.font_mut(font_id) else {
             return Err(ErrorKind::NoFontFound);
@@ -1701,6 +1706,7 @@ where
                 paint.stroke.line_width,
                 render_mode,
                 normalized_coords,
+                atlas_positioning,
             )?
         };
 
@@ -1728,6 +1734,7 @@ where
                         paint.stroke.line_width,
                         render_mode,
                         normalized_coords,
+                        atlas_positioning,
                     )?
                 } else {
                     atlas.render_atlas(
@@ -1740,6 +1747,7 @@ where
                         paint.stroke.line_width,
                         render_mode,
                         normalized_coords,
+                        atlas_positioning,
                     )?
                 }
             };
