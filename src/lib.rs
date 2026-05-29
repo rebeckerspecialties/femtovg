@@ -1642,8 +1642,7 @@ where
         };
         let effective_font_size = paint.text.font_size * effective_scale;
         let atlas_positioning = match rasterization {
-            Rasterization::ScaledAtlas { .. } => text::AtlasGlyphPositioning::Subpixel,
-            _ if self.state().transform.is_pure_translation(1e-3) => text::AtlasGlyphPositioning::PixelAligned,
+            Rasterization::Atlas => text::AtlasGlyphPositioning::PixelAligned,
             _ => text::AtlasGlyphPositioning::Subpixel,
         };
 
@@ -1793,7 +1792,7 @@ where
             &glyph_texture,
             &scissor,
             1.0,
-            1.0,
+            self.fringe_width,
             -1.0,
         );
 
@@ -2170,6 +2169,19 @@ fn first_draw_params(commands: &[renderer::Command]) -> &Params {
         .expect("expected a draw command")
 }
 
+#[cfg(all(test, feature = "textlayout"))]
+fn first_glyph_draw_params(commands: &[renderer::Command]) -> &Params {
+    use renderer::CommandType;
+
+    commands
+        .iter()
+        .find_map(|command| match &command.cmd_type {
+            CommandType::Triangles { params } if params.glyph_texture_type != 0 => Some(params),
+            _ => None,
+        })
+        .expect("expected a glyph draw command")
+}
+
 #[cfg(test)]
 fn fill_rect_with_current_scissor(canvas: &mut Canvas<RecordingRenderer>) {
     let mut path = Path::new();
@@ -2191,6 +2203,78 @@ fn rounded_scissor_radius_is_clamped_into_render_params() {
     let commands = recorded_commands.borrow();
     let params = first_draw_params(&commands);
     assert!((params.scissor_radius - 10.0).abs() < 0.001);
+}
+
+#[cfg(feature = "textlayout")]
+#[test]
+fn rounded_scissor_is_preserved_for_glyph_draws_inside_containing_clip() {
+    let renderer = RecordingRenderer::default();
+    let recorded_commands = renderer.last_commands.clone();
+    let mut canvas = Canvas::new(renderer).unwrap();
+    canvas.set_size(100, 100, 1.0);
+
+    let font = canvas
+        .add_font("examples/assets/RobotoFlex-VariableFont.ttf")
+        .expect("Font not found");
+    let paint = Paint::color(Color::white()).with_font(&[font]).with_font_size(16.0);
+
+    canvas.rounded_scissor(10.0, 10.0, 56.0, 28.0, 14.0);
+    canvas.intersect_scissor(0.0, 0.0, 100.0, 100.0);
+    canvas.fill_text(12.0, 30.0, "Click Me", &paint).unwrap();
+    canvas.flush_to_output(());
+
+    let commands = recorded_commands.borrow();
+    let params = first_glyph_draw_params(&commands);
+    assert_eq!(params.glyph_texture_type, 1);
+    assert!((params.scissor_radius - 14.0).abs() < 0.001);
+    assert!((params.scissor_ext[0] - 28.0).abs() < 0.001);
+    assert!((params.scissor_ext[1] - 14.0).abs() < 0.001);
+}
+
+#[cfg(feature = "textlayout")]
+#[test]
+fn glyph_scissor_ramp_matches_fill_at_high_dpi() {
+    // The glyph draw path must feed the device fringe (1/dpi) into the scissor scale,
+    // exactly like fills/strokes. A hardcoded fringe of 1.0 made the glyph scissor
+    // ramp too soft at dpi>1, letting clipped text bleed past the boundary (most
+    // visible at rounded-rect corners). nanovg passes the real fringe to
+    // renderTriangles for the same reason.
+    let renderer = RecordingRenderer::default();
+    let recorded_commands = renderer.last_commands.clone();
+    let mut canvas = Canvas::new(renderer).unwrap();
+    canvas.set_size(100, 100, 2.0); // device fringe = 0.5 -> scissor scale = 2.0
+
+    let font = canvas
+        .add_font("examples/assets/RobotoFlex-VariableFont.ttf")
+        .expect("Font not found");
+    let paint = Paint::color(Color::white()).with_font(&[font]).with_font_size(16.0);
+
+    canvas.rounded_scissor(10.0, 10.0, 56.0, 28.0, 14.0);
+
+    let mut rect = Path::new();
+    rect.rect(0.0, 0.0, 100.0, 100.0);
+    canvas.fill_path(&rect, &Paint::color(Color::white()));
+    canvas.fill_text(12.0, 30.0, "Click", &paint).unwrap();
+    canvas.flush_to_output(());
+
+    let commands = recorded_commands.borrow();
+    let fill = first_draw_params(&commands);
+    let glyph = first_glyph_draw_params(&commands);
+
+    // Untransformed scissor at dpi=2 -> ramp scale == dpi == 2.0 for both. Before the
+    // fix the glyph scale was 1.0 (hardcoded fringe) while the fill scale was 2.0.
+    assert!(
+        (glyph.scissor_scale[0] - 2.0).abs() < 0.001,
+        "glyph scale {:?}",
+        glyph.scissor_scale
+    );
+    assert!(
+        (glyph.scissor_scale[1] - 2.0).abs() < 0.001,
+        "glyph scale {:?}",
+        glyph.scissor_scale
+    );
+    assert!((glyph.scissor_scale[0] - fill.scissor_scale[0]).abs() < 0.001);
+    assert!((glyph.scissor_scale[1] - fill.scissor_scale[1]).abs() < 0.001);
 }
 
 #[test]
