@@ -148,6 +148,10 @@ impl UniformArray {
     pub fn set_image_blur_filter_coeff(&mut self, coeff: [f32; 3]) {
         self.0[48..51].copy_from_slice(&coeff);
     }
+
+    pub fn set_conic_start_angle(&mut self, angle: f32) {
+        self.0[51] = angle;
+    }
 }
 
 impl From<&Params> for UniformArray {
@@ -171,6 +175,7 @@ impl From<&Params> for UniformArray {
         arr.set_image_blur_filter_direction(params.image_blur_filter_direction);
         arr.set_image_blur_filter_sigma(params.image_blur_filter_sigma);
         arr.set_image_blur_filter_coeff(params.image_blur_filter_coeff);
+        arr.set_conic_start_angle(params.conic_start_angle);
 
         arr
     }
