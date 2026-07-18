@@ -82,6 +82,18 @@ impl Default for Contour {
 }
 
 impl Contour {
+    /// Clears the contour for reuse while keeping its `fill`/`stroke` `Vec`
+    /// allocations, so a recycled contour does not re-malloc its vertex buffers.
+    fn reset(&mut self) {
+        self.point_range = 0..0;
+        self.closed = false;
+        self.bevel = 0;
+        self.solidity = None;
+        self.fill.clear();
+        self.stroke.clear();
+        self.convexity = Convexity::Unknown;
+    }
+
     fn point_pairs<'a>(&self, points: &'a [Point]) -> impl Iterator<Item = (&'a Point, &'a Point)> {
         PointPairsIter {
             curr: 0,
@@ -132,31 +144,56 @@ pub struct PathCache {
     pub(crate) contours: Vec<Contour>,
     pub(crate) bounds: Bounds,
     points: Vec<Point>,
+    /// Recycled contour buffers. On rebuild the previous contours are moved here
+    /// (keeping their `fill`/`stroke` `Vec` capacity) and popped back as new
+    /// contours are added, so a steady render loop stops re-allocating per-contour
+    /// vertex buffers each frame.
+    contour_pool: Vec<Contour>,
+    /// Reused scratch buffer for the fill triangle fan built in `expand_fill`,
+    /// so the fan is not re-allocated on every fill.
+    fan_scratch: Vec<Vertex>,
 }
 
 impl PathCache {
     pub fn new(verbs: impl Iterator<Item = Verb>, transform: &Transform2D, tess_tol: f32, dist_tol: f32) -> Self {
         let mut cache = Self::default();
+        cache.rebuild(verbs, transform, tess_tol, dist_tol);
+        cache
+    }
+
+    /// Rebuilds the cache from `verbs` in place, reusing the existing buffers
+    /// instead of allocating fresh ones. The `points` buffer, the `contours`
+    /// `Vec`, and each contour's `fill`/`stroke` buffers keep their capacity, so
+    /// a steady render loop that draws the same shapes each frame stops churning
+    /// the allocator.
+    pub fn rebuild(
+        &mut self,
+        verbs: impl Iterator<Item = Verb>,
+        transform: &Transform2D,
+        tess_tol: f32,
+        dist_tol: f32,
+    ) {
+        self.reset();
 
         // Convert path verbs to a set of contours
         for verb in verbs {
             match verb {
                 Verb::MoveTo(x, y) => {
-                    cache.add_contour();
+                    self.add_contour();
                     let (x, y) = transform.transform_point(x, y);
-                    cache.add_point(x, y, PointFlags::CORNER, dist_tol);
+                    self.add_point(x, y, PointFlags::CORNER, dist_tol);
                 }
                 Verb::LineTo(x, y) => {
                     let (x, y) = transform.transform_point(x, y);
-                    cache.add_point(x, y, PointFlags::CORNER, dist_tol);
+                    self.add_point(x, y, PointFlags::CORNER, dist_tol);
                 }
                 Verb::BezierTo(c1x, c1y, c2x, c2y, x, y) => {
-                    if let Some(last) = cache.points.last().copied() {
+                    if let Some(last) = self.points.last().copied() {
                         let (c1x, c1y) = transform.transform_point(c1x, c1y);
                         let (c2x, c2y) = transform.transform_point(c2x, c2y);
                         let (x, y) = transform.transform_point(x, y);
 
-                        cache.tesselate_bezier(
+                        self.tesselate_bezier(
                             last.pos.x,
                             last.pos.y,
                             c1x,
@@ -170,98 +207,68 @@ impl PathCache {
                             tess_tol,
                             dist_tol,
                         );
-
-                        // cache.tesselate_bezier_afd(
-                        //     last.pos.x,
-                        //     last.pos.y,
-                        //     c1x,
-                        //     c1y,
-                        //     c2x,
-                        //     c2y,
-                        //     x,
-                        //     y,
-                        //     PointFlags::CORNER,
-                        //     tess_tol,
-                        //     dist_tol,
-                        // );
                     }
                 }
                 Verb::Close => {
-                    if let Some(contour) = cache.contours.last_mut() {
+                    if let Some(contour) = self.contours.last_mut() {
                         contour.closed = true;
                     }
                 }
                 Verb::Solid => {
-                    if let Some(contour) = cache.contours.last_mut() {
+                    if let Some(contour) = self.contours.last_mut() {
                         contour.solidity = Some(Solidity::Solid);
                     }
                 }
                 Verb::Hole => {
-                    if let Some(contour) = cache.contours.last_mut() {
+                    if let Some(contour) = self.contours.last_mut() {
                         contour.solidity = Some(Solidity::Hole);
                     }
                 }
             }
         }
 
-        let all_points = &mut cache.points;
-        let bounds = &mut cache.bounds;
+        self.finalize_contours(dist_tol);
+    }
 
-        cache.contours.retain_mut(|contour| {
-            let mut points = &mut all_points[contour.point_range.clone()];
+    /// Clears the cache for reuse, recycling the previous contours (and their
+    /// vertex buffers) into `contour_pool` and keeping `points`/`fan_scratch`
+    /// capacity.
+    fn reset(&mut self) {
+        for mut contour in self.contours.drain(..) {
+            contour.reset();
+            self.contour_pool.push(contour);
+        }
+        self.points.clear();
+        self.bounds = Bounds::default();
+    }
 
-            // If the first and last points are the same, remove the last, mark as closed contour.
-            if let (Some(p0), Some(p1)) = (points.last(), points.first()) {
-                if p0.approx_eq(p1, dist_tol) {
-                    contour.point_range.end -= 1;
-                    contour.closed = true;
-                    points = &mut all_points[contour.point_range.clone()];
-                }
+    /// Drops degenerate contours, normalizes winding, and computes per-point edge
+    /// deltas and the overall bounds. Removed contours are recycled into the pool
+    /// so their buffers survive for the next frame. Mirrors the original
+    /// `retain_mut` pass but preserves contour order via stable compaction.
+    fn finalize_contours(&mut self, dist_tol: f32) {
+        let points = &mut self.points;
+        let bounds = &mut self.bounds;
+        let contours = &mut self.contours;
+
+        let mut kept = 0;
+        for read in 0..contours.len() {
+            if finalize_contour(&mut contours[read], points, bounds, dist_tol) {
+                contours.swap(kept, read);
+                kept += 1;
             }
+        }
 
-            if points.len() < 2 {
-                return false;
-            }
-
-            // Enforce solidity by reversing the winding.
-            if let Some(solidity) = contour.solidity {
-                let area = Contour::polygon_area(points);
-
-                if solidity == Solidity::Solid && area < 0.0 {
-                    points.reverse();
-                }
-
-                if solidity == Solidity::Hole && area > 0.0 {
-                    points.reverse();
-                }
-            }
-
-            for i in 0..contour.point_count() {
-                let p1 = points.get(i).copied().unwrap();
-
-                let p0 = if i == 0 {
-                    points.last_mut().unwrap()
-                } else {
-                    points.get_mut(i - 1).unwrap()
-                };
-
-                p0.dpos = p1.pos - p0.pos;
-                p0.len = p0.dpos.normalize();
-
-                bounds.minx = bounds.minx.min(p0.pos.x);
-                bounds.miny = bounds.miny.min(p0.pos.y);
-                bounds.maxx = bounds.maxx.max(p0.pos.x);
-                bounds.maxy = bounds.maxy.max(p0.pos.y);
-            }
-
-            true
-        });
-
-        cache
+        for mut contour in contours.drain(kept..) {
+            contour.reset();
+            self.contour_pool.push(contour);
+        }
     }
 
     fn add_contour(&mut self) {
-        let mut contour = Contour::default();
+        // Reuse a recycled contour (keeping its vertex-buffer capacity) if one is
+        // available, otherwise allocate a fresh one.
+        let mut contour = self.contour_pool.pop().unwrap_or_default();
 
         contour.point_range.start = self.points.len();
         contour.point_range.end = self.points.len();
@@ -540,8 +547,10 @@ impl PathCache {
             contour.stroke.clear();
             contour.fill.clear();
 
-            let triangle_count = (contour.fill.capacity() - 2) * 3;
-            let mut triangle_fan_fill = Vec::with_capacity(triangle_count);
+            // Build the fill triangle fan into a reused scratch buffer instead of
+            // allocating a fresh temporary on every fill.
+            let fan = &mut self.fan_scratch;
+            fan.clear();
 
             // TODO: woff = 0.0 produces no artifaacts for small sizes
             let woff = 0.5 * fringe_width;
@@ -552,34 +561,35 @@ impl PathCache {
                     if p1.flags.contains(PointFlags::BEVEL) {
                         if p1.flags.contains(PointFlags::LEFT) {
                             let lpos = p1.pos + p1.dmpos * woff;
-                            triangle_fan_fill.push(Vertex::pos(lpos, 0.5, 1.0));
+                            fan.push(Vertex::pos(lpos, 0.5, 1.0));
                         } else {
                             let lpos0 = p1.pos + p0.dpos.orthogonal() * woff;
                             let lpos1 = p1.pos + p1.dpos.orthogonal() * woff;
-                            triangle_fan_fill.push(Vertex::pos(lpos0, 0.5, 1.0));
-                            triangle_fan_fill.push(Vertex::pos(lpos1, 0.5, 1.0));
+                            fan.push(Vertex::pos(lpos0, 0.5, 1.0));
+                            fan.push(Vertex::pos(lpos1, 0.5, 1.0));
                         }
                     } else {
-                        triangle_fan_fill.push(Vertex::pos(p1.pos + p1.dmpos * woff, 0.5, 1.0));
+                        fan.push(Vertex::pos(p1.pos + p1.dmpos * woff, 0.5, 1.0));
                     }
                 }
             } else {
                 let points = &self.points[contour.point_range.clone()];
 
                 for point in points {
-                    triangle_fan_fill.push(Vertex::pos(point.pos, 0.5, 1.0));
+                    fan.push(Vertex::pos(point.pos, 0.5, 1.0));
                 }
             }
 
-            // convert fill triangle fan to triangles, to eliminate requirement for GL_TRIANGLE_FAN
-            // from the renderer.
-            if triangle_fan_fill.len() > 2 {
-                let center = triangle_fan_fill[0];
-                let tail = &triangle_fan_fill[1..];
-                contour.fill = tail
-                    .windows(2)
-                    .flat_map(|vertices| IntoIterator::into_iter([center, vertices[0], vertices[1]]))
-                    .collect();
+            // Convert fill triangle fan to triangles, to eliminate requirement for GL_TRIANGLE_FAN
+            // from the renderer. Written into the contour's reused `fill` buffer.
+            if fan.len() > 2 {
+                let center = fan[0];
+                contour.fill.reserve((fan.len() - 2) * 3);
+                for vertices in fan[1..].windows(2) {
+                    contour.fill.push(center);
+                    contour.fill.push(vertices[0]);
+                    contour.fill.push(vertices[1]);
+                }
             }
 
             if has_fringe {
@@ -908,6 +918,60 @@ impl PathCache {
     }
 }
 
+/// Finalizes a single contour: collapses a duplicated closing point, rejects
+/// contours with fewer than two points, enforces solidity winding, and computes
+/// each edge's delta/length while accumulating `bounds`. Returns `false` when the
+/// contour is degenerate and should be dropped.
+fn finalize_contour(contour: &mut Contour, all_points: &mut [Point], bounds: &mut Bounds, dist_tol: f32) -> bool {
+    let mut points = &mut all_points[contour.point_range.clone()];
+
+    // If the first and last points are the same, remove the last, mark as closed contour.
+    if let (Some(p0), Some(p1)) = (points.last(), points.first()) {
+        if p0.approx_eq(p1, dist_tol) {
+            contour.point_range.end -= 1;
+            contour.closed = true;
+            points = &mut all_points[contour.point_range.clone()];
+        }
+    }
+
+    if points.len() < 2 {
+        return false;
+    }
+
+    // Enforce solidity by reversing the winding.
+    if let Some(solidity) = contour.solidity {
+        let area = Contour::polygon_area(points);
+
+        if solidity == Solidity::Solid && area < 0.0 {
+            points.reverse();
+        }
+
+        if solidity == Solidity::Hole && area > 0.0 {
+            points.reverse();
+        }
+    }
+
+    for i in 0..contour.point_count() {
+        let p1 = points.get(i).copied().unwrap();
+
+        let p0 = if i == 0 {
+            points.last_mut().unwrap()
+        } else {
+            points.get_mut(i - 1).unwrap()
+        };
+
+        p0.dpos = p1.pos - p0.pos;
+        p0.len = p0.dpos.normalize();
+
+        bounds.minx = bounds.minx.min(p0.pos.x);
+        bounds.miny = bounds.miny.min(p0.pos.y);
+        bounds.maxx = bounds.maxx.max(p0.pos.x);
+        bounds.maxy = bounds.maxy.max(p0.pos.y);
+    }
+
+    true
+}
+
 fn curve_divisions(radius: f32, arc: f32, tol: f32) -> u32 {
     let da = (radius / (radius + tol)).acos() * 2.0;
 
@@ -1123,6 +1187,92 @@ mod tests {
         path_cache.expand_fill(1.0, LineJoin::Miter, 10.0);
 
         assert_eq!(path_cache.contours[0].convexity, Convexity::Concave);
+    }
+
+    fn assert_caches_match(reused: &PathCache, fresh: &PathCache) {
+        assert_eq!(reused.bounds, fresh.bounds);
+        assert_eq!(reused.points.len(), fresh.points.len());
+        assert_eq!(reused.contours.len(), fresh.contours.len());
+        for (r, f) in reused.contours.iter().zip(&fresh.contours) {
+            assert_eq!(r.point_range, f.point_range);
+            assert_eq!(r.closed, f.closed);
+            assert_eq!(r.convexity, f.convexity);
+            assert_eq!(r.fill, f.fill);
+            assert_eq!(r.stroke, f.stroke);
+        }
+    }
+
+    /// A cache reused via `rebuild` (after a previous, different path was built
+    /// and expanded into it) must produce byte-identical geometry to a freshly
+    /// constructed cache — i.e. no stale state leaks through the recycled
+    /// points/contour/vertex buffers.
+    #[test]
+    fn rebuild_matches_fresh_cache() {
+        let transform = Transform2D::identity();
+
+        // A richer path first: rounded rect + a circle + a concave star, so the
+        // reused cache has multiple contours (and their vertex buffers) to recycle.
+        let mut warm = Path::new();
+        warm.rounded_rect(10.0, 10.0, 120.0, 80.0, 12.0);
+        warm.circle(200.0, 200.0, 40.0);
+        warm.move_to(300.0, 0.0);
+        warm.line_to(321.0, 90.0);
+        warm.line_to(398.0, 35.0);
+        warm.line_to(302.0, 35.0);
+        warm.line_to(379.0, 90.0);
+        warm.close();
+
+        // Paths whose fresh vs reused output we compare. Include a hole (solidity)
+        // to exercise winding reversal, and a fewer-contour path to exercise the
+        // contour-pool drain path.
+        let make_target = || {
+            let mut p = Path::new();
+            p.rect(40.0, 40.0, 100.0, 100.0);
+            p.circle(90.0, 90.0, 20.0);
+            p.solidity(Solidity::Hole);
+            p
+        };
+
+        for &fringe in &[0.0_f32, 1.0] {
+            let mut reused = PathCache::new(warm.verbs(), &transform, 0.25, 0.01);
+            reused.expand_fill(1.0, LineJoin::Miter, 2.4);
+            reused.rebuild(make_target().verbs(), &transform, 0.25, 0.01);
+            reused.expand_fill(fringe, LineJoin::Miter, 2.4);
+
+            let mut fresh = PathCache::new(make_target().verbs(), &transform, 0.25, 0.01);
+            fresh.expand_fill(fringe, LineJoin::Miter, 2.4);
+
+            assert_caches_match(&reused, &fresh);
+        }
+
+        // Same check for the stroke expansion path.
+        for &fringe in &[0.0_f32, 1.0] {
+            let mut reused = PathCache::new(warm.verbs(), &transform, 0.25, 0.01);
+            reused.expand_stroke(2.0, 1.0, LineCap::Butt, LineCap::Butt, LineJoin::Miter, 10.0, 0.25);
+            reused.rebuild(make_target().verbs(), &transform, 0.25, 0.01);
+            reused.expand_stroke(
+                2.0,
+                fringe,
+                LineCap::Round,
+                LineCap::Square,
+                LineJoin::Round,
+                10.0,
+                0.25,
+            );
+
+            let mut fresh = PathCache::new(make_target().verbs(), &transform, 0.25, 0.01);
+            fresh.expand_stroke(
+                2.0,
+                fringe,
+                LineCap::Round,
+                LineCap::Square,
+                LineJoin::Round,
+                10.0,
+                0.25,
+            );
+
+            assert_caches_match(&reused, &fresh);
+        }
     }
 }
 

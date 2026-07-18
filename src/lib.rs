@@ -64,7 +64,7 @@ pub use paint::TextDecoration;
 use paint::{GlyphTexture, PaintFlavor, StrokeSettings};
 
 mod path;
-use path::Convexity;
+use path::{Convexity, PathCache};
 pub use path::{Path, PathIter, Solidity, Verb};
 
 mod gradient_store;
@@ -327,6 +327,10 @@ pub struct Canvas<T: Renderer> {
     // referenced by deferred draw commands, so they can only be freed once those
     // commands have been submitted to the renderer (i.e. after flush).
     shadow_images: Vec<ImageId>,
+    // Reusable path cache for fill/stroke tessellation. Reused across every
+    // fill_path/stroke_path call so a steady render loop building fresh paths
+    // each frame stops re-allocating the tessellation buffers.
+    scratch_path_cache: PathCache,
 }
 
 /// Returns the enabled text-decoration lines as `(offset, thickness)` pairs,
@@ -385,6 +389,7 @@ where
             dist_tol: 0.01,
             gradients: GradientStore::new(),
             shadow_images: Vec::new(),
+            scratch_path_cache: PathCache::default(),
         };
 
         canvas.save();
@@ -415,6 +420,7 @@ where
             dist_tol: 0.01,
             gradients: GradientStore::new(),
             shadow_images: Vec::new(),
+            scratch_path_cache: PathCache::default(),
         };
 
         canvas.save();
@@ -1079,14 +1085,16 @@ where
             }
         }
 
-        // The path cache saves a flattened and transformed version of the path.
-        let mut path_cache = path.cache(&transform, self.tess_tol, self.dist_tol);
+        // Tessellate into the reusable scratch cache; it retains its buffers
+        // across frames instead of re-allocating them for every fill.
+        self.scratch_path_cache
+            .rebuild(path.verbs(), &transform, self.tess_tol, self.dist_tol);
 
         // Early out if path is outside the canvas bounds
-        if path_cache.bounds.maxx < 0.0
-            || path_cache.bounds.minx > canvas_width as f32
-            || path_cache.bounds.maxy < 0.0
-            || path_cache.bounds.miny > canvas_height as f32
+        if self.scratch_path_cache.bounds.maxx < 0.0
+            || self.scratch_path_cache.bounds.minx > canvas_width as f32
+            || self.scratch_path_cache.bounds.maxy < 0.0
+            || self.scratch_path_cache.bounds.miny > canvas_height as f32
         {
             return;
         }
@@ -1097,15 +1105,15 @@ where
         let scissor = self.state().scissor;
 
         // Calculate fill vertices.
-        // expand_fill will fill path_cache.contours[].{stroke, fill} with vertex data for the GPU
+        // expand_fill will fill the scratch cache's contours[].{stroke, fill} with vertex data for the GPU
         // fringe_with is the size of the strip of triangles generated at the path border used for AA
         let fringe_width = if anti_alias { self.fringe_width } else { 0.0 };
-        path_cache.expand_fill(fringe_width, LineJoin::Miter, 2.4);
+        self.scratch_path_cache.expand_fill(fringe_width, LineJoin::Miter, 2.4);
 
         // Detect if this path fill is in fact just an unclipped image copy
 
         if let (Some(path_rect), Some(scissor_rect), true) = (
-            path_cache.path_fill_is_rect(),
+            self.scratch_path_cache.path_fill_is_rect(),
             scissor.as_rect(canvas_width as f32, canvas_height as f32),
             paint_flavor.is_straight_tinted_image(anti_alias),
         ) {
@@ -1119,7 +1127,9 @@ where
         }
 
         // GPU uniforms
-        let flavor = if path_cache.contours.len() == 1 && path_cache.contours[0].convexity == Convexity::Convex {
+        let flavor = if self.scratch_path_cache.contours.len() == 1
+            && self.scratch_path_cache.contours[0].convexity == Convexity::Convex
+        {
             let params = Params::new(
                 &self.images,
                 &transform,
@@ -1174,8 +1184,8 @@ where
         // Drawable struct is used to describe the range of vertices each draw call will operate on
         let mut offset = self.verts.len();
 
-        cmd.drawables.reserve_exact(path_cache.contours.len());
-        for contour in &path_cache.contours {
+        cmd.drawables.reserve_exact(self.scratch_path_cache.contours.len());
+        for contour in &self.scratch_path_cache.contours {
             let mut drawable = Drawable::default();
 
             // Fill commands can have both fill and stroke vertices. Fill vertices are used to fill
@@ -1200,30 +1210,27 @@ where
             // Concave shapes are first filled by writing to a stencil buffer and then drawing a quad
             // over the shape area with stencil test enabled to produce the final fill. These are
             // the verts needed for the covering quad
+            let bounds = self.scratch_path_cache.bounds;
             self.verts.push(Vertex::new(
-                path_cache.bounds.maxx + fringe_width,
-                path_cache.bounds.maxy + fringe_width,
+                bounds.maxx + fringe_width,
+                bounds.maxy + fringe_width,
                 0.5,
                 1.0,
             ));
             self.verts.push(Vertex::new(
-                path_cache.bounds.maxx + fringe_width,
-                path_cache.bounds.miny - fringe_width,
+                bounds.maxx + fringe_width,
+                bounds.miny - fringe_width,
                 0.5,
                 1.0,
             ));
             self.verts.push(Vertex::new(
-                path_cache.bounds.minx - fringe_width,
-                path_cache.bounds.maxy + fringe_width,
+                bounds.minx - fringe_width,
+                bounds.maxy + fringe_width,
                 0.5,
                 1.0,
             ));
-            self.verts.push(Vertex::new(
-                path_cache.bounds.minx - fringe_width,
-                path_cache.bounds.miny,
-                0.5,
-                1.0,
-            ));
+            self.verts
+                .push(Vertex::new(bounds.minx - fringe_width, bounds.miny, 0.5, 1.0));
 
             cmd.triangles_verts = Some((offset, 4));
         }
@@ -1290,14 +1297,16 @@ where
             }
         }
 
-        // The path cache saves a flattened and transformed version of the path.
-        let mut path_cache = path.cache(&transform, self.tess_tol, self.dist_tol);
+        // Tessellate into the reusable scratch cache; it retains its buffers
+        // across frames instead of re-allocating them for every stroke.
+        self.scratch_path_cache
+            .rebuild(path.verbs(), &transform, self.tess_tol, self.dist_tol);
 
         // Early out if path is outside the canvas bounds
-        if path_cache.bounds.maxx < 0.0
-            || path_cache.bounds.minx > self.width() as f32
-            || path_cache.bounds.maxy < 0.0
-            || path_cache.bounds.miny > self.height() as f32
+        if self.scratch_path_cache.bounds.maxx < 0.0
+            || self.scratch_path_cache.bounds.minx > self.width() as f32
+            || self.scratch_path_cache.bounds.maxy < 0.0
+            || self.scratch_path_cache.bounds.miny > self.height() as f32
         {
             return;
         }
@@ -1324,9 +1333,9 @@ where
         paint_flavor.mul_alpha(self.state().alpha);
 
         // Calculate stroke vertices.
-        // expand_stroke will fill path_cache.contours[].stroke with vertex data for the GPU
+        // expand_stroke will fill the scratch cache's contours[].stroke with vertex data for the GPU
         let fringe_with = if anti_alias { self.fringe_width } else { 0.0 };
-        path_cache.expand_stroke(
+        self.scratch_path_cache.expand_stroke(
             line_width * 0.5,
             fringe_with,
             stroke.line_cap_start,
@@ -1385,8 +1394,8 @@ where
         // Drawable struct is used to describe the range of vertices each draw call will operate on
         let mut offset = self.verts.len();
 
-        cmd.drawables.reserve_exact(path_cache.contours.len());
-        for contour in &path_cache.contours {
+        cmd.drawables.reserve_exact(self.scratch_path_cache.contours.len());
+        for contour in &self.scratch_path_cache.contours {
             let mut drawable = Drawable::default();
 
             if !contour.stroke.is_empty() {
