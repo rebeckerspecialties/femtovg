@@ -3870,6 +3870,334 @@ fn decoration_rect_tracks_scaled_atlas_transform() {
 /// `glyph.y`, so a run beginning with a combining mark (non-zero `offset_y`)
 /// would otherwise drag every decoration line up or down with the mark.
 ///
+/// The paragraph base direction follows the first strong character (UAX #9
+/// P2/P3). For an RTL paragraph that puts trailing neutral punctuation at the
+/// visual LEFT end and orders an embedded LTR word between its Arabic
+/// neighbors right-to-left; a pinned-LTR base got both wrong. An LTR-first
+/// paragraph with an embedded Arabic word must keep its old ordering.
+#[cfg(feature = "textlayout")]
+#[test]
+fn paragraph_base_direction_follows_first_strong_character() {
+    let renderer = RecordingRenderer::default();
+    let mut canvas = Canvas::new(renderer).unwrap();
+    canvas.set_size(1000, 300, 1.0);
+    let font_id = canvas
+        .add_font_mem(include_bytes!("../examples/assets/amiri-regular.ttf"))
+        .expect("failed to load test font");
+    let paint = Paint::color(Color::black()).with_font(&[font_id]).with_font_size(30.0);
+
+    // Mean x position of the glyphs whose byte range covers `needle`.
+    let cluster_x = |layout: &TextMetrics, text: &str, needle: &str| -> f32 {
+        let start = text.find(needle).unwrap();
+        let end = start + needle.len();
+        let xs: Vec<f32> = layout
+            .glyphs
+            .iter()
+            .filter(|g| g.byte_index >= start && g.byte_index < end)
+            .map(|g| g.x)
+            .collect();
+        assert!(!xs.is_empty(), "no glyphs for {needle:?}");
+        xs.iter().sum::<f32>() / xs.len() as f32
+    };
+
+    // RTL paragraph, embedded LTR word: visual order is right-to-left, so the
+    // logically-later Arabic word sits LEFT of "Alice", which sits LEFT of the
+    // logically-first Arabic word.
+    let text = "\u{0642}\u{0631}\u{0623} Alice \u{0643}\u{062A}\u{0627}\u{0628}";
+    let layout = canvas.measure_text(300.0, 100.0, text, &paint).unwrap();
+    let first_word = cluster_x(&layout, text, "\u{0642}\u{0631}\u{0623}");
+    let alice = cluster_x(&layout, text, "Alice");
+    let last_word = cluster_x(&layout, text, "\u{0643}\u{062A}\u{0627}\u{0628}");
+    assert!(
+        last_word < alice && alice < first_word,
+        "RTL paragraph should order runs right-to-left: got first-word x {first_word}, \
+         Alice x {alice}, last-word x {last_word}"
+    );
+
+    // Trailing punctuation of an RTL paragraph resolves to the paragraph level
+    // and lands at the visual LEFT end.
+    let text = "\u{0633}\u{0644}\u{0627}\u{0645}!";
+    let layout = canvas.measure_text(300.0, 100.0, text, &paint).unwrap();
+    let bang = cluster_x(&layout, text, "!");
+    let word = cluster_x(&layout, text, "\u{0633}\u{0644}\u{0627}\u{0645}");
+    assert!(
+        bang < word,
+        "the ! of an RTL sentence belongs at its visual left end (bang x {bang}, word x {word})"
+    );
+
+    // European digits inside an RTL paragraph stay an LTR sequence, placed to
+    // the left of the word that logically precedes them.
+    let text = "\u{0635}\u{0641}\u{062D}\u{0629} 42";
+    let layout = canvas.measure_text(300.0, 100.0, text, &paint).unwrap();
+    let four = cluster_x(&layout, text, "4");
+    let two = cluster_x(&layout, text, "2");
+    let page = cluster_x(&layout, text, "\u{0635}\u{0641}\u{062D}\u{0629}");
+    assert!(four < two, "digits stay left-to-right: 4 at {four}, 2 at {two}");
+    assert!(two < page, "the number sits left of the RTL word that precedes it");
+
+    // An LTR-first paragraph with an embedded RTL word keeps LTR ordering.
+    let text = "The word \u{0633}\u{0644}\u{0627}\u{0645} means peace";
+    let layout = canvas.measure_text(20.0, 100.0, text, &paint).unwrap();
+    let the = cluster_x(&layout, text, "The");
+    let salam = cluster_x(&layout, text, "\u{0633}\u{0644}\u{0627}\u{0645}");
+    let peace = cluster_x(&layout, text, "peace");
+    assert!(
+        the < salam && salam < peace,
+        "LTR-first paragraph keeps left-to-right run order ({the}, {salam}, {peace})"
+    );
+}
+
+/// Regression cases from shipped browser bidi bugs (Firefox 726420/459035/
+/// 721821, WebKit bug 3435 class, Firefox 1177350's bracket pairing):
+/// strong-less text stays LTR, an Arabic-Indic date is one number run in
+/// logical order, bracket pairs around an embedded LTR word resolve to the
+/// paragraph direction together, and combining marks travel with their base
+/// through RTL reversal.
+#[cfg(feature = "textlayout")]
+#[test]
+fn bidi_browser_regression_cases() {
+    let renderer = RecordingRenderer::default();
+    let mut canvas = Canvas::new(renderer).unwrap();
+    canvas.set_size(1200, 300, 1.0);
+    let font_id = canvas
+        .add_font_mem(include_bytes!("../examples/assets/amiri-regular.ttf"))
+        .expect("failed to load test font");
+    let paint = Paint::color(Color::black()).with_font(&[font_id]).with_font_size(30.0);
+
+    let cluster_x = |layout: &TextMetrics, text: &str, needle: &str| -> f32 {
+        let start = text.find(needle).unwrap();
+        let end = start + needle.len();
+        let xs: Vec<f32> = layout
+            .glyphs
+            .iter()
+            .filter(|g| g.byte_index >= start && g.byte_index < end)
+            .map(|g| g.x)
+            .collect();
+        assert!(!xs.is_empty(), "no glyphs for {needle:?}");
+        xs.iter().sum::<f32>() / xs.len() as f32
+    };
+
+    // UAX #9 P3: text with no strong character keeps the LTR default, in
+    // logical order (Firefox bug 726420's class).
+    let text = "123 + 456!";
+    let layout = canvas.measure_text(20.0, 100.0, text, &paint).unwrap();
+    assert!(
+        cluster_x(&layout, text, "123") < cluster_x(&layout, text, "456"),
+        "strong-less text must stay left-to-right"
+    );
+    let bang_x = layout
+        .glyphs
+        .iter()
+        .find(|g| g.byte_index == text.find('!').unwrap())
+        .unwrap()
+        .x;
+    assert!(
+        bang_x > cluster_x(&layout, text, "456"),
+        "trailing ! of an LTR-defaulted line stays at the right end"
+    );
+
+    // UAX #9 W4: a separator between numbers of the same kind joins them into
+    // one number run, displayed in logical order - the day stays leftmost in
+    // an Arabic-Indic date (Firefox bug 459035).
+    let text = "\u{0663}\u{0660}/\u{0661}\u{0662}/\u{0662}\u{0660}\u{0660}\u{0668}";
+    let layout = canvas.measure_text(400.0, 100.0, text, &paint).unwrap();
+    let day = cluster_x(&layout, text, "\u{0663}\u{0660}");
+    let month = cluster_x(&layout, text, "\u{0661}\u{0662}");
+    let year = cluster_x(&layout, text, "\u{0662}\u{0660}\u{0660}\u{0668}");
+    assert!(
+        day < month && month < year,
+        "the Arabic-Indic date must stay in logical order left-to-right (day {day}, month {month}, year {year})"
+    );
+
+    // UAX #9 N0 (bracket pairs): parens wrapping an embedded LTR word in an
+    // RTL paragraph resolve to the paragraph level TOGETHER - the pair
+    // surrounds the word, open on the visual right, close on the visual left,
+    // both mirrored (the Firefox bug 1177350 / "(GMT+0800 (CST))" class).
+    let text = "\u{0627}\u{062E}\u{062A}\u{0628}\u{0627}\u{0631} (test) \u{0646}\u{0635}";
+    let layout = canvas.measure_text(400.0, 100.0, text, &paint).unwrap();
+    let open_x = layout
+        .glyphs
+        .iter()
+        .find(|g| g.byte_index == text.find('(').unwrap())
+        .unwrap()
+        .x;
+    let close_x = layout
+        .glyphs
+        .iter()
+        .find(|g| g.byte_index == text.find(')').unwrap())
+        .unwrap()
+        .x;
+    let word_x = cluster_x(&layout, text, "test");
+    assert!(
+        close_x < word_x && word_x < open_x,
+        "the bracket pair must surround its LTR content in RTL order (close {close_x}, test {word_x}, open {open_x})"
+    );
+
+    // Explicit directional overrides (UAX #9 X1-X8): RLO forces even strong
+    // LTR characters to RTL, reversing them visually - the WPT
+    // 2d.text.draw.fill.rtl case Chromium's fast glyph path broke (issue
+    // 389726691's class). The override mark itself must add no advance.
+    let text = "\u{202E}abc\u{202C}";
+    let layout = canvas.measure_text(400.0, 100.0, text, &paint).unwrap();
+    let gx = |ch: char| {
+        layout
+            .glyphs
+            .iter()
+            .find(|g| g.byte_index == text.find(ch).unwrap())
+            .unwrap_or_else(|| panic!("no glyph for {ch:?}"))
+            .x
+    };
+    assert!(
+        gx('a') > gx('b') && gx('b') > gx('c'),
+        "RLO must reverse Latin text visually: a at {}, b at {}, c at {}",
+        gx('a'),
+        gx('b'),
+        gx('c')
+    );
+    let plain = canvas.measure_text(400.0, 100.0, "abc", &paint).unwrap();
+    assert!(
+        (layout.width() - plain.width()).abs() < 0.5,
+        "RLO/PDF marks must not add advance: {} vs {}",
+        layout.width(),
+        plain.width()
+    );
+
+    // Combining marks travel with their base through RTL reversal (the
+    // Firefox bug 721821 class): every Hebrew niqqud mark must sit at the
+    // same pen position as its base consonant, not detached at a reversed
+    // per-character position.
+    let text = "\u{05E9}\u{05B8}\u{05C1}\u{05DC}\u{05D5}\u{05B9}\u{05DD}";
+    let layout = canvas.measure_text(400.0, 100.0, text, &paint).unwrap();
+    for (mark, base) in [
+        ('\u{05B8}', '\u{05E9}'), // qamats under shin
+        ('\u{05B9}', '\u{05D5}'), // holam on vav
+    ] {
+        let mark_i = text.find(mark).unwrap();
+        let base_i = text.find(base).unwrap();
+        let mark_g = layout.glyphs.iter().find(|g| g.byte_index == mark_i);
+        let Some(mark_g) = mark_g else {
+            // Some fonts substitute base+mark into one glyph; that also keeps
+            // the mark attached, which is what this guards.
+            continue;
+        };
+        let base_g = layout.glyphs.iter().find(|g| g.byte_index == base_i).unwrap();
+        assert!(
+            (mark_g.x - base_g.x).abs() < 30.0 * 0.8,
+            "mark {mark:?} at x {} should ride its base {base:?} at x {}",
+            mark_g.x,
+            base_g.x
+        );
+    }
+}
+
+/// The shaped-word cache keys on letter spacing: `shape_word` bakes the
+/// spacing into the cached advances, so the same word measured at two
+/// spacings must not share an entry - previously the second measurement
+/// replayed the first's advances.
+#[cfg(feature = "textlayout")]
+#[test]
+fn letter_spacing_does_not_collide_in_the_shaping_cache() {
+    let renderer = RecordingRenderer::default();
+    let mut canvas = Canvas::new(renderer).unwrap();
+    canvas.set_size(1000, 300, 1.0);
+    let font_id = canvas
+        .add_font_mem(include_bytes!("../examples/assets/RobotoFlex-VariableFont.ttf"))
+        .expect("failed to load test font");
+    let base = Paint::color(Color::black()).with_font(&[font_id]).with_font_size(30.0);
+
+    let plain = canvas.measure_text(20.0, 100.0, "cache", &base).unwrap().width();
+    let spaced = canvas
+        .measure_text(20.0, 100.0, "cache", &base.clone().with_letter_spacing(6.0))
+        .unwrap()
+        .width();
+    assert!(
+        spaced > plain + 4.0 * 6.0 - 1.0,
+        "letter spacing must widen the cached word: plain {plain}, spaced {spaced}"
+    );
+}
+
+/// Bidi control characters are default-ignorable: isolate marks (U+2066..
+/// U+2069) and direction marks (U+200E/U+200F) must add no advance and no
+/// visible glyph, whether or not the font has real coverage for them - the
+/// class behind Firefox bugs 1439018/1440470 (isolates rendered as tofu).
+#[cfg(feature = "textlayout")]
+#[test]
+fn bidi_controls_are_invisible_and_zero_width() {
+    let renderer = RecordingRenderer::default();
+    let mut canvas = Canvas::new(renderer).unwrap();
+    canvas.set_size(1000, 300, 1.0);
+    let font_id = canvas
+        .add_font_mem(include_bytes!("../examples/assets/amiri-regular.ttf"))
+        .expect("failed to load test font");
+    let paint = Paint::color(Color::black()).with_font(&[font_id]).with_font_size(30.0);
+
+    let bare = "\u{0633}\u{0644}\u{0627}\u{0645}";
+    let isolated = "\u{2068}\u{0633}\u{0644}\u{0627}\u{0645}\u{2069}";
+    let marked = "\u{200F}\u{0633}\u{0644}\u{0627}\u{0645}\u{200E}";
+
+    let w_bare = canvas.measure_text(300.0, 100.0, bare, &paint).unwrap().width();
+    let w_isolated = canvas.measure_text(300.0, 100.0, isolated, &paint).unwrap().width();
+    let w_marked = canvas.measure_text(300.0, 100.0, marked, &paint).unwrap().width();
+
+    assert!(
+        (w_isolated - w_bare).abs() < 0.5,
+        "FSI/PDI must not add advance: bare {w_bare}, isolated {w_isolated}"
+    );
+    assert!(
+        (w_marked - w_bare).abs() < 0.5,
+        "LRM/RLM must not add advance: bare {w_bare}, marked {w_marked}"
+    );
+}
+
+/// Paired brackets mirror in RTL runs (UAX #9 L4): the '(' of an Arabic
+/// sentence renders with the ')' glyph. The shaped-word cache must key on the
+/// run direction for this to survive cache hits — shaping the same bracket
+/// text in an LTR sentence first used to poison the cache with the unmirrored
+/// shaping, which the RTL sentence then reused.
+#[cfg(feature = "textlayout")]
+#[test]
+fn brackets_mirror_in_rtl_runs_even_after_ltr_caching() {
+    let renderer = RecordingRenderer::default();
+    let mut canvas = Canvas::new(renderer).unwrap();
+    canvas.set_size(1000, 300, 1.0);
+    let font_id = canvas
+        .add_font_mem(include_bytes!("../examples/assets/amiri-regular.ttf"))
+        .expect("failed to load test font");
+    let paint = Paint::color(Color::black()).with_font(&[font_id]).with_font_size(30.0);
+
+    let glyph_at = |layout: &TextMetrics, text: &str, needle: char| -> u16 {
+        let at = text.find(needle).unwrap();
+        layout
+            .glyphs
+            .iter()
+            .find(|g| g.byte_index == at)
+            .unwrap_or_else(|| panic!("no glyph for {needle:?}"))
+            .glyph_id
+    };
+
+    // Prime the shaped-word cache with LTR shapings of the same bracket words.
+    let ltr = "he said (yes) loudly";
+    let ltr_layout = canvas.measure_text(20.0, 100.0, ltr, &paint).unwrap();
+    let ltr_open = glyph_at(&ltr_layout, ltr, '(');
+    let ltr_close = glyph_at(&ltr_layout, ltr, ')');
+    assert_ne!(ltr_open, ltr_close, "font distinguishes the paren glyphs");
+
+    // The same words inside an Arabic sentence shape as an RTL run: each paren
+    // must come out mirrored, not replayed from the LTR cache entry.
+    let rtl = "\u{0642}\u{0627}\u{0644} (\u{0646}\u{0639}\u{0645}) \u{0628}\u{0635}\u{0648}\u{062A}";
+    let rtl_layout = canvas.measure_text(300.0, 100.0, rtl, &paint).unwrap();
+    let rtl_open = glyph_at(&rtl_layout, rtl, '(');
+    let rtl_close = glyph_at(&rtl_layout, rtl, ')');
+    assert_eq!(
+        rtl_open, ltr_close,
+        "'(' in an RTL run should render with the ')' glyph (UAX #9 L4 mirroring)"
+    );
+    assert_eq!(
+        rtl_close, ltr_open,
+        "')' in an RTL run should render with the '(' glyph (UAX #9 L4 mirroring)"
+    );
+}
+
 /// `Canvas::measure_font` reports user-space metrics: the same values under
 /// any canvas transform or device pixel ratio, in the space `fill_text()`
 /// consumes — matching `measure_text()` and `TextContext::measure_font()`.
