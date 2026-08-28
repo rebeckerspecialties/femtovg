@@ -26,10 +26,13 @@ pub use textlayout::*;
 // This padding is an empty border around the glyph’s pixels but inside the
 // sampled area (texture coordinates) for the quad in render_atlas().
 const GLYPH_PADDING: u32 = 1;
-// We add an additional margin of 1 pixel outside of the sampled area,
-// to deal with the linear interpolation of texels at the edge of that area
-// which mixes in the texels just outside of the edge.
-// This manifests as noise around the glyph, outside of the padding.
+// We add an additional margin of 1 texel outside of the sampled area.
+// The atlas is NEAREST-sampled (since 62e5be6), so no filter tap blends
+// across the boundary; the margin is a guard band for GPUs whose
+// interpolated texture coordinates drift at quad edges and select a
+// neighbouring texel instead (issues #22, #310). Margin texels are
+// written blank at upload time - the atlas texture itself starts
+// uninitialized, so an unwritten margin would hold undefined data.
 const GLYPH_MARGIN: u32 = 1;
 
 const TEXTURE_SIZE: usize = 512;
@@ -788,40 +791,18 @@ impl GlyphAtlas {
 
         let is_color = image.content == swash::scale::image::Content::Color;
 
-        // Create a padded image with zeroed borders to avoid sampling undefined
-        // texture data at glyph edges (the atlas texture is not zero-initialized).
-        let padded_width = (glyph_width + 2 * GLYPH_PADDING) as usize;
-        let padded_height = (glyph_height + 2 * GLYPH_PADDING) as usize;
-        let mut pixels = vec![rgb::RGBA8::new(0, 0, 0, 0); padded_width * padded_height];
-
-        if is_color {
-            for y in 0..glyph_height as usize {
-                for x in 0..glyph_width as usize {
-                    let src_idx = (y * glyph_width as usize + x) * 4;
-                    let dst_idx = (y + GLYPH_PADDING as usize) * padded_width + x + GLYPH_PADDING as usize;
-                    pixels[dst_idx] = rgb::RGBA8::new(
-                        image.data[src_idx],
-                        image.data[src_idx + 1],
-                        image.data[src_idx + 2],
-                        image.data[src_idx + 3],
-                    );
-                }
-            }
-        } else {
-            for y in 0..glyph_height as usize {
-                for x in 0..glyph_width as usize {
-                    let src_idx = y * glyph_width as usize + x;
-                    let dst_idx = (y + GLYPH_PADDING as usize) * padded_width + x + GLYPH_PADDING as usize;
-                    pixels[dst_idx] = rgb::RGBA8::new(image.data[src_idx], 0, 0, 0);
-                }
-            }
-        }
-
-        let target_x = dst_x + GLYPH_MARGIN as usize;
-        let target_y = dst_y + GLYPH_MARGIN as usize;
-
-        let img = imgref::Img::new(&pixels[..], padded_width, padded_height);
-        canvas.update_image(dst_image_id, crate::image::ImageSource::from(img), target_x, target_y)?;
+        // Upload the whole allocated cell, zero-filled around the glyph, so the
+        // GLYPH_MARGIN ring is written too: the atlas texture is not
+        // zero-initialized, and a margin left unwritten holds undefined data
+        // that edge-of-quad NEAREST lookups can select on GPUs with imprecise
+        // texture-coordinate interpolation (#22, #310).
+        let cell = glyph_cell_pixels(&image.data, glyph_width as usize, glyph_height as usize, is_color);
+        canvas.update_image(
+            dst_image_id,
+            crate::image::ImageSource::from(cell.as_ref()),
+            dst_x,
+            dst_y,
+        )?;
 
         Ok(Some(RenderedGlyph {
             texture_index: dst_index,
@@ -1017,4 +998,86 @@ pub fn render_direct<T: Renderer>(
     }
 
     Ok(())
+}
+
+/// Builds the full atlas cell for a glyph bitmap: the glyph's pixels offset
+/// by `GLYPH_PADDING + GLYPH_MARGIN`, with every other texel zeroed. The
+/// caller uploads it at the cell's allocation origin so the margin ring is
+/// written as well - see the comment on [`GLYPH_MARGIN`].
+#[cfg(feature = "swash")]
+fn glyph_cell_pixels(
+    data: &[u8],
+    glyph_width: usize,
+    glyph_height: usize,
+    is_color: bool,
+) -> imgref::ImgVec<rgb::RGBA8> {
+    let offset = (GLYPH_PADDING + GLYPH_MARGIN) as usize;
+    let cell_width = glyph_width + 2 * offset;
+    let cell_height = glyph_height + 2 * offset;
+    let mut pixels = vec![rgb::RGBA8::new(0, 0, 0, 0); cell_width * cell_height];
+
+    for y in 0..glyph_height {
+        for x in 0..glyph_width {
+            let dst_idx = (y + offset) * cell_width + x + offset;
+            pixels[dst_idx] = if is_color {
+                let src_idx = (y * glyph_width + x) * 4;
+                rgb::RGBA8::new(data[src_idx], data[src_idx + 1], data[src_idx + 2], data[src_idx + 3])
+            } else {
+                rgb::RGBA8::new(data[y * glyph_width + x], 0, 0, 0)
+            };
+        }
+    }
+
+    imgref::Img::new(pixels, cell_width, cell_height)
+}
+
+#[cfg(all(test, feature = "swash"))]
+mod swash_cell_tests {
+    use super::*;
+
+    /// The uploaded cell must cover the whole allocation - glyph plus
+    /// padding AND margin - so no texel of the cell is left with the atlas
+    /// texture's undefined initial contents (#310 finding 1).
+    #[test]
+    fn cell_covers_the_full_allocation() {
+        let img = glyph_cell_pixels(&[255u8; 6], 3, 2, false);
+        let expected = 2 * (GLYPH_PADDING + GLYPH_MARGIN) as usize;
+        assert_eq!(img.width(), 3 + expected);
+        assert_eq!(img.height(), 2 + expected);
+    }
+
+    /// Every texel of the padding and margin rings is blank; the glyph's
+    /// pixels sit at the padding+margin offset.
+    #[test]
+    fn rings_are_blank_and_ink_is_centered() {
+        let img = glyph_cell_pixels(&[7u8; 6], 3, 2, false);
+        let offset = (GLYPH_PADDING + GLYPH_MARGIN) as usize;
+        for (y, row) in img.rows().enumerate() {
+            for (x, px) in row.iter().enumerate() {
+                let inked = x >= offset && x < offset + 3 && y >= offset && y < offset + 2;
+                let expected = if inked {
+                    rgb::RGBA8::new(7, 0, 0, 0)
+                } else {
+                    rgb::RGBA8::new(0, 0, 0, 0)
+                };
+                assert_eq!(*px, expected, "texel ({x}, {y})");
+            }
+        }
+    }
+
+    /// Color glyphs carry all four channels through, with the same blank rings.
+    #[test]
+    fn color_cells_keep_rgba_and_blank_rings() {
+        let data: Vec<u8> = (0..8).collect(); // one 2x1 RGBA pair
+        let img = glyph_cell_pixels(&data, 2, 1, true);
+        let offset = (GLYPH_PADDING + GLYPH_MARGIN) as usize;
+        assert_eq!(img.buf()[offset * img.width() + offset], rgb::RGBA8::new(0, 1, 2, 3));
+        assert_eq!(
+            img.buf()[offset * img.width() + offset + 1],
+            rgb::RGBA8::new(4, 5, 6, 7)
+        );
+        assert_eq!(img.buf()[0], rgb::RGBA8::new(0, 0, 0, 0));
+        let last = img.width() * img.height() - 1;
+        assert_eq!(img.buf()[last], rgb::RGBA8::new(0, 0, 0, 0));
+    }
 }
