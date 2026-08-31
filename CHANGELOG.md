@@ -38,6 +38,9 @@ All notable changes to this project will be documented in this file.
 - Fixed `Canvas::measure_font()` scaling its result by the internal glyph
   rasterization scale and the DPI factor. It now reports user space metrics,
   like `measure_text()` and `TextContext::measure_font()` do.
+- Fixed `measure_text()` returning a run box shifted down by the glyph bearing
+  (about 4.5px at font size 12). `TextMetrics::y` and `height()` are measured
+  from the glyph ink again, not from the baseline.
 - Fixed `Path::rounded_rect()` and `rounded_rect_varying()` squashing corners
   into ellipses when a radius did not fit. Radii that overlap are now reduced by
   one common factor, as CSS and the Canvas `roundRect()` algorithm specify, and
