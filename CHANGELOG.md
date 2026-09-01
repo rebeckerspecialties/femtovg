@@ -11,7 +11,8 @@ All notable changes to this project will be documented in this file.
   offscreen image and composite it back with `LayerEffects` - group opacity, so
   overlapping shapes fade as one like an SVG group, and/or an image-filter
   chain. The offscreen image is sized to the current scissor rect plus the
-  blur reach, not the whole canvas.
+  blur reach, not the whole canvas. This fixes mis-rendering of the Google Workspace
+  SVG icon, which now more closely matches browser implementations.
 - Added `Canvas::filter_image_chain()`, which applies a list of image filters in
   one call the way a Canvas `ctx.filter` list (`"blur(5px) brightness(1.2)"`) or
   an SVG filter chain does. Consecutive color-matrix filters are folded into a
@@ -21,7 +22,7 @@ All notable changes to this project will be documented in this file.
 - Fixed `ImageFilter::GaussianBlur` with a zero, negative or non-finite
   standard deviation blanking the image instead of leaving it unchanged, and
   with a very large one using inconsistent coefficients. Both backends now
-  clamp the value the same way.
+  clamp the value the same way, matching WPT test case expectations.
 
 ## [0.27.0] - 2026-08-31
 
