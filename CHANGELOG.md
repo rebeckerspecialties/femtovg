@@ -3,31 +3,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-- Added `Canvas::filter_image_chain()`, executing a list of image filters as
-  one chain - the model behind Canvas `ctx.filter` lists
-  (`"blur(5px) brightness(1.2)"`) and SVG filter chains. Runs of adjacent
-  color-matrix filters fold into a single matrix on the CPU
-  (`ImageFilter::fold_with()`), so any number of consecutive color operations
-  costs one GPU pass; passes that cannot fold ping-pong between at most two
-  transient scratch images, keeping peak transient memory at twice the source
-  image regardless of chain length.
-- Fixed Gaussian blur with a degenerate standard deviation: sigma 0 (or
-  negative / non-finite) divided the Gaussian coefficient by zero and blanked
-  the output instead of passing the image through, and a huge sigma computed
-  coefficients from the unclamped value while the shader loop used the
-  clamped one. Both backends now sanitize sigma at one place.
-- Fixed `stroke_text()` line widths under a scaled canvas transform. The width
-  crossed into the rasterizer's space inconsistently per regime: baked-atlas
-  glyphs never scaled it, while path-fallback glyphs scaled it twice, so the
-  drawn width changed law with the zoom, the font size, and even the paint
-  flavor. All user-space text quantities now cross through the baked scale at
-  one place, and a zoom-invariance test suite holds the regime seams.
-- Added elliptical radial gradients, matching CSS's `radial-gradient(ellipse ...)`.
-  New `Paint` constructors `elliptical_gradient()` and `elliptical_gradient_stops()`
-  take separate inner/outer radii per axis. `PaintFlavor::RadialGradient`'s
-  `in_radius` and `out_radius` fields changed from `f32` to `(f32, f32)` to hold the
-  per-axis radii; `Paint::radial_gradient()` and `radial_gradient_stops()` keep their
-  existing scalar-radius signatures unchanged.
+- Added `Canvas::filter_image_chain()`, which applies a list of image filters in
+  one call the way a Canvas `ctx.filter` list (`"blur(5px) brightness(1.2)"`) or
+  an SVG filter chain does. Consecutive color-matrix filters are folded into a
+  single GPU pass (`ImageFilter::fold_with()`), and the remaining passes share
+  two scratch images, so memory stays at twice the source image however long
+  the chain is.
+- Fixed `ImageFilter::GaussianBlur` with a zero, negative or non-finite
+  standard deviation blanking the image instead of leaving it unchanged, and
+  with a very large one using inconsistent coefficients. Both backends now
+  clamp the value the same way.
 
 ## [0.27.0] - 2026-08-31
 
