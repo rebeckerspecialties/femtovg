@@ -68,7 +68,11 @@ paths find the offending path fast); `PATH_DUMP=1` print segments;
 `GRAD_DUMP=1` gradient stops + transform; `TREE_DUMP=1` usvg group tree
 (mask/clip/filter/opacity); `NO_MASK=1`, `MASK_ONLY=1`, `SHOW_CAPTURE=1`;
 `FORCE_SOLID=1` replaces gradient paints with magenta - the fastest way to
-tell a geometry bug from a paint bug.
+tell a geometry bug from a paint bug; `NO_CLIP=1`, `NO_OPACITY=1`,
+`NO_BLEND=1` drop one feature class at a time (a render that *improves*
+when a feature is dropped points at that feature's wiring), and
+`CLIP_SHOW=1` paints each clip region magenta instead of clipping with it
+(an empty clip region is invisible - and clips everything).
 
 Other techniques that paid off:
 * Keep pre-fix and post-fix binaries side by side (md5 them) and diff their
@@ -87,8 +91,16 @@ Other techniques that paid off:
   transforms, normalises radials to unit circle + transform; pass the
   transform via `with_gradient_transform`, radials via
   `two_point_radial_gradient_stops(fx,fy,0,cx,cy,r)`.
-* Clip-path content transforms are relative to the clip root: bake each
-  path's `abs_transform()` into the points before `clip_path`.
+* Clip-path content transforms are relative to the clip root: walk the
+  whole clip subtree (a `<use>` inside `<clipPath>` becomes a Group wrapping
+  the path - collecting only direct Path children yields an empty clip, which
+  correctly clips everything) and bake `group.abs_transform() *
+  clip.transform() * path.abs_transform()` into the points before
+  `clip_path`.
+* `viewBox` needs no harness handling: usvg folds the viewBox-to-size
+  transform into a synthetic root group, so `abs_transform()` already
+  includes it. `<text>` needs `Options::fontdb_mut().load_system_fonts()` or
+  it silently converts to nothing.
 * Masks: draw content under the referencing group's `abs_transform()`, and
   **pre-capture every mask image before any `begin_layer`** - femtovg has no
   render-target getter, so a capture inside a live layer cannot restore to
@@ -98,6 +110,11 @@ Other techniques that paid off:
 * Not femtovg bugs: CSS `var()` fills (usvg -> black), `@keyframes` /
   `offset-path` animation state, CSS-hidden frames (usvg ignores `<style>`).
 * Searchfox "SVG" downloads are HTML pages; `make_ref.py` unwraps them.
+
+Known non-femtovg residuals in the corpus: CSS `mix-blend-mode` (femtovg has
+Porter-Duff composites only - `corpus/banner.svg`'s `color-burn` group is
+the driver), `feDropShadow` (a multi-input filter primitive, deferred), and
+text set in fonts the machine lacks.
 
 ## femtovg facts that bite comparisons
 

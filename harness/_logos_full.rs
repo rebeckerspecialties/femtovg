@@ -47,6 +47,16 @@ fn to_paint(p: &usvg::Paint) -> Option<Paint> {
         usvg::Paint::Pattern(_) => return None,
     };
     paint.set_anti_alias(true);
+    if std::env::var("GRAD_DUMP").is_ok() {
+        match p {
+            usvg::Paint::LinearGradient(g) => eprintln!("linear {} stops x1y1x2y2=({},{})-({},{}) transform={:?}", g.stops().len(), g.x1(), g.y1(), g.x2(), g.y2(), g.transform()),
+            usvg::Paint::RadialGradient(g) => eprintln!("radial {} stops c=({},{}) f=({},{}) r={} transform={:?}", g.stops().len(), g.cx(), g.cy(), g.fx(), g.fy(), g.r().get(), g.transform()),
+            _ => {}
+        }
+    }
+    if std::env::var("FORCE_SOLID").is_ok() && !matches!(p, usvg::Paint::Color(_)) {
+        return Some(Paint::color(Color::rgb(200, 0, 200)));
+    }
     Some(paint)
 }
 
@@ -119,7 +129,7 @@ fn group_effects(
     scale: f32,
     masks: &MaskMap,
 ) -> Option<LayerEffects> {
-    let opacity = group.opacity().get();
+    let opacity = if std::env::var("NO_OPACITY").is_ok() { 1.0 } else { group.opacity().get() };
     let mut blurs: Vec<ImageFilter> = Vec::new();
     for f in group.filters() {
         for prim in f.primitives() {
@@ -145,56 +155,78 @@ fn group_effects(
     Some(fx)
 }
 
+#[allow(dead_code)]
+fn dump(children: &[usvg::Node], depth: usize) {
+    for node in children {
+        match node {
+            usvg::Node::Group(g) => {
+                eprintln!("{:indent$}Group mask={:?} clip={:?} blend={:?} filters={} opacity={} transform={:?}", "", g.mask().map(|m| format!("{:?} rect={:?}", m.kind(), m.rect())), g.clip_path().map(|c| format!("transform={:?} children={}", c.transform(), c.root().children().len())), g.blend_mode(), g.filters().len(), g.opacity().get(), g.transform(), indent = depth * 2);
+                dump(g.children(), depth + 1);
+            }
+            usvg::Node::Path(p) => {
+                let b = p.abs_bounding_box();
+                eprintln!("{:indent$}Path bbox=({:.0},{:.0} {:.0}x{:.0}) fill={} stroke={}", "", b.x(), b.y(), b.width(), b.height(), p.fill().is_some(), p.stroke().is_some(), indent = depth * 2);
+            }
+            usvg::Node::Text(_) => eprintln!("{:indent$}Text(unconverted)", "", indent = depth * 2),
+            other => eprintln!("{:indent$}{:?}", "", format!("{other:?}").chars().take(60).collect::<String>(), indent = depth * 2),
+        }
+    }
+}
+
+static PATH_COUNTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
 fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale: f32, masks: &MaskMap) {
     use usvg::tiny_skia_path::PathSegment;
     for node in children {
         match node {
             usvg::Node::Group(group) => {
-                let clipped = group.clip_path().is_some();
-                if let Some(clip) = group.clip_path() {
+                if std::env::var("NO_BLEND").is_ok() && group.blend_mode() != usvg::BlendMode::Normal {
+                    continue;
+                }
+                let clipped = group.clip_path().is_some() && std::env::var("NO_CLIP").is_err();
+                if let Some(clip) = group.clip_path().filter(|_| std::env::var("NO_CLIP").is_err()) {
                     canvas.save();
                     let mut combined = Path::new();
                     let mut rule = FillRule::NonZero;
-                    for node in clip.root().children() {
-                        if let usvg::Node::Path(p) = node {
-                            use usvg::tiny_skia_path::PathSegment;
-                            if let Some(f) = p.fill() {
-                                if matches!(f.rule(), usvg::FillRule::EvenOdd) {
-                                    rule = FillRule::EvenOdd;
+                    // Clip content may be nested in groups (usvg wraps a
+                    // <use> inside <clipPath> in a Group); walk the whole
+                    // subtree and bake every path's absolute transform.
+                    fn collect_clip(nodes: &[usvg::Node], base: usvg::Transform, combined: &mut Path, rule: &mut FillRule) {
+                        use usvg::tiny_skia_path::PathSegment;
+                        for node in nodes {
+                            match node {
+                                usvg::Node::Group(g) => collect_clip(g.children(), base, combined, rule),
+                                usvg::Node::Path(p) => {
+                                    if let Some(f) = p.fill() {
+                                        if matches!(f.rule(), usvg::FillRule::EvenOdd) {
+                                            *rule = FillRule::EvenOdd;
+                                        }
+                                    }
+                                    let ct = base.pre_concat(p.abs_transform());
+                                    let map = |x: f32, y: f32| (ct.sx * x + ct.kx * y + ct.tx, ct.ky * x + ct.sy * y + ct.ty);
+                                    for seg in p.data().segments() {
+                                        match seg {
+                                            PathSegment::MoveTo(q) => { let (x, y) = map(q.x, q.y); combined.move_to(x, y); }
+                                            PathSegment::LineTo(q) => { let (x, y) = map(q.x, q.y); combined.line_to(x, y); }
+                                            PathSegment::QuadTo(a, q) => { let (ax, ay) = map(a.x, a.y); let (x, y) = map(q.x, q.y); combined.quad_to(ax, ay, x, y); }
+                                            PathSegment::CubicTo(a, b, q) => { let (ax, ay) = map(a.x, a.y); let (bx, by) = map(b.x, b.y); let (x, y) = map(q.x, q.y); combined.bezier_to(ax, ay, bx, by, x, y); }
+                                            PathSegment::Close => combined.close(),
+                                        }
+                                    }
                                 }
-                            }
-                            // Clip content carries its own transforms; bake them
-                            // into the points since the canvas transform at clip
-                            // time belongs to the group.
-                            let ct = p.abs_transform();
-                            let map = |x: f32, y: f32| (ct.sx * x + ct.kx * y + ct.tx, ct.ky * x + ct.sy * y + ct.ty);
-                            for seg in p.data().segments() {
-                                match seg {
-                                    PathSegment::MoveTo(pt) => {
-                                        let (x, y) = map(pt.x, pt.y);
-                                        combined.move_to(x, y)
-                                    }
-                                    PathSegment::LineTo(pt) => {
-                                        let (x, y) = map(pt.x, pt.y);
-                                        combined.line_to(x, y)
-                                    }
-                                    PathSegment::CubicTo(a, b, pt) => {
-                                        let (ax, ay) = map(a.x, a.y);
-                                        let (bx, by) = map(b.x, b.y);
-                                        let (x, y) = map(pt.x, pt.y);
-                                        combined.bezier_to(ax, ay, bx, by, x, y)
-                                    }
-                                    PathSegment::QuadTo(a, pt) => {
-                                        let (ax, ay) = map(a.x, a.y);
-                                        let (x, y) = map(pt.x, pt.y);
-                                        combined.quad_to(ax, ay, x, y)
-                                    }
-                                    PathSegment::Close => combined.close(),
-                                }
+                                _ => {}
                             }
                         }
                     }
-                    canvas.clip_path(&combined, rule);
+                    collect_clip(clip.root().children(), group.abs_transform().pre_concat(clip.transform()), &mut combined, &mut rule);
+                    if std::env::var("CLIP_SHOW").is_ok() {
+                        // Debug: paint the clip region instead of clipping with it.
+                        let mut show = Paint::color(Color::rgba(200, 0, 200, 90));
+                        show.set_fill_rule(rule);
+                        canvas.fill_path(&combined, &show);
+                    } else {
+                        canvas.clip_path(&combined, rule);
+                    }
                 }
                 match group_effects(canvas, group, W as usize, H as usize, scale, masks) {
                     Some(fx) => {
@@ -209,6 +241,20 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                 }
             }
             usvg::Node::Path(svg_path) => {
+                if let Ok(range) = std::env::var("PATH_RANGE") {
+                    let (lo, hi) = range.split_once(':').unwrap();
+                    let (lo, hi): (usize, usize) = (lo.parse().unwrap(), hi.parse().unwrap());
+                    let idx = PATH_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    if idx < lo || idx >= hi {
+                        continue;
+                    }
+                }
+                if std::env::var("PATH_DUMP").is_ok() {
+                    eprintln!("--- path fill={:?} rule={:?}", svg_path.fill().map(|f| format!("{:?}", f.paint()).chars().take(60).collect::<String>()), svg_path.fill().map(|f| f.rule()));
+                    for seg in svg_path.data().segments() {
+                        eprintln!("  {:?}", seg);
+                    }
+                }
                 let mut path = Path::new();
                 for seg in svg_path.data().segments() {
                     match seg {
@@ -285,7 +331,14 @@ fn main() {
     let mut canvas = Canvas::new(renderer).unwrap();
     canvas.set_size(W, H, 1.0);
 
-    let tree = usvg::Tree::from_data(&std::fs::read(svg_path).unwrap(), &usvg::Options::default()).unwrap();
+    let tree = {
+        let mut opt = usvg::Options::default();
+        opt.fontdb_mut().load_system_fonts();
+        usvg::Tree::from_data(&std::fs::read(svg_path).unwrap(), &opt).unwrap()
+    };
+    if std::env::var("TREE_DUMP").is_ok() {
+        dump(tree.root().children(), 0);
+    }
 
     let target = device.create_texture(&wgpu::TextureDescriptor {
         label: None,
