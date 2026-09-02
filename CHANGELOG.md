@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+- Fixed the WGPU backend painting a nonzero fill's whole bounding box after an
+  even-odd fill, because the even-odd fill left winding counts in the stencil
+  buffer. Showed as a block above the bow tie of the DuckDuckGo logo.
+
 ## [0.27.0] - 2026-08-31
 
 - Added text decoration for `fill_text()` and `stroke_text()`: underline,
