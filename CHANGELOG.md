@@ -14,6 +14,12 @@ All notable changes to this project will be documented in this file.
   single GPU pass (`ImageFilter::fold_with()`), and the remaining passes share
   two scratch images, so memory stays at twice the source image however long
   the chain is.
+- Added `Canvas::filter_image_chain()`, which applies a list of image filters in
+  one call the way a Canvas `ctx.filter` list (`"blur(5px) brightness(1.2)"`) or
+  an SVG filter chain does. Consecutive color-matrix filters are folded into a
+  single GPU pass (`ImageFilter::fold_with()`), and the remaining passes share
+  two scratch images, so memory stays at twice the source image however long
+  the chain is. `ImageFilter::identity()` is the explicit no-op filter.
 - Fixed `ImageFilter::GaussianBlur` with a zero, negative or non-finite
   standard deviation blanking the image instead of leaving it unchanged, and
   with a very large one using inconsistent coefficients. Both backends now
