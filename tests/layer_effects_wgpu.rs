@@ -257,7 +257,6 @@ fn layer_composite_honors_outer_scissor() {
     assert_eq!(px(&out, 50, 50), [255, 255, 255], "outside the scissor must stay white");
 }
 
-<<<<<<< HEAD
 fn circle_mask_image(canvas: &mut Canvas<WGPURenderer>) -> femtovg::ImageId {
     // White circle on transparent: full luminance coverage inside, none outside.
     let mask = canvas
@@ -317,119 +316,11 @@ fn luminance_mask_gates_the_layer() {
 /// opaque - proving coverage is luminance, not alpha.
 #[test]
 fn luminance_mask_uses_luminance_not_alpha() {
-=======
-fn readback(device: &wgpu::Device, queue: &wgpu::Queue, target: &wgpu::Texture) -> Vec<u8> {
-    let unpadded = W * 4;
-    let padded = unpadded.div_ceil(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT) * wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
-    let buffer = device.create_buffer(&wgpu::BufferDescriptor {
-        label: None,
-        size: (padded * H) as u64,
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
-    let mut enc = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
-    enc.copy_texture_to_buffer(
-        wgpu::TexelCopyTextureInfo {
-            texture: target,
-            mip_level: 0,
-            origin: wgpu::Origin3d::ZERO,
-            aspect: wgpu::TextureAspect::All,
-        },
-        wgpu::TexelCopyBufferInfo {
-            buffer: &buffer,
-            layout: wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(padded),
-                rows_per_image: Some(H),
-            },
-        },
-        wgpu::Extent3d {
-            width: W,
-            height: H,
-            depth_or_array_layers: 1,
-        },
-    );
-    queue.submit(Some(enc.finish()));
-    let slice = buffer.slice(..);
-    slice.map_async(wgpu::MapMode::Read, |_| {});
-    device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
-    let mapped = slice.get_mapped_range().unwrap();
-    let mut out = vec![0u8; (W * H * 4) as usize];
-    for y in 0..H as usize {
-        let s = y * padded as usize;
-        let d = y * (W * 4) as usize;
-        out[d..d + (W * 4) as usize].copy_from_slice(&mapped[s..s + (W * 4) as usize]);
-    }
-    out
-}
-
-fn output_texture(device: &wgpu::Device) -> wgpu::Texture {
-    device.create_texture(&wgpu::TextureDescriptor {
-        label: Some("layer flush test target"),
-        size: wgpu::Extent3d {
-            width: W,
-            height: H,
-            depth_or_array_layers: 1,
-        },
-        mip_level_count: 1,
-        sample_count: 1,
-        dimension: wgpu::TextureDimension::D2,
-        format: wgpu::TextureFormat::Rgba8Unorm,
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
-        view_formats: &[],
-    })
-}
-
-/// A flush in the middle of an open layer must not release the layer's
-/// backing image or lose the redirect into it: draws before and after the
-/// flush both belong to the layer and composite with its opacity at end_layer.
-#[test]
-fn open_layer_survives_a_flush() {
-    let Some((device, queue)) = headless_device() else {
-        eprintln!("skipping: no wgpu adapter available");
-        return;
-    };
-    let target = output_texture(&device);
-    let renderer = WGPURenderer::new(device.clone(), queue.clone());
-    let mut canvas = Canvas::new(renderer).expect("canvas");
-    canvas.set_size(W, H, 1.0);
-    canvas.clear_rect(0, 0, W, H, Color::white());
-    canvas.begin_layer(&LayerEffects::new().with_opacity(0.8));
-    let mut red = Path::new();
-    red.rect(0.0, 0.0, 32.0, 64.0);
-    canvas.fill_path(&red, &Paint::color(Color::rgb(255, 0, 0)));
-    queue.submit(canvas.flush_to_output(&target));
-    let mut blue = Path::new();
-    blue.rect(32.0, 0.0, 32.0, 64.0);
-    canvas.fill_path(&blue, &Paint::color(Color::rgb(0, 0, 255)));
-    canvas.end_layer();
-    queue.submit(canvas.flush_to_output(&target));
-    let out = readback(&device, &queue, &target);
-    // 0.8 red over white = (255, 51, 51); 0.8 blue over white = (51, 51, 255).
-    let r = px(&out, 16, 32);
-    let b = px(&out, 48, 32);
-    assert!(
-        close(r[0], 255) && close(r[1], 51) && close(r[2], 51),
-        "draw before the flush must survive in the layer, got {r:?}"
-    );
-    assert!(
-        close(b[0], 51) && close(b[1], 51) && close(b[2], 255),
-        "draw after the flush must still land in the layer, got {b:?}"
-    );
-}
-
-/// Past the transient budget a layer degrades to pass-through (its draws
-/// still appear, unfaded) instead of allocating, and releasing at flush
-/// returns the budget.
-#[test]
-fn layers_degrade_past_the_transient_budget() {
->>>>>>> origin/layer-core
     let Some((device, queue)) = headless_device() else {
         eprintln!("skipping: no wgpu adapter available");
         return;
     };
     let out = render(&device, &queue, |canvas| {
-<<<<<<< HEAD
         // Opaque half-white / half-black mask.
         let mask = canvas
             .create_image_empty(
@@ -567,16 +458,11 @@ fn luminance_mask_multiplies_alpha() {
             W as f32,
             H as f32,
         ));
-=======
-        canvas.set_transient_image_budget(1024); // far below one 64x64 RGBA8 layer
-        canvas.begin_layer(&LayerEffects::new().with_opacity(0.5));
->>>>>>> origin/layer-core
         let mut p = Path::new();
         p.rect(0.0, 0.0, W as f32, H as f32);
         canvas.fill_path(&p, &Paint::color(Color::rgb(255, 0, 0)));
         canvas.end_layer();
     });
-<<<<<<< HEAD
     // Top row: coverage ~1 -> red survives.
     assert!(
         close(px(&out, 32, 1)[0], 255) && close(px(&out, 32, 1)[1], 0),
@@ -592,7 +478,125 @@ fn luminance_mask_multiplies_alpha() {
     // Bottom row: coverage ~0 -> white shows through.
     let bottom = px(&out, 32, H - 1);
     assert!(bottom[1] > 240, "bottom should fade to white, got {bottom:?}");
-=======
+}
+
+fn readback(device: &wgpu::Device, queue: &wgpu::Queue, target: &wgpu::Texture) -> Vec<u8> {
+    let unpadded = W * 4;
+    let padded = unpadded.div_ceil(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT) * wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
+    let buffer = device.create_buffer(&wgpu::BufferDescriptor {
+        label: None,
+        size: (padded * H) as u64,
+        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+        mapped_at_creation: false,
+    });
+    let mut enc = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+    enc.copy_texture_to_buffer(
+        wgpu::TexelCopyTextureInfo {
+            texture: target,
+            mip_level: 0,
+            origin: wgpu::Origin3d::ZERO,
+            aspect: wgpu::TextureAspect::All,
+        },
+        wgpu::TexelCopyBufferInfo {
+            buffer: &buffer,
+            layout: wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(padded),
+                rows_per_image: Some(H),
+            },
+        },
+        wgpu::Extent3d {
+            width: W,
+            height: H,
+            depth_or_array_layers: 1,
+        },
+    );
+    queue.submit(Some(enc.finish()));
+    let slice = buffer.slice(..);
+    slice.map_async(wgpu::MapMode::Read, |_| {});
+    device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
+    let mapped = slice.get_mapped_range().unwrap();
+    let mut out = vec![0u8; (W * H * 4) as usize];
+    for y in 0..H as usize {
+        let s = y * padded as usize;
+        let d = y * (W * 4) as usize;
+        out[d..d + (W * 4) as usize].copy_from_slice(&mapped[s..s + (W * 4) as usize]);
+    }
+    out
+}
+
+fn output_texture(device: &wgpu::Device) -> wgpu::Texture {
+    device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("layer flush test target"),
+        size: wgpu::Extent3d {
+            width: W,
+            height: H,
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format: wgpu::TextureFormat::Rgba8Unorm,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+        view_formats: &[],
+    })
+}
+
+/// A flush in the middle of an open layer must not release the layer's
+/// backing image or lose the redirect into it: draws before and after the
+/// flush both belong to the layer and composite with its opacity at end_layer.
+#[test]
+fn open_layer_survives_a_flush() {
+    let Some((device, queue)) = headless_device() else {
+        eprintln!("skipping: no wgpu adapter available");
+        return;
+    };
+    let target = output_texture(&device);
+    let renderer = WGPURenderer::new(device.clone(), queue.clone());
+    let mut canvas = Canvas::new(renderer).expect("canvas");
+    canvas.set_size(W, H, 1.0);
+    canvas.clear_rect(0, 0, W, H, Color::white());
+    canvas.begin_layer(&LayerEffects::new().with_opacity(0.8));
+    let mut red = Path::new();
+    red.rect(0.0, 0.0, 32.0, 64.0);
+    canvas.fill_path(&red, &Paint::color(Color::rgb(255, 0, 0)));
+    queue.submit(canvas.flush_to_output(&target));
+    let mut blue = Path::new();
+    blue.rect(32.0, 0.0, 32.0, 64.0);
+    canvas.fill_path(&blue, &Paint::color(Color::rgb(0, 0, 255)));
+    canvas.end_layer();
+    queue.submit(canvas.flush_to_output(&target));
+    let out = readback(&device, &queue, &target);
+    // 0.8 red over white = (255, 51, 51); 0.8 blue over white = (51, 51, 255).
+    let r = px(&out, 16, 32);
+    let b = px(&out, 48, 32);
+    assert!(
+        close(r[0], 255) && close(r[1], 51) && close(r[2], 51),
+        "draw before the flush must survive in the layer, got {r:?}"
+    );
+    assert!(
+        close(b[0], 51) && close(b[1], 51) && close(b[2], 255),
+        "draw after the flush must still land in the layer, got {b:?}"
+    );
+}
+
+/// Past the transient budget a layer degrades to pass-through (its draws
+/// still appear, unfaded) instead of allocating, and releasing at flush
+/// returns the budget.
+#[test]
+fn layers_degrade_past_the_transient_budget() {
+    let Some((device, queue)) = headless_device() else {
+        eprintln!("skipping: no wgpu adapter available");
+        return;
+    };
+    let out = render(&device, &queue, |canvas| {
+        canvas.set_transient_image_budget(1024); // far below one 64x64 RGBA8 layer
+        canvas.begin_layer(&LayerEffects::new().with_opacity(0.5));
+        let mut p = Path::new();
+        p.rect(0.0, 0.0, W as f32, H as f32);
+        canvas.fill_path(&p, &Paint::color(Color::rgb(255, 0, 0)));
+        canvas.end_layer();
+    });
     let c = px(&out, 32, 32);
     assert!(
         close(c[0], 255) && close(c[1], 0),
@@ -611,5 +615,4 @@ fn luminance_mask_multiplies_alpha() {
         close(c[0], 255) && close(c[1], 128),
         "within budget the layer applies its opacity; got {c:?}"
     );
->>>>>>> origin/layer-core
 }
