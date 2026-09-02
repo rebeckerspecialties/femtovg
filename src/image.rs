@@ -434,6 +434,19 @@ impl ImageFilter {
         }
     }
 
+    /// The identity color matrix: leaves every pixel unchanged. Chains use it
+    /// as an explicit no-op pass; it is exact by construction.
+    pub fn identity() -> Self {
+        #[rustfmt::skip]
+        let matrix = [
+            1.0, 0.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 0.0, 1.0, 0.0,
+        ];
+        Self::ColorMatrix { matrix }
+    }
+
     /// CSS `saturate(amount)` (`feColorMatrix type="saturate"`). `amount` >= 0;
     /// 0 desaturates, 1 is identity, >1 over-saturates. Uses the SVG
     /// 0.213/0.715/0.072 luma weights.
@@ -560,8 +573,8 @@ impl ImageFilter {
     /// matrix in - matching how Skia folds via `asAColorMatrix`/`Compose`.
     /// Returns `None` when either side is not a color matrix (a blur cannot
     /// fold), leaving chain execution to run them as separate passes.
-    pub fn fold_with(&self, next: &ImageFilter) -> Option<ImageFilter> {
-        let (ImageFilter::ColorMatrix { matrix: a }, ImageFilter::ColorMatrix { matrix: b }) = (self, next) else {
+    pub fn fold_with(self, next: Self) -> Option<Self> {
+        let (Self::ColorMatrix { matrix: a }, Self::ColorMatrix { matrix: b }) = (self, next) else {
             return None;
         };
         // `self` runs first, `next` second: out = B * augment(A), where
@@ -581,7 +594,18 @@ impl ImageFilter {
                 m[row * 5 + col] = sum;
             }
         }
-        Some(ImageFilter::ColorMatrix { matrix: m })
+        Some(Self::ColorMatrix { matrix: m })
+    }
+
+    /// Whether one pass of this filter flips the image's stored orientation:
+    /// a color-matrix pass renders through the render-target convention once
+    /// (flipped), while the two-pass Gaussian blur flips twice and preserves
+    /// it. Exhaustive on purpose - a new variant must declare its parity here.
+    pub(crate) fn flips_output(&self) -> bool {
+        match self {
+            Self::ColorMatrix { .. } => true,
+            Self::GaussianBlur { .. } => false,
+        }
     }
 }
 
@@ -614,7 +638,7 @@ mod filter_fold_tests {
     fn folding_matches_sequential_application() {
         let first = ImageFilter::sepia(0.8);
         let second = ImageFilter::hue_rotate(1.1);
-        let folded = first.fold_with(&second).expect("two color matrices fold");
+        let folded = first.fold_with(second).expect("two color matrices fold");
 
         for px in [
             [1.0, 0.0, 0.0, 1.0],
@@ -643,8 +667,8 @@ mod filter_fold_tests {
         let invert = ImageFilter::invert(1.0);
         let bright = ImageFilter::brightness(2.0);
         // invert then brighten: 2*(1-c) ; brighten then invert: 1-2c. Distinct.
-        let a = matrix(&invert.fold_with(&bright).unwrap());
-        let b = matrix(&bright.fold_with(&invert).unwrap());
+        let a = matrix(&invert.fold_with(bright).unwrap());
+        let b = matrix(&bright.fold_with(invert).unwrap());
         let px = [0.25, 0.5, 0.75, 1.0];
         let ab = apply(&a, px);
         let ba = apply(&b, px);
@@ -659,8 +683,8 @@ mod filter_fold_tests {
             ba[0]
         );
 
-        let identity = ImageFilter::saturate(1.0);
-        let folded = ImageFilter::sepia(1.0).fold_with(&identity).unwrap();
+        let identity = ImageFilter::identity();
+        let folded = ImageFilter::sepia(1.0).fold_with(identity).unwrap();
         let direct = matrix(&ImageFilter::sepia(1.0));
         for (x, y) in matrix(&folded).iter().zip(direct.iter()) {
             assert!((x - y).abs() < 1e-5);
@@ -671,7 +695,7 @@ mod filter_fold_tests {
     #[test]
     fn blur_does_not_fold() {
         let blur = ImageFilter::GaussianBlur { sigma: 2.0 };
-        assert!(blur.fold_with(&ImageFilter::sepia(1.0)).is_none());
-        assert!(ImageFilter::sepia(1.0).fold_with(&blur).is_none());
+        assert!(blur.fold_with(ImageFilter::sepia(1.0)).is_none());
+        assert!(ImageFilter::sepia(1.0).fold_with(blur).is_none());
     }
 }

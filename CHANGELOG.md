@@ -8,7 +8,7 @@ All notable changes to this project will be documented in this file.
   an SVG filter chain does. Consecutive color-matrix filters are folded into a
   single GPU pass (`ImageFilter::fold_with()`), and the remaining passes share
   two scratch images, so memory stays at twice the source image however long
-  the chain is.
+  the chain is. `ImageFilter::identity()` is the explicit no-op filter.
 - Fixed `ImageFilter::GaussianBlur` with a zero, negative or non-finite
   standard deviation blanking the image instead of leaving it unchanged, and
   with a very large one using inconsistent coefficients. Both backends now
