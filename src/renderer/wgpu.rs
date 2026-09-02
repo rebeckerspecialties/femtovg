@@ -1395,13 +1395,11 @@ fn concave_fill(
                         (true, FillRule::NonZero) => 0xff,
                         (true, FillRule::EvenOdd) => 0x81,
                     },
-                    write_mask: match (command.clip_active, command.fill_rule) {
-                        (false, FillRule::NonZero) => 0xff,
-                        (false, FillRule::EvenOdd) => 0x1,
-                        // The clip bit is write-protected while the winding
-                        // bits are cleared for the next shape.
-                        (true, _) => 0x7f,
-                    },
+                    // Even-odd reads only the parity bit, but the winding pass
+                    // wrote the full count (2 in overlaps, 0xff for a wrapped
+                    // -1); clear every winding bit so nothing leaks into the
+                    // next fill. The clip bit stays write-protected.
+                    write_mask: if command.clip_active { 0x7f } else { 0xff },
                 },
                 stencil_reference: if command.clip_active { 0x80 } else { 0 },
             },
