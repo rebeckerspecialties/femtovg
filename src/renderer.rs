@@ -254,9 +254,9 @@ pub enum ShaderType {
     /// form, where the start and end circles may have different centers. Ordinary
     /// concentric radial gradients keep using the cheaper box-gradient
     /// [`FillGradient`](Self::FillGradient) path.
-    FillGradientRadial,
+    FillGradientTwoPointRadial,
     /// Fill image two-point radial gradient shader (multi-stop LUT variant).
-    FillImageGradientRadial,
+    FillImageGradientTwoPointRadial,
 }
 
 impl ShaderType {
@@ -274,8 +274,8 @@ impl ShaderType {
             Self::FillGradientConic => 8,
             Self::FillImageGradientConic => 9,
             Self::FilterImageColorMatrix => 10,
-            Self::FillGradientRadial => 11,
-            Self::FillImageGradientRadial => 12,
+            Self::FillGradientTwoPointRadial => 11,
+            Self::FillImageGradientTwoPointRadial => 12,
         }
     }
 

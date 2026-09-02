@@ -44,8 +44,8 @@ varying vec2 fpos;
  #define SHADER_TYPE_FillGradientConic 8
  #define SHADER_TYPE_FillImageGradientConic 9
  #define SHADER_TYPE_FilterImageColorMatrix 10
- #define SHADER_TYPE_FillGradientRadial 11
- #define SHADER_TYPE_FillImageGradientRadial 12
+ #define SHADER_TYPE_FillGradientTwoPointRadial 11
+ #define SHADER_TYPE_FillImageGradientTwoPointRadial 12
 
 float sdroundrect(vec2 pt, vec2 ext, float rad) {
     vec2 ext2 = ext - vec2(rad,rad);
@@ -168,16 +168,13 @@ float radialTwoPointT(out bool covered) {
         }
     } else {
         float disc = b * b - a * c;
-        if (a < 0.0) {
-            // One circle strictly contains the other, so every fragment is on
-            // some interpolated circle and the discriminant is never really
-            // negative. At the focal point it is mathematically zero and rounds
-            // just below, which would punch a hole exactly where the first stop
-            // belongs, so hold it at zero rather than reading it as a miss.
-            disc = max(disc, 0.0);
-        }
-        if (disc >= 0.0) {
-            float s = sqrt(disc);
+        // When one circle strictly contains the other (a < 0), every fragment
+        // is on some interpolated circle and the discriminant is never really
+        // negative: at the focal point it is mathematically zero and rounds
+        // just below, which would punch a hole exactly where the first stop
+        // belongs. So a negative discriminant only counts as a miss for a > 0.
+        if (a < 0.0 || disc >= 0.0) {
+            float s = sqrt(max(disc, 0.0));
             // One reciprocal, two roots (a is guaranteed away from zero here).
             float inv_a = 1.0 / a;
             float root_a = (b - s) * inv_a;
@@ -199,14 +196,14 @@ float radialTwoPointT(out bool covered) {
     return clamp(t, 0.0, 1.0);
 }
 
-vec4 renderGradientRadial() {
+vec4 renderGradientTwoPointRadial() {
     bool covered;
     float d = radialTwoPointT(covered);
     if (!covered) return vec4(0.0);
     return ditherGradient(mix(innerCol, outerCol, d));
 }
 
-vec4 renderImageGradientRadial() {
+vec4 renderImageGradientTwoPointRadial() {
     bool covered;
     float d = radialTwoPointT(covered);
     if (!covered) return vec4(0.0);
@@ -329,10 +326,10 @@ void main(void) {
     result = renderImageGradientConic();
 #elif SELECT_SHADER == SHADER_TYPE_FilterImageColorMatrix
     result = renderColorMatrix();
-#elif SELECT_SHADER == SHADER_TYPE_FillGradientRadial
-    result = renderGradientRadial();
-#elif SELECT_SHADER == SHADER_TYPE_FillImageGradientRadial
-    result = renderImageGradientRadial();
+#elif SELECT_SHADER == SHADER_TYPE_FillGradientTwoPointRadial
+    result = renderGradientTwoPointRadial();
+#elif SELECT_SHADER == SHADER_TYPE_FillImageGradientTwoPointRadial
+    result = renderImageGradientTwoPointRadial();
 #else
 #error A shader variant must be selected with the SELECT_SHADER pre-processor variable
 #endif

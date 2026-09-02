@@ -19,94 +19,11 @@ const W: u32 = 300;
 const H: u32 = 120;
 const FONT: &[u8] = include_bytes!("../examples/assets/RobotoFlex-VariableFont.ttf");
 
-fn headless_device() -> Option<(wgpu::Device, wgpu::Queue)> {
-    let instance = wgpu::Instance::default();
-    let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
-        power_preference: wgpu::PowerPreference::default(),
-        force_fallback_adapter: false,
-        compatible_surface: None,
-        ..Default::default()
-    }))
-    .ok()?;
-    let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
-        label: Some("femtovg gradient paint test device"),
-        required_features: wgpu::Features::empty(),
-        required_limits: wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits()),
-        experimental_features: wgpu::ExperimentalFeatures::disabled(),
-        memory_hints: wgpu::MemoryHints::MemoryUsage,
-        trace: wgpu::Trace::default(),
-    }))
-    .ok()?;
-    Some((device, queue))
-}
+mod common;
+use common::headless_device;
 
 fn render(device: &wgpu::Device, queue: &wgpu::Queue, draw: impl FnOnce(&mut Canvas<WGPURenderer>)) -> Vec<u8> {
-    let target = device.create_texture(&wgpu::TextureDescriptor {
-        label: Some("grad paint out"),
-        size: wgpu::Extent3d {
-            width: W,
-            height: H,
-            depth_or_array_layers: 1,
-        },
-        mip_level_count: 1,
-        sample_count: 1,
-        dimension: wgpu::TextureDimension::D2,
-        format: wgpu::TextureFormat::Rgba8Unorm,
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
-        view_formats: &[],
-    });
-    let renderer = WGPURenderer::new(device.clone(), queue.clone());
-    let mut canvas = Canvas::new(renderer).expect("canvas");
-    canvas.set_size(W, H, 1.0);
-    canvas.clear_rect(0, 0, W, H, Color::white());
-    draw(&mut canvas);
-    let commands = canvas.flush_to_output(&target);
-    queue.submit(commands);
-
-    let unpadded = W * 4;
-    let padded = unpadded.div_ceil(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT) * wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
-    let readback = device.create_buffer(&wgpu::BufferDescriptor {
-        label: None,
-        size: (padded * H) as u64,
-        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-        mapped_at_creation: false,
-    });
-    let mut enc = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
-    enc.copy_texture_to_buffer(
-        wgpu::TexelCopyTextureInfo {
-            texture: &target,
-            mip_level: 0,
-            origin: wgpu::Origin3d::ZERO,
-            aspect: wgpu::TextureAspect::All,
-        },
-        wgpu::TexelCopyBufferInfo {
-            buffer: &readback,
-            layout: wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(padded),
-                rows_per_image: Some(H),
-            },
-        },
-        wgpu::Extent3d {
-            width: W,
-            height: H,
-            depth_or_array_layers: 1,
-        },
-    );
-    queue.submit(Some(enc.finish()));
-    let slice = readback.slice(..);
-    slice.map_async(wgpu::MapMode::Read, |_| {});
-    device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
-    let mapped = slice.get_mapped_range().expect("readback");
-    let mut pixels = vec![0u8; (unpadded * H) as usize];
-    for row in 0..H as usize {
-        let s = row * padded as usize;
-        let d = row * unpadded as usize;
-        pixels[d..d + unpadded as usize].copy_from_slice(&mapped[s..s + unpadded as usize]);
-    }
-    drop(mapped);
-    readback.unmap();
-    pixels
+    common::render_rgba(device, queue, W, H, Color::white(), draw)
 }
 
 fn px(pixels: &[u8], x: usize, y: usize) -> [i32; 3] {

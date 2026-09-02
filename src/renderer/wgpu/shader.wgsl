@@ -34,8 +34,8 @@ const SHADER_TYPE_FillColorUnclipped: i32 = 7;
 const SHADER_TYPE_FillGradientConic: i32 = 8;
 const SHADER_TYPE_FillImageGradientConic: i32 = 9;
 const SHADER_TYPE_FilterImageColorMatrix: i32 = 10;
-const SHADER_TYPE_FillGradientRadial: i32 = 11;
-const SHADER_TYPE_FillImageGradientRadial: i32 = 12;
+const SHADER_TYPE_FillGradientTwoPointRadial: i32 = 11;
+const SHADER_TYPE_FillImageGradientTwoPointRadial: i32 = 12;
 
 const TAU: f32 = 6.28318530717958647692528676655900577;
 
@@ -163,12 +163,12 @@ fn fs_main(vertex: VertexOutput) -> @location(0) vec4<f32> {
         case SHADER_TYPE_FilterImageColorMatrix: {
             return renderColorMatrix(vertex, params);
         }
-        case SHADER_TYPE_FillGradientRadial: {
+        case SHADER_TYPE_FillGradientTwoPointRadial: {
             // Set `result` and fall through to the scissor + stroke-AA multiply.
-            result = renderGradientRadial(vertex, params);
+            result = renderGradientTwoPointRadial(vertex, params);
         }
-        case SHADER_TYPE_FillImageGradientRadial: {
-            result = renderImageGradientRadial(vertex, params);
+        case SHADER_TYPE_FillImageGradientTwoPointRadial: {
+            result = renderImageGradientTwoPointRadial(vertex, params);
         }
         default: {
             result = vec4<f32>(0.0, 0.0, 1.0, 1.0);
@@ -274,22 +274,18 @@ fn radialTwoPointT(vertex: VertexOutput, params: Params) -> RadialT {
         // equation -2b*t + c = 0. This is exactly the case where the end center
         // sits on the start circle, common in focal-style gradients.
         if (abs(b) > 1e-6) {
-            let t: f32 = c / (2.0 * b);
-            result.t = clamp(t, 0.0, 1.0);
-            result.covered = (r0 + t * dr >= 0.0);
+            result.t = c / (2.0 * b);
+            result.covered = (r0 + result.t * dr >= 0.0);
         }
     } else {
-        var disc: f32 = b * b - a * c;
-        if (a < 0.0) {
-            // One circle strictly contains the other, so every fragment is on
-            // some interpolated circle and the discriminant is never really
-            // negative. At the focal point it is mathematically zero and rounds
-            // just below, which would punch a hole exactly where the first stop
-            // belongs, so hold it at zero rather than reading it as a miss.
-            disc = max(disc, 0.0);
-        }
-        if (disc >= 0.0) {
-            let s: f32 = sqrt(disc);
+        let disc: f32 = b * b - a * c;
+        // When one circle strictly contains the other (a < 0), every fragment
+        // is on some interpolated circle and the discriminant is never really
+        // negative: at the focal point it is mathematically zero and rounds
+        // just below, which would punch a hole exactly where the first stop
+        // belongs. So a negative discriminant only counts as a miss for a > 0.
+        if (a < 0.0 || disc >= 0.0) {
+            let s: f32 = sqrt(max(disc, 0.0));
             // One reciprocal, two roots (a is guaranteed away from zero here).
             let inv_a: f32 = 1.0 / a;
             let root_a: f32 = (b - s) * inv_a;
@@ -300,18 +296,19 @@ fn radialTwoPointT(vertex: VertexOutput, params: Params) -> RadialT {
             // does not overpaint, so the largest offset whose interpolated circle
             // has a non-negative radius is the one that claims the fragment.
             if (r0 + t_hi * dr >= 0.0) {
-                result.t = clamp(t_hi, 0.0, 1.0);
+                result.t = t_hi;
                 result.covered = true;
             } else if (r0 + t_lo * dr >= 0.0) {
-                result.t = clamp(t_lo, 0.0, 1.0);
+                result.t = t_lo;
                 result.covered = true;
             }
         }
     }
+    result.t = clamp(result.t, 0.0, 1.0);
     return result;
 }
 
-fn renderGradientRadial(vertex: VertexOutput, params: Params) -> vec4<f32> {
+fn renderGradientTwoPointRadial(vertex: VertexOutput, params: Params) -> vec4<f32> {
     let r: RadialT = radialTwoPointT(vertex, params);
     if (!r.covered) {
         return vec4<f32>(0.0);
@@ -319,7 +316,7 @@ fn renderGradientRadial(vertex: VertexOutput, params: Params) -> vec4<f32> {
     return ditherGradient(mix(params.inner_col, params.outer_col, r.t), vertex.position.xy);
 }
 
-fn renderImageGradientRadial(vertex: VertexOutput, params: Params) -> vec4<f32> {
+fn renderImageGradientTwoPointRadial(vertex: VertexOutput, params: Params) -> vec4<f32> {
     let r: RadialT = radialTwoPointT(vertex, params);
     if (!r.covered) {
         return vec4<f32>(0.0);

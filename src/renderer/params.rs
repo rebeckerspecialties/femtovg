@@ -302,10 +302,10 @@ impl Params {
                     GradientColors::TwoStop { start_color, end_color } => {
                         params.inner_col = start_color.premultiplied().to_array();
                         params.outer_col = end_color.premultiplied().to_array();
-                        params.shader_type = ShaderType::FillGradientRadial;
+                        params.shader_type = ShaderType::FillGradientTwoPointRadial;
                     }
                     GradientColors::MultiStop { .. } => {
-                        params.shader_type = ShaderType::FillImageGradientRadial;
+                        params.shader_type = ShaderType::FillImageGradientTwoPointRadial;
                     }
                 }
             }
@@ -330,20 +330,21 @@ impl Params {
 /// Degenerate inputs (zero-length gradient, singular transform) fall back
 /// to mapping both endpoints.
 fn fold_linear_gradient_transform(sx: f32, sy: f32, ex: f32, ey: f32, transform: &Transform2D) -> (f32, f32, f32, f32) {
-    let [a, b, c, d, e, f] = transform.0;
-    let (nsx, nsy) = (a * sx + c * sy + e, b * sx + d * sy + f);
+    let (nsx, nsy) = transform.transform_point(sx, sy);
+    let (nex, ney) = transform.transform_point(ex, ey);
+    let [a, b, c, d, _, _] = transform.0;
     let (vx, vy) = (ex - sx, ey - sy);
     let vv = vx * vx + vy * vy;
     let det = a * d - b * c;
     if vv <= f32::EPSILON || det.abs() <= f32::EPSILON {
-        return (nsx, nsy, a * ex + c * ey + e, b * ex + d * ey + f);
+        return (nsx, nsy, nex, ney);
     }
     // w = A^-T v / |v|^2 : the user-space gradient of t.
     let wx = (d * vx - b * vy) / det / vv;
     let wy = (-c * vx + a * vy) / det / vv;
     let ww = wx * wx + wy * wy;
     if ww <= f32::EPSILON {
-        return (nsx, nsy, a * ex + c * ey + e, b * ex + d * ey + f);
+        return (nsx, nsy, nex, ney);
     }
     (nsx, nsy, nsx + wx / ww, nsy + wy / ww)
 }

@@ -197,13 +197,13 @@ impl OpenGl {
                 Some(MainProgram::new(
                     &context,
                     antialias,
-                    ShaderType::FillGradientRadial,
+                    ShaderType::FillGradientTwoPointRadial,
                     with_glyph_texture,
                 )?),
                 Some(MainProgram::new(
                     &context,
                     antialias,
-                    ShaderType::FillImageGradientRadial,
+                    ShaderType::FillImageGradientTwoPointRadial,
                     with_glyph_texture,
                 )?),
             ])
