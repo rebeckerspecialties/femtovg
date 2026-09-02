@@ -152,7 +152,7 @@ fn chained_color_matrices_match_the_fold() {
     let src = solid(femtovg::rgb::RGBA8::new(180, 90, 40, 255));
     let first = ImageFilter::sepia(0.8);
     let second = ImageFilter::hue_rotate(1.1);
-    let folded = first.fold_with(&second).expect("folds");
+    let folded = first.fold_with(second).expect("folds");
 
     let chained = run_chain(&device, &queue, &src, &[first, second]);
     let one_pass = run_chain(&device, &queue, &src, &[folded]);
