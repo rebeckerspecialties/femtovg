@@ -979,11 +979,11 @@ where
     /// vertically flipped, sampled upright via [`ImageFlags::FLIP_Y`], and
     /// carrying premultiplied alpha - create chain targets with
     /// `ImageFlags::PREMULTIPLIED | ImageFlags::FLIP_Y` so semi-transparent
-    /// results composite once, not twice. An
-    /// empty list degrades to a plain copy under that same convention. A
-    /// chain whose flip parity comes out even (for example a lone blur) pays
-    /// one extra identity pass for that uniformity; blur-only callers who
-    /// want the single-pass form can call `filter_image` directly.
+    /// results composite once, not twice. An empty list degrades to a plain
+    /// copy under that same convention. A chain whose flip parity comes out
+    /// even (for example a lone blur) pays one extra identity pass for that
+    /// uniformity; blur-only callers who want the single-pass form can call
+    /// `filter_image` directly.
     ///
     /// The chain borrows `source_image` and `target_image` without taking
     /// ownership - both may be caller-managed or acquired transients (a layer
@@ -999,7 +999,7 @@ where
         let mut passes: Vec<ImageFilter> = Vec::with_capacity(filters.len() + 1);
         for filter in filters {
             if let Some(prev) = passes.last_mut() {
-                if let Some(folded) = prev.fold_with(filter) {
+                if let Some(folded) = prev.fold_with(*filter) {
                     *prev = folded;
                     continue;
                 }
@@ -1012,24 +1012,13 @@ where
         // Appending an identity matrix when the flip count is even pins the
         // documented flipped-storage contract for every chain shape - and
         // makes the empty list a copy.
-        let flips = passes
-            .iter()
-            .filter(|f| matches!(f, ImageFilter::ColorMatrix { .. }))
-            .count();
+        let flips = passes.iter().filter(|f| f.flips_output()).count();
         if flips % 2 == 0 {
-            passes.push(ImageFilter::saturate(1.0));
+            passes.push(ImageFilter::identity());
         }
 
-        if passes.len() == 1 {
-            self.filter_image(target_image, passes[0], source_image);
-            return;
-        }
-
-        let Ok((width, height)) = self.image_size(source_image) else {
-            return;
-        };
-
-        // Ping-pong between at most two scratches regardless of chain length.
+        // Ping-pong between at most two scratches regardless of chain length;
+        // a single pass allocates none and writes the target directly.
         let mut scratch: [Option<ImageId>; 2] = [None, None];
         let mut src = source_image;
         let last = passes.len() - 1;
@@ -1037,19 +1026,24 @@ where
             let dst = if i == last {
                 target_image
             } else {
-                let slot = i % 2;
-                if scratch[slot].is_none() {
-                    // Scratches hold premultiplied filter output; the flag
-                    // keeps every consumer (filter passes and composites)
-                    // reading them under the same alpha convention. Without
-                    // it, semi-transparent content is premultiplied a second
-                    // time at each read and darkens per pass.
-                    let Ok(id) = self.acquire_transient_image(width, height, ImageFlags::PREMULTIPLIED) else {
-                        return;
-                    };
-                    scratch[slot] = Some(id);
+                match scratch[i % 2] {
+                    Some(id) => id,
+                    None => {
+                        let Ok((width, height)) = self.image_size(source_image) else {
+                            return;
+                        };
+                        // Scratches hold premultiplied filter output; the flag
+                        // keeps every consumer (filter passes and composites)
+                        // reading them under the same alpha convention. Without
+                        // it, semi-transparent content is premultiplied a second
+                        // time at each read and darkens per pass.
+                        let Ok(id) = self.acquire_transient_image(width, height, ImageFlags::PREMULTIPLIED) else {
+                            return;
+                        };
+                        scratch[i % 2] = Some(id);
+                        id
+                    }
                 }
-                scratch[slot].unwrap()
             };
             self.filter_image(dst, *filter, src);
             src = dst;
@@ -4933,7 +4927,6 @@ fn layer_bounds_follow_the_scissor() {
 /// folds to a single pass (zero transient images), and longer mixed chains
 /// ping-pong between exactly two transient scratches however long they get -
 /// the WebKit-600MB-intermediates class (bug 218422) made into an invariant.
-#[cfg(test)]
 #[test]
 fn filter_chain_bounds_transient_images() {
     use crate::ImageFilter;
