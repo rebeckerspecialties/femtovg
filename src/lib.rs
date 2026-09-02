@@ -327,6 +327,10 @@ pub struct Canvas<T: Renderer> {
     // referenced by deferred draw commands, so they can only be freed once those
     // commands have been submitted to the renderer (i.e. after flush).
     transient_images: Vec<ImageId>,
+    /// Bytes currently held by transient images, against `transient_budget`.
+    transient_bytes: usize,
+    /// Upper bound on live transient image memory; see `set_transient_image_budget`.
+    transient_budget: usize,
     // Open layers from begin_layer(), innermost last.
     layers: Vec<LayerRecord>,
 }
@@ -377,6 +381,10 @@ impl LayerEffects {
         self
     }
 }
+
+/// Default cap on live transient image memory: 256 MiB, room for a handful
+/// of full-screen layers at 4K plus their filter and mask scratch.
+const DEFAULT_TRANSIENT_IMAGE_BUDGET: usize = 256 * 1024 * 1024;
 
 #[derive(Debug)]
 struct LayerRecord {
@@ -448,6 +456,8 @@ where
             dist_tol: 0.01,
             gradients: GradientStore::new(),
             transient_images: Vec::new(),
+            transient_bytes: 0,
+            transient_budget: DEFAULT_TRANSIENT_IMAGE_BUDGET,
             layers: Vec::new(),
         };
 
@@ -479,6 +489,8 @@ where
             dist_tol: 0.01,
             gradients: GradientStore::new(),
             transient_images: Vec::new(),
+            transient_bytes: 0,
+            transient_budget: DEFAULT_TRANSIENT_IMAGE_BUDGET,
             layers: Vec::new(),
         };
 
@@ -564,6 +576,7 @@ where
         if let Some(atlas) = self.ephemeral_glyph_atlas.take() {
             atlas.clear(self);
         }
+        self.reissue_render_target_after_flush();
         command_buffer
     }
 
@@ -910,9 +923,43 @@ where
         height: usize,
         flags: ImageFlags,
     ) -> Result<ImageId, ErrorKind> {
+        let bytes = width.saturating_mul(height).saturating_mul(4);
+        if self.transient_bytes.saturating_add(bytes) > self.transient_budget {
+            return Err(ErrorKind::TransientImageBudgetExceeded);
+        }
         let id = self.create_image_empty(width, height, PixelFormat::Rgba8, flags)?;
-        self.transient_images.push(id);
+        self.track_transient_image(id);
         Ok(id)
+    }
+
+    /// Caps the memory held by transient images - layer backings, filter-chain
+    /// scratches and mask coverage - at `bytes` (default 256 MiB). Every
+    /// transient is released at the next flush, so this bounds what a frame
+    /// can accumulate: once the budget is reached, further layers degrade to
+    /// pass-through, chains run unfiltered and masks are skipped, rather than
+    /// allocating without bound. Nesting depth is bounded by the same limit.
+    pub fn set_transient_image_budget(&mut self, bytes: usize) {
+        self.transient_budget = bytes;
+    }
+
+    /// Bytes an image occupies, for transient accounting.
+    fn image_bytes(&self, id: ImageId) -> usize {
+        self.images
+            .info(id)
+            .map(|info| {
+                let bpp = match info.format() {
+                    PixelFormat::Gray8 => 1,
+                    PixelFormat::Rgb8 => 3,
+                    PixelFormat::Rgba8 => 4,
+                };
+                info.width() * info.height() * bpp
+            })
+            .unwrap_or(0)
+    }
+
+    fn track_transient_image(&mut self, id: ImageId) {
+        self.transient_bytes = self.transient_bytes.saturating_add(self.image_bytes(id));
+        self.transient_images.push(id);
     }
 
     /// Applies a list of image filters as one chain, `filters[0]` first —
@@ -1942,17 +1989,39 @@ where
 
         // The transient images are referenced by deferred draw commands, so they
         // can only be freed after the next flush. Queue them for later cleanup.
-        self.transient_images.push(coverage_image);
+        self.track_transient_image(coverage_image);
         if let Some(blurred_image) = blurred_image {
-            self.transient_images.push(blurred_image);
+            self.track_transient_image(blurred_image);
         }
     }
 
     /// Frees offscreen images allocated by drop-shadow passes during the frame.
     /// Called after the renderer has consumed the frame's commands.
     fn release_transient_images(&mut self) {
+        // A layer that is still open keeps its backing image across the flush;
+        // the draws recorded so far already live in it and the ones still to
+        // come must land in the same image. It is released at the flush after
+        // its end_layer like any other transient.
+        let held: Vec<ImageId> = self.layers.iter().filter_map(|layer| layer.image).collect();
+        let mut kept = Vec::new();
         for id in std::mem::take(&mut self.transient_images) {
-            self.images.remove(&mut self.renderer, id);
+            if held.contains(&id) {
+                kept.push(id);
+            } else {
+                self.transient_bytes = self.transient_bytes.saturating_sub(self.image_bytes(id));
+                self.images.remove(&mut self.renderer, id);
+            }
+        }
+        self.transient_images = kept;
+    }
+
+    /// After a flush the renderer starts the next command stream on the
+    /// screen target; if drawing is currently redirected (an open layer, or a
+    /// caller-selected image target), the redirect must be re-issued so the
+    /// next frame's commands keep landing where the canvas state says.
+    fn reissue_render_target_after_flush(&mut self) {
+        if self.current_render_target != RenderTarget::Screen {
+            self.append_cmd(Command::new(CommandType::SetRenderTarget(self.current_render_target)));
         }
     }
 
@@ -2779,6 +2848,7 @@ where
         if let Some(atlas) = self.ephemeral_glyph_atlas.take() {
             atlas.clear(self);
         }
+        self.reissue_render_target_after_flush();
     }
 }
 

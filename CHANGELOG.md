@@ -7,7 +7,10 @@ All notable changes to this project will be documented in this file.
   offscreen image and composite it back with `LayerEffects` - group opacity, so
   overlapping shapes fade as one like an SVG group, and/or an image-filter
   chain. The offscreen image is sized to the current scissor rect plus the
-  blur reach, not the whole canvas.
+  blur reach, not the whole canvas, and layers stay open across a flush.
+  `Canvas::set_transient_image_budget()` caps the memory held by layers,
+  filter scratches and masks (default 256 MiB); past it, layers pass through
+  rather than allocate.
 - Added `Canvas::filter_image_chain()`, which applies a list of image filters in
   one call the way a Canvas `ctx.filter` list (`"blur(5px) brightness(1.2)"`) or
   an SVG filter chain does. Consecutive color-matrix filters are folded into a
