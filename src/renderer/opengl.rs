@@ -670,8 +670,12 @@ impl OpenGl {
                 height as i32,
             );
             self.context.clear_color(color.r, color.g, color.b, color.a);
-            self.context.clear_stencil(0x80);
-            self.context.clear(glow::COLOR_BUFFER_BIT | glow::STENCIL_BUFFER_BIT);
+            // Color only. The stencil carries the clip plane (bit 7, armed
+            // and disarmed by the ClipReset quads) and the winding scratch
+            // that every concave fill zeroes behind itself; clearing it here
+            // would either arm the plane on every cleared pixel or wipe an
+            // active clip's shape, and the WGPU backend leaves it alone too.
+            self.context.clear(glow::COLOR_BUFFER_BIT);
             self.context.disable(glow::SCISSOR_TEST);
         }
     }

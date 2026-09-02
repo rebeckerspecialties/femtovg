@@ -321,3 +321,116 @@ fn image_blit_respects_the_clip() {
     assert_eq!(px(&out, 32, 32), RED, "blit paints inside the clip circle");
     assert_eq!(px(&out, 6, 6), WHITE, "blit clipped outside the circle");
 }
+
+fn output_texture_sized(device: &wgpu::Device, width: u32, height: u32) -> wgpu::Texture {
+    device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("clip resize test target"),
+        size: wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format: wgpu::TextureFormat::Rgba8Unorm,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+        view_formats: &[],
+    })
+}
+
+fn readback_sized(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    target: &wgpu::Texture,
+    width: u32,
+    height: u32,
+) -> Vec<u8> {
+    let unpadded = width * 4;
+    let padded = unpadded.div_ceil(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT) * wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
+    let buffer = device.create_buffer(&wgpu::BufferDescriptor {
+        label: None,
+        size: (padded * height) as u64,
+        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+        mapped_at_creation: false,
+    });
+    let mut enc = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+    enc.copy_texture_to_buffer(
+        wgpu::TexelCopyTextureInfo {
+            texture: target,
+            mip_level: 0,
+            origin: wgpu::Origin3d::ZERO,
+            aspect: wgpu::TextureAspect::All,
+        },
+        wgpu::TexelCopyBufferInfo {
+            buffer: &buffer,
+            layout: wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(padded),
+                rows_per_image: Some(height),
+            },
+        },
+        wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
+    );
+    queue.submit(Some(enc.finish()));
+    let slice = buffer.slice(..);
+    slice.map_async(wgpu::MapMode::Read, |_| {});
+    device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
+    let mapped = slice.get_mapped_range().unwrap();
+    let mut out = vec![0u8; (width * height * 4) as usize];
+    for y in 0..height as usize {
+        let s = y * padded as usize;
+        let d = y * (width * 4) as usize;
+        out[d..d + (width * 4) as usize].copy_from_slice(&mapped[s..s + (width * 4) as usize]);
+    }
+    out
+}
+
+/// A resize replaces the stencil attachment, so an active clip has to be
+/// re-armed from the logical clip stack: after set_size, clipped draws must
+/// still appear inside the clip and stay out of the rest.
+#[test]
+fn active_clip_survives_a_resize() {
+    let Some((device, queue)) = headless_device() else {
+        eprintln!("skipping: no wgpu adapter available");
+        return;
+    };
+    let renderer = WGPURenderer::new(device.clone(), queue.clone());
+    let mut canvas = Canvas::new(renderer).expect("canvas");
+    canvas.set_size(64, 64, 1.0);
+    canvas.clear_rect(0, 0, 64, 64, Color::white());
+    let mut left_half = Path::new();
+    left_half.rect(0.0, 0.0, 32.0, 64.0);
+    canvas.clip_path(&left_half, FillRule::NonZero);
+    let mut full = Path::new();
+    full.rect(0.0, 0.0, 128.0, 128.0);
+    canvas.fill_path(&full, &Paint::color(Color::rgb(0, 255, 0)));
+    let small = output_texture_sized(&device, 64, 64);
+    queue.submit(canvas.flush_to_output(&small));
+
+    // Grow the output while the clip is still active.
+    canvas.set_size(128, 128, 1.0);
+    canvas.clear_rect(0, 0, 128, 128, Color::white());
+    canvas.fill_path(&full, &Paint::color(Color::rgb(0, 255, 0)));
+    let large = output_texture_sized(&device, 128, 128);
+    queue.submit(canvas.flush_to_output(&large));
+    let out = readback_sized(&device, &queue, &large, 128, 128);
+    let at = |x: usize, y: usize| {
+        let i = (y * 128 + x) * 4;
+        [out[i], out[i + 1], out[i + 2]]
+    };
+    assert_eq!(
+        at(16, 16),
+        [0, 255, 0],
+        "inside the clip must still draw after the resize"
+    );
+    assert_eq!(
+        at(96, 16),
+        [255, 255, 255],
+        "outside the clip must stay clear after the resize"
+    );
+}

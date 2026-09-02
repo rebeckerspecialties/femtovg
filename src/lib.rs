@@ -564,6 +564,15 @@ where
         self.renderer.set_size(width, height, dpi);
 
         self.append_cmd(Command::new(CommandType::SetRenderTarget(RenderTarget::Screen)));
+
+        // A resize replaces the stencil attachment (the WGPU backend recreates
+        // its stencil texture for the new size; a window's stencil is
+        // undefined after a resize), so an active clip would test a blank
+        // plane and draw nothing. Re-arm it from the logical clip stack, which
+        // survives the resize like the rest of the state.
+        if !self.clip_stack.is_empty() && self.clip_target == RenderTarget::Screen {
+            self.replay_clip_stack();
+        }
     }
 
     /// Clears the rectangle area defined by left upper corner (x,y), width and height with the provided color.
