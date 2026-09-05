@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- `CompositeOperation` and `BlendFactor` are now `#[non_exhaustive]`. Both
+  describe an open-ended capability space - the separable blend modes
+  (`multiply`, `screen`, `color-burn`, ...) belong in `CompositeOperation`, and
+  `BlendFactor` is a subset of what the backends expose - so adding to either
+  should not be a breaking change. Downstream `match`es on them now need a
+  wildcard arm.
 - Fixed multi-stop gradients whose last stop ends before 1.0: the rest of the
   ramp was left transparent (or holding stale texture data) instead of the last
   stop's color, as SVG's default `spreadMethod="pad"` and Canvas gradients
