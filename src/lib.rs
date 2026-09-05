@@ -337,7 +337,7 @@ pub struct Canvas<T: Renderer> {
     // Transient offscreen images allocated for drop-shadow passes. They are
     // referenced by deferred draw commands, so they can only be freed once those
     // commands have been submitted to the renderer (i.e. after flush).
-    shadow_images: Vec<ImageId>,
+    transient_images: Vec<ImageId>,
 }
 
 /// Returns the enabled text-decoration lines as `(offset, thickness)` pairs,
@@ -395,7 +395,7 @@ where
             tess_tol: 0.25,
             dist_tol: 0.01,
             gradients: GradientStore::new(),
-            shadow_images: Vec::new(),
+            transient_images: Vec::new(),
         };
 
         canvas.save();
@@ -425,7 +425,7 @@ where
             tess_tol: 0.25,
             dist_tol: 0.01,
             gradients: GradientStore::new(),
-            shadow_images: Vec::new(),
+            transient_images: Vec::new(),
         };
 
         canvas.save();
@@ -506,7 +506,7 @@ where
         self.verts.clear();
         self.gradients
             .release_old_gradients(&mut self.images, &mut self.renderer);
-        self.release_shadow_images();
+        self.release_transient_images();
         if let Some(atlas) = self.ephemeral_glyph_atlas.take() {
             atlas.clear(self);
         }
@@ -845,6 +845,114 @@ where
         cmd.triangles_verts = Some((vertex_offset, 6));
 
         self.append_cmd(cmd)
+    }
+
+    /// Acquires a transient offscreen image that is released automatically
+    /// after the next flush. This is the seam a shared render-target pool can
+    /// later drop into; today it creates a fresh image and defers the delete.
+    fn acquire_transient_image(
+        &mut self,
+        width: usize,
+        height: usize,
+        flags: ImageFlags,
+    ) -> Result<ImageId, ErrorKind> {
+        let id = self.create_image_empty(width, height, PixelFormat::Rgba8, flags)?;
+        self.transient_images.push(id);
+        Ok(id)
+    }
+
+    /// Applies a list of image filters as one chain, `filters[0]` first —
+    /// the execution model behind a Canvas `ctx.filter` list
+    /// (`"blur(5px) brightness(1.2)"`) and SVG filter chains.
+    ///
+    /// Runs of adjacent color-matrix filters fold into a single matrix on the
+    /// CPU (see [`ImageFilter::fold_with`]), so a run of color operations costs
+    /// one GPU pass - as long as each matrix but the last stays within [0, 1];
+    /// one that can overflow (`brightness(>1)`, `contrast`, `sepia`) keeps its
+    /// own pass so its clamp still happens, matching how browsers clamp per
+    /// filter function. Passes that do not fold ping-pong between at most two
+    /// transient scratch images sized like the source; a blur pass allocates
+    /// one more full-size buffer of its own for its duration, so peak transient
+    /// memory is twice the source image, or three times across a blur - bounded
+    /// regardless of chain length either way. The scratches are freed at the
+    /// next flush. All color work is in unpremultiplied sRGB with output
+    /// clamped to [0, 1] per pass, so an alpha-amplifying matrix feeding a blur
+    /// cannot blow out later passes.
+    ///
+    /// The target ends up in the same orientation convention as a single
+    /// color-matrix [`filter_image`](Self::filter_image) call: content stored
+    /// vertically flipped, sampled upright via [`ImageFlags::FLIP_Y`], and
+    /// carrying premultiplied alpha - create chain targets with
+    /// `ImageFlags::PREMULTIPLIED | ImageFlags::FLIP_Y` so semi-transparent
+    /// results composite once, not twice. An empty list degrades to a plain
+    /// copy under that same convention. A chain whose flip parity comes out
+    /// even (for example a lone blur) pays one extra identity pass for that
+    /// uniformity; blur-only callers who want the single-pass form can call
+    /// `filter_image` directly.
+    ///
+    /// The chain borrows `source_image` and `target_image` without taking
+    /// ownership - both may be caller-managed or acquired transients (a layer
+    /// capture pass, say, can feed its layer in as `source_image` and keep
+    /// releasing it on its own schedule). Only the internal scratches are
+    /// tied to the flush lifecycle, so composing this under group effects
+    /// adds no copies and no extra retained images.
+    pub fn filter_image_chain(&mut self, target_image: ImageId, filters: &[ImageFilter], source_image: ImageId) {
+        // Fold adjacent color matrices; the folded run costs one pass. The
+        // capacity covers the worst case (nothing folds) plus the possible
+        // parity pass below, so the list never reallocates; ImageFilter is
+        // Copy, so building it never deep-copies anything.
+        let mut passes: Vec<ImageFilter> = Vec::with_capacity(filters.len() + 1);
+        for filter in filters {
+            if let Some(prev) = passes.last_mut() {
+                if let Some(folded) = prev.fold_with(*filter) {
+                    *prev = folded;
+                    continue;
+                }
+            }
+            passes.push(*filter);
+        }
+
+        // Orientation parity: a color-matrix pass flips the image (the
+        // render-target convention), the two-pass Gaussian blur preserves it.
+        // Appending an identity matrix when the flip count is even pins the
+        // documented flipped-storage contract for every chain shape - and
+        // makes the empty list a copy.
+        let flips = passes.iter().filter(|f| f.flips_output()).count();
+        if flips % 2 == 0 {
+            passes.push(ImageFilter::identity());
+        }
+
+        // Ping-pong between at most two scratches regardless of chain length;
+        // a single pass allocates none and writes the target directly.
+        let mut scratch: [Option<ImageId>; 2] = [None, None];
+        let mut src = source_image;
+        let last = passes.len() - 1;
+        for (i, filter) in passes.iter().enumerate() {
+            let dst = if i == last {
+                target_image
+            } else {
+                match scratch[i % 2] {
+                    Some(id) => id,
+                    None => {
+                        let Ok((width, height)) = self.image_size(source_image) else {
+                            return;
+                        };
+                        // Scratches hold premultiplied filter output; the flag
+                        // keeps every consumer (filter passes and composites)
+                        // reading them under the same alpha convention. Without
+                        // it, semi-transparent content is premultiplied a second
+                        // time at each read and darkens per pass.
+                        let Ok(id) = self.acquire_transient_image(width, height, ImageFlags::PREMULTIPLIED) else {
+                            return;
+                        };
+                        scratch[i % 2] = Some(id);
+                        id
+                    }
+                }
+            };
+            self.filter_image(dst, *filter, src);
+            src = dst;
+        }
     }
 
     // Transforms
@@ -1629,16 +1737,16 @@ where
 
         // The transient images are referenced by deferred draw commands, so they
         // can only be freed after the next flush. Queue them for later cleanup.
-        self.shadow_images.push(coverage_image);
+        self.transient_images.push(coverage_image);
         if let Some(blurred_image) = blurred_image {
-            self.shadow_images.push(blurred_image);
+            self.transient_images.push(blurred_image);
         }
     }
 
     /// Frees offscreen images allocated by drop-shadow passes during the frame.
     /// Called after the renderer has consumed the frame's commands.
-    fn release_shadow_images(&mut self) {
-        for id in std::mem::take(&mut self.shadow_images) {
+    fn release_transient_images(&mut self) {
+        for id in std::mem::take(&mut self.transient_images) {
             self.images.remove(&mut self.renderer, id);
         }
     }
@@ -2462,7 +2570,7 @@ where
         self.verts.clear();
         self.gradients
             .release_old_gradients(&mut self.images, &mut self.renderer);
-        self.release_shadow_images();
+        self.release_transient_images();
         if let Some(atlas) = self.ephemeral_glyph_atlas.take() {
             atlas.clear(self);
         }
@@ -4403,6 +4511,96 @@ fn layout_stores_the_run_baseline() {
             layout.baseline()
         );
     }
+}
+
+/// Chain execution stays within a bounded transient budget: a run of
+/// range-safe color matrices folds to a single pass (zero transient images);
+/// a matrix that can leave [0, 1] keeps its own clamped pass rather than
+/// folding (see [`ImageFilter::fold_with`]); and any chain - however long,
+/// whatever the mix - ping-pongs between at most two transient scratches. The
+/// WebKit-600MB-intermediates class (bug 218422) made into an invariant.
+#[test]
+fn filter_chain_bounds_transient_images() {
+    use crate::ImageFilter;
+    let make = || {
+        let renderer = RecordingRenderer::default();
+        let mut canvas = Canvas::new(renderer).unwrap();
+        canvas.set_size(64, 64, 1.0);
+        let src = canvas
+            .create_image_empty(16, 16, PixelFormat::Rgba8, ImageFlags::empty())
+            .unwrap();
+        let dst = canvas
+            .create_image_empty(16, 16, PixelFormat::Rgba8, ImageFlags::FLIP_Y)
+            .unwrap();
+        (canvas, src, dst)
+    };
+
+    // A run of range-safe color ops folds into ONE pass: no scratches at all.
+    // Each matrix but the last stays within [0, 1]; the last may overflow
+    // (brightness(1.5)) since its output is clamped at the end of the pass.
+    let (mut canvas, src, dst) = make();
+    canvas.filter_image_chain(
+        dst,
+        &[
+            ImageFilter::saturate(0.7),
+            ImageFilter::grayscale(0.5),
+            ImageFilter::opacity(0.8),
+            ImageFilter::invert(1.0),
+            ImageFilter::brightness(1.5),
+        ],
+        src,
+    );
+    assert_eq!(
+        canvas.transient_images.len(),
+        0,
+        "folded range-safe color run must not allocate scratches"
+    );
+
+    // An overflow-capable matrix breaks the fold so its clamp is preserved,
+    // but the chain still caps at two scratches. brightness(2) cannot fold
+    // into the next matrix, and sepia(1)*saturate(0) is not range-safe either,
+    // so this runs as three passes ping-ponging through two scratches.
+    let (mut canvas, src, dst) = make();
+    canvas.filter_image_chain(
+        dst,
+        &[
+            ImageFilter::brightness(2.0),
+            ImageFilter::saturate(0.0),
+            ImageFilter::sepia(1.0),
+            ImageFilter::invert(1.0),
+        ],
+        src,
+    );
+    assert_eq!(
+        canvas.transient_images.len(),
+        2,
+        "overflow-broken folds still ping-pong between at most two scratches"
+    );
+
+    // A long mixed chain (blurs break the folds) caps at two scratches.
+    let (mut canvas, src, dst) = make();
+    canvas.filter_image_chain(
+        dst,
+        &[
+            ImageFilter::GaussianBlur { sigma: 1.0 },
+            ImageFilter::sepia(1.0),
+            ImageFilter::GaussianBlur { sigma: 2.0 },
+            ImageFilter::invert(1.0),
+            ImageFilter::GaussianBlur { sigma: 1.5 },
+            ImageFilter::brightness(1.3),
+        ],
+        src,
+    );
+    assert_eq!(
+        canvas.transient_images.len(),
+        2,
+        "mixed chains ping-pong between exactly two scratches"
+    );
+
+    // The empty chain is a single identity pass - a copy, no scratches.
+    let (mut canvas, src, dst) = make();
+    canvas.filter_image_chain(dst, &[], src);
+    assert_eq!(canvas.transient_images.len(), 0);
 }
 
 /// Rebuilds a sfnt/TrueType font byte buffer with the named 4-byte tables
