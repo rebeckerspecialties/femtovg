@@ -564,19 +564,36 @@ impl ImageFilter {
     }
 
     /// Folds this filter with `next` (applied after it) into a single
-    /// equivalent filter when both are color matrices.
+    /// equivalent filter when both are color matrices and the fold is exact.
     ///
-    /// This is the load-bearing rule for filter chains: a run of N adjacent
+    /// This is the load-bearing rule for filter chains: a run of adjacent
     /// color operations costs one GPU pass and zero intermediate textures,
-    /// because 4x5 matrices compose by multiplication on the CPU. The fold is
-    /// exact in unpremultiplied space - the same space the shader applies the
-    /// matrix in - matching how Skia folds via `asAColorMatrix`/`Compose`.
+    /// because 4x5 matrices compose by multiplication on the CPU. Composition
+    /// is exact only where it preserves the per-pass clamp the shader applies:
+    /// `renderColorMatrix` clamps each result to [0, 1] before the next pass
+    /// reads it, and both CSS/SVG and Skia clamp per filter function too (Skia
+    /// carries an explicit `Clamp` flag on `SkColorFilters::Matrix`). Folding
+    /// drops the clamp between the two matrices, so it matches running them
+    /// separately only when `self` - the one that runs first - never leaves
+    /// [0, 1] for inputs in [0, 1]. A matrix that can push a channel out of
+    /// range (`brightness(>1)`, `contrast`, `sepia`, `saturate(>1)`) is
+    /// therefore left as its own pass, so its clamp still happens; without the
+    /// guard, `brightness(2)` then `saturate(0)` came out ~33/255 off from the
+    /// sequential result and from Chromium. `next` may overflow freely: its
+    /// output is clamped at the end of the pass either way.
+    ///
     /// Returns `None` when either side is not a color matrix (a blur cannot
-    /// fold), leaving chain execution to run them as separate passes.
+    /// fold) or when `self` is not range-safe, leaving chain execution to run
+    /// the passes separately.
     pub fn fold_with(self, next: Self) -> Option<Self> {
         let (Self::ColorMatrix { matrix: a }, Self::ColorMatrix { matrix: b }) = (self, next) else {
             return None;
         };
+        // Folding drops the clamp between the two matrices; that only matches
+        // the two-pass result when the first matrix never needs it.
+        if !color_matrix_range_safe(&a) {
+            return None;
+        }
         // `self` runs first, `next` second: out = B * augment(A), where
         // augment(A) extends the 4x5 matrix with the implicit [0 0 0 0 1] row
         // so the constant column composes correctly.
@@ -609,9 +626,45 @@ impl ImageFilter {
     }
 }
 
+/// Whether a 4x5 color matrix maps every input in [0, 1] to an output in
+/// [0, 1], i.e. the shader's per-pass clamp would be a no-op on its result.
+/// Only such a matrix is safe to fold into a following pass (see
+/// [`ImageFilter::fold_with`]); a matrix that can overflow must keep its own
+/// clamped pass.
+///
+/// Each output channel is affine in the four inputs, so its extremes over the
+/// unit box `[0, 1]^4` are at the corners: the maximum is `constant + sum of
+/// positive coefficients`, the minimum is `constant + sum of negative
+/// coefficients`. The matrix is range-safe when every row's maximum is `<= 1`
+/// and minimum is `>= 0`. A small epsilon keeps rows that sum to exactly 1.0
+/// (saturate, grayscale) foldable despite f32 rounding; a non-finite
+/// coefficient is treated as unsafe so it never folds.
+pub(crate) fn color_matrix_range_safe(matrix: &[f32; 20]) -> bool {
+    const EPS: f32 = 1e-4;
+    for row in 0..4 {
+        let mut max = matrix[row * 5 + 4];
+        let mut min = matrix[row * 5 + 4];
+        for col in 0..4 {
+            let c = matrix[row * 5 + col];
+            if !c.is_finite() {
+                return false;
+            }
+            if c > 0.0 {
+                max += c;
+            } else {
+                min += c;
+            }
+        }
+        if !max.is_finite() || !min.is_finite() || max > 1.0 + EPS || min < -EPS {
+            return false;
+        }
+    }
+    true
+}
+
 #[cfg(test)]
 mod filter_fold_tests {
-    use super::ImageFilter;
+    use super::{color_matrix_range_safe, ImageFilter};
 
     fn apply(m: &[f32; 20], px: [f32; 4]) -> [f32; 4] {
         let mut out = [0.0f32; 4];
@@ -625,6 +678,16 @@ mod filter_fold_tests {
         out
     }
 
+    /// Models one shader pass: apply the matrix, then clamp to [0, 1] the way
+    /// `renderColorMatrix` does before the next pass reads the result.
+    fn apply_clamped(m: &[f32; 20], px: [f32; 4]) -> [f32; 4] {
+        let mut out = apply(m, px);
+        for c in &mut out {
+            *c = c.clamp(0.0, 1.0);
+        }
+        out
+    }
+
     fn matrix(f: &ImageFilter) -> [f32; 20] {
         let ImageFilter::ColorMatrix { matrix } = f else {
             panic!("not a color matrix")
@@ -632,59 +695,123 @@ mod filter_fold_tests {
         *matrix
     }
 
-    /// The fold must equal sequential application for arbitrary pixels - the
-    /// property that lets a chain of N color ops run as one GPU pass.
+    /// When the first matrix is range-safe the fold is exact: it equals the
+    /// two-pass result whether or not the intermediate clamp fires (it never
+    /// does), which is the property that lets a range-safe color run collapse
+    /// to one GPU pass.
     #[test]
     fn folding_matches_sequential_application() {
-        let first = ImageFilter::sepia(0.8);
-        let second = ImageFilter::hue_rotate(1.1);
-        let folded = first.fold_with(second).expect("two color matrices fold");
-
-        for px in [
-            [1.0, 0.0, 0.0, 1.0],
-            [0.2, 0.7, 0.4, 0.5],
-            [0.0, 0.0, 0.0, 0.0],
-            [1.0, 1.0, 1.0, 1.0],
-            [0.9, 0.1, 0.6, 0.3],
-        ] {
-            let sequential = apply(&matrix(&second), apply(&matrix(&first), px));
-            let one_pass = apply(&matrix(&folded), px);
-            for c in 0..4 {
-                assert!(
-                    (sequential[c] - one_pass[c]).abs() < 1e-5,
-                    "channel {c} of {px:?}: sequential {} vs folded {}",
-                    sequential[c],
-                    one_pass[c]
-                );
+        // Every first matrix here is range-safe (maps [0,1] into [0,1]).
+        let pairs = [
+            (ImageFilter::saturate(0.5), ImageFilter::hue_rotate(1.1)),
+            (ImageFilter::grayscale(0.7), ImageFilter::invert(1.0)),
+            (ImageFilter::invert(1.0), ImageFilter::sepia(0.8)),
+            (ImageFilter::opacity(0.6), ImageFilter::brightness(2.0)),
+        ];
+        for (first, second) in pairs {
+            assert!(
+                color_matrix_range_safe(&matrix(&first)),
+                "first matrix should be range-safe"
+            );
+            let folded = first.fold_with(second).expect("range-safe first folds");
+            for px in [
+                [1.0, 0.0, 0.0, 1.0],
+                [0.2, 0.7, 0.4, 0.5],
+                [0.0, 0.0, 0.0, 0.0],
+                [1.0, 1.0, 1.0, 1.0],
+                [0.9, 0.1, 0.6, 0.3],
+            ] {
+                // A range-safe first matrix never overflows, so its own pass
+                // clamp is a no-op - this is exactly what makes the fold exact.
+                let first_raw = apply(&matrix(&first), px);
+                let first_clamped = apply_clamped(&matrix(&first), px);
+                for c in 0..4 {
+                    assert!(
+                        (first_raw[c] - first_clamped[c]).abs() < 1e-5,
+                        "range-safe first should stay within [0,1]"
+                    );
+                }
+                // One clamped pass (the fold) equals two clamped passes. The
+                // second matrix may overflow; both sides clamp it at the end.
+                let two_pass = apply_clamped(&matrix(&second), first_clamped);
+                let one_pass = apply_clamped(&matrix(&folded), px);
+                for c in 0..4 {
+                    assert!(
+                        (two_pass[c] - one_pass[c]).abs() < 1e-5,
+                        "channel {c} of {px:?}: two-pass {} vs folded {}",
+                        two_pass[c],
+                        one_pass[c]
+                    );
+                }
             }
         }
     }
 
+    /// A first matrix that can leave [0, 1] must not fold: the fold would drop
+    /// the clamp that separates the passes. `brightness(2)` then `saturate(0)`
+    /// is the witness - folded and sequential luma differ by ~0.13.
+    #[test]
+    fn fold_guard_rejects_range_unsafe_first() {
+        for unsafe_first in [
+            ImageFilter::brightness(2.0),
+            ImageFilter::contrast(2.0),
+            ImageFilter::sepia(1.0),
+            ImageFilter::saturate(2.0),
+        ] {
+            assert!(
+                !color_matrix_range_safe(&matrix(&unsafe_first)),
+                "matrix should be flagged range-unsafe"
+            );
+            assert!(
+                unsafe_first.fold_with(ImageFilter::saturate(0.0)).is_none(),
+                "a range-unsafe first matrix must not fold"
+            );
+        }
+
+        // The divergence the guard prevents, computed on rgb (0.8, 0.1, 0.1):
+        // folded would grayscale the unclamped (1.6, 0.2, 0.2); the passes
+        // grayscale the clamped (1.0, 0.2, 0.2). Confirm they really differ.
+        let px = [0.8, 0.1, 0.1, 1.0];
+        let bright = matrix(&ImageFilter::brightness(2.0));
+        let gray = matrix(&ImageFilter::saturate(0.0));
+        let sequential = apply_clamped(&gray, apply_clamped(&bright, px));
+        let would_be_folded = apply(&gray, apply(&bright, px));
+        assert!(
+            (sequential[0] - would_be_folded[0]).abs() > 0.1,
+            "sequential {} should differ from an unclamped fold {}",
+            sequential[0],
+            would_be_folded[0]
+        );
+    }
+
     /// Folding with an identity leaves the other matrix unchanged, and the
-    /// constant column (brightness offsets, invert) composes in order.
+    /// constant column composes in order. `brightness(0.5)` and `invert(1.0)`
+    /// are both range-safe, so both directions fold, and they do not commute:
+    /// brighten-then-invert is `1 - 0.5c`, invert-then-brighten is `0.5 - 0.5c`.
     #[test]
     fn folding_respects_order_and_identity() {
+        let bright = ImageFilter::brightness(0.5);
         let invert = ImageFilter::invert(1.0);
-        let bright = ImageFilter::brightness(2.0);
-        // invert then brighten: 2*(1-c) ; brighten then invert: 1-2c. Distinct.
-        let a = matrix(&invert.fold_with(bright).unwrap());
-        let b = matrix(&bright.fold_with(invert).unwrap());
+        let bi = matrix(&bright.fold_with(invert).unwrap());
+        let ib = matrix(&invert.fold_with(bright).unwrap());
         let px = [0.25, 0.5, 0.75, 1.0];
-        let ab = apply(&a, px);
-        let ba = apply(&b, px);
+        let ab = apply(&bi, px);
+        let ba = apply(&ib, px);
         assert!(
-            (ab[0] - 2.0 * (1.0 - 0.25)).abs() < 1e-5,
-            "invert-then-brighten got {}",
+            (ab[0] - (1.0 - 0.5 * 0.25)).abs() < 1e-5,
+            "brighten-then-invert got {}",
             ab[0]
         );
         assert!(
-            (ba[0] - (1.0 - 2.0 * 0.25)).abs() < 1e-5,
-            "brighten-then-invert got {}",
+            (ba[0] - (0.5 - 0.5 * 0.25)).abs() < 1e-5,
+            "invert-then-brighten got {}",
             ba[0]
         );
 
+        // identity as the first pass is range-safe, so it always folds and
+        // leaves the following matrix untouched.
         let identity = ImageFilter::identity();
-        let folded = ImageFilter::sepia(1.0).fold_with(identity).unwrap();
+        let folded = identity.fold_with(ImageFilter::sepia(1.0)).unwrap();
         let direct = matrix(&ImageFilter::sepia(1.0));
         for (x, y) in matrix(&folded).iter().zip(direct.iter()) {
             assert!((x - y).abs() < 1e-5);
