@@ -13,6 +13,10 @@ All notable changes to this project will be documented in this file.
   standard deviation blanking the image instead of leaving it unchanged, and
   with a very large one using inconsistent coefficients. Both backends now
   clamp the value the same way.
+- Fixed multi-stop gradients whose last stop ends before 1.0: the rest of the
+  ramp was left transparent (or holding stale texture data) instead of the last
+  stop's color, as SVG's default `spreadMethod="pad"` and Canvas gradients
+  render it. Showed as a wedge cut out of the Firefox logo's flame.
 - Fixed two-stop gradients fading a transparent stop through the wrong colors:
   the stop's own color was discarded, so `transparent` to blue turned a plain
   light blue instead of darkening, and transparent red to blue lost its red.
