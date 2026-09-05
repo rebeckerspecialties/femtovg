@@ -687,8 +687,29 @@ where
     }
 
     /// Resets current state to default values. Does not affect the state stack.
+    ///
+    /// Clips added at this state level are dropped with the rest of the
+    /// level's state; clips established by outer levels stay in force, as
+    /// they would after a `restore()`.
     pub fn reset(&mut self) {
-        *self.state_mut() = State::default();
+        // The clip stack is shared across state levels: this level owns the
+        // entries past the depth it inherited from its parent (none at the
+        // base level). Resetting the recorded depth without dropping those
+        // entries would leave the stencil plane clipping draws the state
+        // says are unclipped.
+        let inherited_depth = self
+            .state_stack
+            .len()
+            .checked_sub(2)
+            .map_or(0, |parent| self.state_stack[parent].clip_depth);
+        *self.state_mut() = State {
+            clip_depth: inherited_depth,
+            ..State::default()
+        };
+        if self.clip_stack.len() > inherited_depth {
+            self.clip_stack.truncate(inherited_depth);
+            self.replay_clip_stack();
+        }
     }
 
     /// Saves the current state before calling the callback and restores it afterwards

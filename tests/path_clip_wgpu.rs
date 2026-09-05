@@ -416,3 +416,90 @@ fn active_clip_survives_a_resize() {
         "outside the clip must stay clear after the resize"
     );
 }
+
+/// `reset()` returns the current state level to its defaults, and the clips
+/// that level added are part of that state: after a reset, draws must land
+/// where the clip used to exclude them. The recorded clip depth used to go to
+/// zero while the stencil plane stayed armed, so draws stayed clipped until
+/// the next `restore()` happened to resynchronize them.
+#[test]
+fn reset_drops_the_clips_of_its_level() {
+    let Some((device, queue)) = headless_device() else {
+        return;
+    };
+    let out = render(&device, &queue, |canvas| {
+        let mut left = Path::new();
+        left.rect(0.0, 0.0, 32.0, 64.0);
+        canvas.clip_path(&left, FillRule::NonZero);
+        canvas.reset();
+        let mut full = Path::new();
+        full.rect(0.0, 0.0, 64.0, 64.0);
+        canvas.fill_path(&full, &Paint::color(Color::rgb(0, 255, 0)));
+    });
+    assert_eq!(px(&out, 16, 32), [0, 255, 0], "inside the old clip");
+    assert_eq!(
+        px(&out, 48, 32),
+        [0, 255, 0],
+        "outside the old clip must paint after reset()"
+    );
+}
+
+/// A reset only affects its own state level: clips established by outer
+/// levels survive it, exactly as they survive a `restore()`, and the stack
+/// stays consistent for the restores that follow.
+#[test]
+fn reset_keeps_the_clips_of_outer_levels() {
+    let Some((device, queue)) = headless_device() else {
+        return;
+    };
+    // Control: both clips in force paint only the top-left quadrant.
+    let out = render(&device, &queue, |canvas| {
+        let mut left = Path::new();
+        left.rect(0.0, 0.0, 32.0, 64.0);
+        let mut top = Path::new();
+        top.rect(0.0, 0.0, 64.0, 32.0);
+        canvas.save();
+        canvas.clip_path(&left, FillRule::NonZero);
+        canvas.save();
+        canvas.clip_path(&top, FillRule::NonZero);
+        let mut full = Path::new();
+        full.rect(0.0, 0.0, 64.0, 64.0);
+        canvas.fill_path(&full, &Paint::color(Color::rgb(255, 0, 0)));
+    });
+    assert_eq!(px(&out, 16, 16), [255, 0, 0], "inside both clips");
+    assert_eq!(px(&out, 16, 48), WHITE, "outside the inner clip");
+    assert_eq!(px(&out, 48, 16), WHITE, "outside the outer clip");
+
+    let out = render(&device, &queue, |canvas| {
+        let mut left = Path::new();
+        left.rect(0.0, 0.0, 32.0, 64.0);
+        let mut top = Path::new();
+        top.rect(0.0, 0.0, 64.0, 32.0);
+        canvas.save();
+        canvas.clip_path(&left, FillRule::NonZero);
+        canvas.save();
+        canvas.clip_path(&top, FillRule::NonZero);
+        canvas.reset();
+        let mut full = Path::new();
+        full.rect(0.0, 0.0, 64.0, 64.0);
+        canvas.fill_path(&full, &Paint::color(Color::rgb(0, 255, 0)));
+        // Back out of both levels: nothing is clipped any more.
+        canvas.restore();
+        canvas.restore();
+        let mut right = Path::new();
+        right.rect(32.0, 0.0, 32.0, 64.0);
+        canvas.fill_path(&right, &Paint::color(Color::rgb(0, 0, 255)));
+    });
+    assert_eq!(
+        px(&out, 16, 16),
+        [0, 255, 0],
+        "inner level reset: outer clip still admits the top-left"
+    );
+    assert_eq!(px(&out, 16, 48), [0, 255, 0], "inner level reset: its own clip is gone");
+    assert_eq!(
+        px(&out, 48, 16),
+        [0, 0, 255],
+        "after both restores the outer clip is gone too"
+    );
+    assert_eq!(px(&out, 48, 48), [0, 0, 255], "after both restores nothing is clipped");
+}
