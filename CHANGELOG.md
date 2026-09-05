@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- Fixed two-stop gradients fading a transparent stop through the wrong colors:
+  the stop's own color was discarded, so `transparent` to blue turned a plain
+  light blue instead of darkening, and transparent red to blue lost its red.
+  Two-stop and multi-stop gradients now interpolate the same way, fixing flame
+  gradient accuracy in Firefox's kit.svg embedded art, and now matching
+  Canvas and SVG gradient behaviors in multiple web browsers.
 - Added two-point radial gradients, the general Canvas
   `createRadialGradient(x0, y0, r0, x1, y1, r1)` form where the start and end
   circles can have different centres. New `Paint` constructors
