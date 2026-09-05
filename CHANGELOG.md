@@ -3,6 +3,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- Added `Canvas::filter_image_chain()`, which applies a list of image filters in
+  one call the way a Canvas `ctx.filter` list (`"blur(5px) brightness(1.2)"`) or
+  an SVG filter chain does. Consecutive color-matrix filters fold into a single
+  GPU pass (`ImageFilter::fold_with()`) when doing so is exact - a matrix that
+  can push a channel outside [0, 1] keeps its own pass so its clamp still
+  happens, matching per-filter clamping in browsers and Skia. Non-folding passes
+  share two source-sized scratch images (a blur pass adds one internal buffer of
+  its own), so peak transient memory is bounded regardless of chain length.
+  `ImageFilter::identity()` is the explicit no-op filter.
+- Fixed `ImageFilter::GaussianBlur` with a zero, negative or non-finite
+  standard deviation blanking the image instead of leaving it unchanged, and
+  with a very large one using inconsistent coefficients. Both backends now
+  clamp the value the same way.
 - Fixed multi-stop gradients whose last stop ends before 1.0: the rest of the
   ramp was left transparent (or holding stale texture data) instead of the last
   stop's color, as SVG's default `spreadMethod="pad"` and Canvas gradients
@@ -29,16 +42,6 @@ All notable changes to this project will be documented in this file.
   `Canvas::set_transient_image_budget()` caps the memory held by layers,
   filter scratches and masks (default 256 MiB); past it, layers pass through
   rather than allocate.
-- Added `Canvas::filter_image_chain()`, which applies a list of image filters in
-  one call the way a Canvas `ctx.filter` list (`"blur(5px) brightness(1.2)"`) or
-  an SVG filter chain does. Consecutive color-matrix filters are folded into a
-  single GPU pass (`ImageFilter::fold_with()`), and the remaining passes share
-  two scratch images, so memory stays at twice the source image however long
-  the chain is. `ImageFilter::identity()` is the explicit no-op filter.
-- Fixed `ImageFilter::GaussianBlur` with a zero, negative or non-finite
-  standard deviation blanking the image instead of leaving it unchanged, and
-  with a very large one using inconsistent coefficients. Both backends now
-  clamp the value the same way.
 - Fixed two-stop gradients fading a transparent stop through the wrong colors:
   the stop's own color was discarded, so `transparent` to blue turned a plain
   light blue instead of darkening, and transparent red to blue lost its red.

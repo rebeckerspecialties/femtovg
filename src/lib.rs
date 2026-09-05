@@ -1013,13 +1013,18 @@ where
     /// (`"blur(5px) brightness(1.2)"`) and SVG filter chains.
     ///
     /// Runs of adjacent color-matrix filters fold into a single matrix on the
-    /// CPU (see [`ImageFilter::fold_with`]), so any number of consecutive
-    /// color operations costs one GPU pass. Passes that cannot fold ping-pong
-    /// between at most two transient scratch images sized like the source, so
-    /// peak transient memory is twice the source image regardless of chain
-    /// length; the scratches are freed at the next flush. All color work is
-    /// in unpremultiplied sRGB with output clamped to [0, 1] per pass, so an
-    /// alpha-amplifying matrix feeding a blur cannot blow out later passes.
+    /// CPU (see [`ImageFilter::fold_with`]), so a run of color operations costs
+    /// one GPU pass - as long as each matrix but the last stays within [0, 1];
+    /// one that can overflow (`brightness(>1)`, `contrast`, `sepia`) keeps its
+    /// own pass so its clamp still happens, matching how browsers clamp per
+    /// filter function. Passes that do not fold ping-pong between at most two
+    /// transient scratch images sized like the source; a blur pass allocates
+    /// one more full-size buffer of its own for its duration, so peak transient
+    /// memory is twice the source image, or three times across a blur - bounded
+    /// regardless of chain length either way. The scratches are freed at the
+    /// next flush. All color work is in unpremultiplied sRGB with output
+    /// clamped to [0, 1] per pass, so an alpha-amplifying matrix feeding a blur
+    /// cannot blow out later passes.
     ///
     /// The target ends up in the same orientation convention as a single
     /// color-matrix [`filter_image`](Self::filter_image) call: content stored
@@ -4954,7 +4959,6 @@ fn layout_stores_the_run_baseline() {
 /// Layer backing stores are bounded by the scissor rect plus declared blur
 /// reach - the memory rule that keeps nested layers from allocating
 /// full-canvas images. Pass-through degradation keeps begin/end balanced.
-#[cfg(test)]
 #[test]
 fn layer_bounds_follow_the_scissor() {
     use crate::ImageFilter;
@@ -4993,10 +4997,12 @@ fn layer_bounds_follow_the_scissor() {
     canvas.end_layer();
 }
 
-/// Chain execution stays within the femto budget: any run of color matrices
-/// folds to a single pass (zero transient images), and longer mixed chains
-/// ping-pong between exactly two transient scratches however long they get -
-/// the WebKit-600MB-intermediates class (bug 218422) made into an invariant.
+/// Chain execution stays within a bounded transient budget: a run of
+/// range-safe color matrices folds to a single pass (zero transient images);
+/// a matrix that can leave [0, 1] keeps its own clamped pass rather than
+/// folding (see [`ImageFilter::fold_with`]); and any chain - however long,
+/// whatever the mix - ping-pongs between at most two transient scratches. The
+/// WebKit-600MB-intermediates class (bug 218422) made into an invariant.
 #[test]
 fn filter_chain_bounds_transient_images() {
     use crate::ImageFilter;
@@ -5013,23 +5019,46 @@ fn filter_chain_bounds_transient_images() {
         (canvas, src, dst)
     };
 
-    // Five color operations fold into ONE pass: no scratches at all.
+    // A run of range-safe color ops folds into ONE pass: no scratches at all.
+    // Each matrix but the last stays within [0, 1]; the last may overflow
+    // (brightness(1.5)) since its output is clamped at the end of the pass.
     let (mut canvas, src, dst) = make();
     canvas.filter_image_chain(
         dst,
         &[
-            ImageFilter::sepia(0.5),
-            ImageFilter::brightness(1.2),
             ImageFilter::saturate(0.7),
-            ImageFilter::hue_rotate(0.3),
-            ImageFilter::contrast(1.1),
+            ImageFilter::grayscale(0.5),
+            ImageFilter::opacity(0.8),
+            ImageFilter::invert(1.0),
+            ImageFilter::brightness(1.5),
         ],
         src,
     );
     assert_eq!(
         canvas.transient_images.len(),
         0,
-        "folded color run must not allocate scratches"
+        "folded range-safe color run must not allocate scratches"
+    );
+
+    // An overflow-capable matrix breaks the fold so its clamp is preserved,
+    // but the chain still caps at two scratches. brightness(2) cannot fold
+    // into the next matrix, and sepia(1)*saturate(0) is not range-safe either,
+    // so this runs as three passes ping-ponging through two scratches.
+    let (mut canvas, src, dst) = make();
+    canvas.filter_image_chain(
+        dst,
+        &[
+            ImageFilter::brightness(2.0),
+            ImageFilter::saturate(0.0),
+            ImageFilter::sepia(1.0),
+            ImageFilter::invert(1.0),
+        ],
+        src,
+    );
+    assert_eq!(
+        canvas.transient_images.len(),
+        2,
+        "overflow-broken folds still ping-pong between at most two scratches"
     );
 
     // A long mixed chain (blurs break the folds) caps at two scratches.
