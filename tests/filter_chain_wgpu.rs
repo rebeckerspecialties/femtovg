@@ -14,14 +14,13 @@ use common::headless_device;
 const W: u32 = 32;
 const H: u32 = 32;
 
-/// Uploads `source_pixels` (row-major RGBA), runs `chain` into a FLIP_Y
-/// target, composites onto white, and returns the full RGBA readback.
-fn run_chain(
+/// Creates the canvas, the uploaded source image, and the output texture that
+/// every runner in this file shares.
+fn setup(
     device: &wgpu::Device,
     queue: &wgpu::Queue,
     source_pixels: &[femtovg::rgb::RGBA8],
-    chain: &[ImageFilter],
-) -> Vec<u8> {
+) -> (Canvas<WGPURenderer>, femtovg::ImageId, wgpu::Texture) {
     let target = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("chain out"),
         size: wgpu::Extent3d {
@@ -47,22 +46,36 @@ fn run_chain(
             ImageFlags::empty(),
         )
         .expect("source image");
-    let filtered = canvas
+    (canvas, source, target)
+}
+
+/// Allocates a FLIP_Y | PREMULTIPLIED filter target, the orientation and alpha
+/// convention filter output uses.
+fn filter_target(canvas: &mut Canvas<WGPURenderer>) -> femtovg::ImageId {
+    canvas
         .create_image_empty(
             W as usize,
             H as usize,
             PixelFormat::Rgba8,
             ImageFlags::FLIP_Y | ImageFlags::PREMULTIPLIED,
         )
-        .expect("target image");
-    canvas.filter_image_chain(filtered, chain, source);
+        .expect("target image")
+}
 
+/// Composites `filtered` onto white and returns the full RGBA readback.
+fn finish_and_read(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    mut canvas: Canvas<WGPURenderer>,
+    filtered: femtovg::ImageId,
+    target: &wgpu::Texture,
+) -> Vec<u8> {
     canvas.clear_rect(0, 0, W, H, Color::white());
     let mut p = Path::new();
     p.rect(0.0, 0.0, W as f32, H as f32);
     canvas.fill_path(&p, &Paint::image(filtered, 0.0, 0.0, W as f32, H as f32, 0.0, 1.0));
 
-    let commands = canvas.flush_to_output(&target);
+    let commands = canvas.flush_to_output(target);
     queue.submit(commands);
 
     let unpadded = W * 4;
@@ -110,6 +123,43 @@ fn run_chain(
     out
 }
 
+/// Uploads `source_pixels`, runs `chain` through `filter_image_chain` (which
+/// folds internally), composites onto white, and returns the RGBA readback.
+fn run_chain(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    source_pixels: &[femtovg::rgb::RGBA8],
+    chain: &[ImageFilter],
+) -> Vec<u8> {
+    let (mut canvas, source, target) = setup(device, queue, source_pixels);
+    let filtered = filter_target(&mut canvas);
+    canvas.filter_image_chain(filtered, chain, source);
+    finish_and_read(device, queue, canvas, filtered, &target)
+}
+
+/// Runs the same filters as an explicit sequence of single `filter_image`
+/// passes - no folding - ping-ponging through fresh targets. Each pass clamps
+/// to [0, 1] the way the shader does, so this is the ground truth a folded
+/// chain must reproduce. For solid sources the per-pass orientation flips are
+/// immaterial, so this is used only with solid inputs.
+fn run_sequential(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    source_pixels: &[femtovg::rgb::RGBA8],
+    filters: &[ImageFilter],
+) -> Vec<u8> {
+    let (mut canvas, source, target) = setup(device, queue, source_pixels);
+    let mut src = source;
+    let mut filtered = source;
+    for filter in filters {
+        let dst = filter_target(&mut canvas);
+        canvas.filter_image(dst, *filter, src);
+        src = dst;
+        filtered = dst;
+    }
+    finish_and_read(device, queue, canvas, filtered, &target)
+}
+
 fn px(buf: &[u8], x: u32, y: u32) -> [u8; 3] {
     let i = ((y * W + x) * 4) as usize;
     [buf[i], buf[i + 1], buf[i + 2]]
@@ -123,26 +173,67 @@ fn close(a: u8, b: u8, tol: i32) -> bool {
     (a as i32 - b as i32).abs() <= tol
 }
 
-/// A folded color run must render identically to executing the same run as a
-/// chain - the property that lets N color ops cost one pass.
+/// A folded color run must render identically to running the same filters as
+/// separate `filter_image` passes - the property that lets a range-safe color
+/// run cost one pass. The two sides here execute different numbers of GPU
+/// passes: `run_chain` folds `saturate` and `grayscale` into one matrix,
+/// `run_sequential` runs both. `saturate(0.6)` is range-safe, so the fold is
+/// exact and the results match.
 #[test]
-fn chained_color_matrices_match_the_fold() {
+fn chained_color_matrices_match_sequential() {
     let Some((device, queue)) = headless_device() else {
         eprintln!("skipping: no wgpu adapter available");
         return;
     };
     let src = solid(femtovg::rgb::RGBA8::new(180, 90, 40, 255));
-    let first = ImageFilter::sepia(0.8);
-    let second = ImageFilter::hue_rotate(1.1);
-    let folded = first.fold_with(second).expect("folds");
+    let filters = [ImageFilter::saturate(0.6), ImageFilter::grayscale(0.8)];
+    assert!(
+        filters[0].fold_with(filters[1]).is_some(),
+        "range-safe first matrix should fold (chain runs one pass here)"
+    );
 
-    let chained = run_chain(&device, &queue, &src, &[first, second]);
-    let one_pass = run_chain(&device, &queue, &src, &[folded]);
+    let chained = run_chain(&device, &queue, &src, &filters);
+    let sequential = run_sequential(&device, &queue, &src, &filters);
     let a = px(&chained, 16, 16);
-    let b = px(&one_pass, 16, 16);
+    let b = px(&sequential, 16, 16);
     for c in 0..3 {
-        assert!(close(a[c], b[c], 1), "chain {a:?} vs folded {b:?}");
+        assert!(close(a[c], b[c], 2), "folded chain {a:?} vs sequential {b:?}");
     }
+}
+
+/// A first matrix that can overflow must NOT fold, or the chain would drop the
+/// per-pass clamp and diverge from sequential passes and from browsers.
+/// `brightness(2)` then `saturate(0)` is the witness: folded, the grayscale
+/// reads the unclamped (1.6, 0.2, 0.2); as two passes it reads the clamped
+/// (1.0, 0.2, 0.2). The chain must match the two-pass result.
+#[test]
+fn range_unsafe_first_matrix_matches_sequential_not_fold() {
+    let Some((device, queue)) = headless_device() else {
+        eprintln!("skipping: no wgpu adapter available");
+        return;
+    };
+    let src = solid(femtovg::rgb::RGBA8::new(204, 26, 26, 255)); // ~ (0.8, 0.1, 0.1)
+    let filters = [ImageFilter::brightness(2.0), ImageFilter::saturate(0.0)];
+    assert!(
+        filters[0].fold_with(filters[1]).is_none(),
+        "range-unsafe first matrix must not fold"
+    );
+
+    let chained = run_chain(&device, &queue, &src, &filters);
+    let sequential = run_sequential(&device, &queue, &src, &filters);
+    let a = px(&chained, 16, 16);
+    let b = px(&sequential, 16, 16);
+    for c in 0..3 {
+        assert!(close(a[c], b[c], 2), "chain {a:?} must match two passes {b:?}");
+    }
+    // The correct (clamped) grayscale luma of (1.0, 0.2, 0.2) is ~0.370 -> ~94;
+    // an unconditional fold would grayscale (1.6, 0.2, 0.2) -> ~0.498 -> ~127.
+    // Assert we are on the clamped side, well below the folded value.
+    assert!(
+        a[0] < 110,
+        "expected clamped grayscale near 94, got {} (fold would give ~127)",
+        a[0]
+    );
 }
 
 /// blur-then-brighten is not brighten-then-blur: the order of passes must be
