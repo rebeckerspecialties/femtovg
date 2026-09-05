@@ -284,3 +284,17 @@ impl ShaderType {
         self.to_u8() as f32
     }
 }
+
+/// Gaussian blur coefficients for `sigma`, sanitized the same way for every
+/// backend. Sigma 0 (or negative / NaN) would divide the coefficient by zero
+/// and blank the output instead of passing the image through, and a huge sigma
+/// must clamp to the bound the fragment shader's loop uses (GLES 2.0 needs a
+/// constant loop bound) so the coefficients and the iteration count agree.
+/// Near-zero renders as a visually exact copy. Returns the three coefficients
+/// and the sanitized sigma the shader must be given.
+pub(crate) fn gaussian_blur_coefficients(sigma: f32) -> ([f32; 3], f32) {
+    let sigma = if sigma > 0.0 { sigma.min(8.0) } else { 1e-3 };
+    let x = 1. / ((2. * std::f32::consts::PI).sqrt() * sigma);
+    let y = f32::exp(-0.5 / (sigma * sigma));
+    ([x, y, y * y], sigma)
+}

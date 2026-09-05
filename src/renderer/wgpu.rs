@@ -890,18 +890,10 @@ fn gaussian_blur_filter(
     );
     blur_params.shader_type = ShaderType::FilterImage;
 
-    let gauss_coeff_x = 1. / ((2. * std::f32::consts::PI).sqrt() * sigma);
-    let gauss_coeff_y = f32::exp(-0.5 / (sigma * sigma));
-    let gauss_coeff_z = gauss_coeff_y * gauss_coeff_y;
-
-    blur_params.image_blur_filter_coeff[0] = gauss_coeff_x;
-    blur_params.image_blur_filter_coeff[1] = gauss_coeff_y;
-    blur_params.image_blur_filter_coeff[2] = gauss_coeff_z;
-
+    let (coeff, sigma) = crate::renderer::gaussian_blur_coefficients(sigma);
+    blur_params.image_blur_filter_coeff[..3].copy_from_slice(&coeff);
     blur_params.image_blur_filter_direction = [1.0, 0.0];
-    // GLES 2.0 does not allow non-constant loop indices, so limit the standard devitation to allow for a upper fixed limit
-    // on the number of iterations in the fragment shader.
-    blur_params.image_blur_filter_sigma = sigma.min(8.);
+    blur_params.image_blur_filter_sigma = sigma;
 
     let horizontal_blur_buffer = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("blur horizontal"),
