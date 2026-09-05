@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- Fixed multi-stop gradients whose last stop ends before 1.0: the rest of the
+  ramp was left transparent (or holding stale texture data) instead of the last
+  stop's color, as SVG's default `spreadMethod="pad"` and Canvas gradients
+  render it. Showed as a wedge cut out of the Firefox logo's flame.
 - Added `Canvas::clip_path(path, fill_rule)`, which clips later drawing to any
   path under the current transform - Canvas 2D `clip()` and SVG `clip-path`
   with `clip-rule` - and is scoped by `save()`/`restore()`. Clips use a bit of
@@ -30,12 +34,6 @@ All notable changes to this project will be documented in this file.
   `Canvas::set_transient_image_budget()` caps the memory held by layers,
   filter scratches and masks (default 256 MiB); past it, layers pass through
   rather than allocate.
-- Added `Canvas::filter_image_chain()`, which applies a list of image filters in
-  one call the way a Canvas `ctx.filter` list (`"blur(5px) brightness(1.2)"`) or
-  an SVG filter chain does. Consecutive color-matrix filters are folded into a
-  single GPU pass (`ImageFilter::fold_with()`), and the remaining passes share
-  two scratch images, so memory stays at twice the source image however long
-  the chain is.
 - Added `Canvas::filter_image_chain()`, which applies a list of image filters in
   one call the way a Canvas `ctx.filter` list (`"blur(5px) brightness(1.2)"`) or
   an SVG filter chain does. Consecutive color-matrix filters are folded into a
