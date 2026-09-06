@@ -43,7 +43,7 @@ All notable changes to this project will be documented in this file.
   offscreen image and composite it back with `LayerEffects` - group opacity, so
   overlapping shapes fade as one like an SVG group, and/or an image-filter
   chain. The offscreen image is sized to the current scissor rect plus the
-  blur reach, not the whole canvas, and layers stay open across a flush.
+  blur reach, not the whole canvas, and layers stay open across a flush. The shadow state in effect at `begin_layer()` is cast once by the layer's result (the Canvas 2D `beginLayer()` rule, and what SVG `feDropShadow` on a group means) and resets inside the layer, so children are not each shadowed on their own.
   `Canvas::set_transient_image_budget()` caps the memory held by layers,
   filter scratches and masks (default 256 MiB); past it, layers pass through
   rather than allocate.

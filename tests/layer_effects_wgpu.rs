@@ -598,3 +598,85 @@ fn layers_degrade_past_the_transient_budget() {
         "within budget the layer applies its opacity; got {c:?}"
     );
 }
+
+fn black_disc(canvas: &mut Canvas<WGPURenderer>, cx: f32, cy: f32, r: f32) {
+    let mut p = Path::new();
+    p.circle(cx, cy, r);
+    canvas.fill_path(&p, &Paint::color(Color::rgb(0, 0, 0)));
+}
+
+/// Two overlapping discs under a half-transparent shadow, cast 20px below.
+/// Returns the pixel where both discs' shadows would land (28,44) and one
+/// where only the first disc's would (17,44). Neither is under a disc.
+fn shadowed_overlap(device: &wgpu::Device, queue: &wgpu::Queue, shadow_set: &str) -> ([u8; 3], [u8; 3]) {
+    let buf = render(device, queue, |canvas| {
+        let mut bg = Path::new();
+        bg.rect(0.0, 0.0, W as f32, H as f32);
+        canvas.fill_path(&bg, &Paint::color(Color::rgb(255, 255, 255)));
+        let set_shadow = |c: &mut Canvas<WGPURenderer>| {
+            c.set_shadow_color(Color::rgbaf(0.0, 0.0, 0.0, 0.5));
+            c.set_shadow_blur(0.0);
+            c.set_shadow_offset(0.0, 20.0);
+        };
+        if shadow_set == "before" {
+            set_shadow(canvas);
+        }
+        canvas.begin_layer(&LayerEffects::new());
+        if shadow_set == "inside" {
+            set_shadow(canvas);
+        }
+        black_disc(canvas, 24.0, 24.0, 10.0);
+        black_disc(canvas, 32.0, 24.0, 10.0);
+        canvas.end_layer();
+    });
+    (px(&buf, 28, 44), px(&buf, 17, 44))
+}
+
+/// A shadow in effect at begin_layer is cast ONCE by the layer's result, the
+/// way Canvas 2D's beginLayer applies its shadow to the layer and SVG's
+/// feDropShadow applies to a filtered group. Where the two discs' shadows
+/// coincide the pixel is the same 50% grey as where only one disc's shadow
+/// falls: the layer's coverage is the union, so it cannot darken twice.
+/// (Per-draw shadows would give 25% there, and if the shadow state also leaked
+/// into the layer's draws the layer would cast a third time, 12.5%.)
+#[test]
+fn a_layer_casts_its_shadow_once() {
+    let Some((device, queue)) = headless_device() else {
+        return;
+    };
+    let (both, one) = shadowed_overlap(&device, &queue, "before");
+    assert!(
+        close(both[0], 128),
+        "overlap of the two shadows: {both:?}, want ~128 (one 50% shadow)"
+    );
+    assert!(close(one[0], 128), "single shadow: {one:?}, want ~128");
+}
+
+/// Inside the layer the shadow state resets, so the children do not each
+/// cast their own; setting it again inside is how to shadow individual draws,
+/// and then the overlap does compound.
+#[test]
+fn shadow_set_inside_a_layer_shadows_each_draw() {
+    let Some((device, queue)) = headless_device() else {
+        return;
+    };
+    let (both, one) = shadowed_overlap(&device, &queue, "inside");
+    assert!(
+        close(both[0], 64),
+        "two per-draw shadows compounding: {both:?}, want ~64"
+    );
+    assert!(close(one[0], 128), "single per-draw shadow: {one:?}, want ~128");
+}
+
+/// No shadow anywhere: the control for the two above.
+#[test]
+fn a_layer_without_shadow_state_casts_none() {
+    let Some((device, queue)) = headless_device() else {
+        return;
+    };
+    let (both, one) = shadowed_overlap(&device, &queue, "none");
+    assert!(
+        close(both[0], 255) && close(one[0], 255),
+        "unexpected shadow: {both:?} {one:?}"
+    );
+}
