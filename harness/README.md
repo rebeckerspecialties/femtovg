@@ -242,3 +242,31 @@ takes the mean to 0.205% (gemini-3-1-pro-preview 0.35 -> 0.03,
 turbulence alone to 0.087% (claude-opus-5 3.65 -> 0.01, qwen3-8-max 0.46 ->
 0.04). Evidence: `busey-turbulence.png` (full frames with diff overlays) and
 `busey-turbulence-detail.png` (3x crops against both browsers).
+
+## Sub-pixel probe (`subpx.svg`, `subpx_ink.py`)
+
+A 200x200 SVG rendered 1:1 in the harness frame: white discs of radius 0.25
+to 3 px and white lines 0.2 to 2 px wide on `#202020`, each shape once on a
+pixel corner/boundary and once on a pixel centre. `subpx_ink.py` sums coverage
+per shape and prints it against the exact area (`pi r^2`, or the width per
+unit length), so a renderer is judged against arithmetic and the browsers only
+confirm they render coverage exactly (Chromium: 0.87-1.02x on discs, 0.99-1.00x
+on lines). What it found on the BuseyBench eyes, which matched the browsers at
+4x zoom and not at 1x:
+
+* Every `<circle>` usvg emits is clockwise, so femtovg/femtovg#308's clockwise
+  dilation (fixed by #336) added a pixel of radius to every catchlight, pupil
+  and iris rim: a 0.5 px disc drew 9.6x its ink, r = 3 px 1.77x, r = 20 px 1.10x
+  (`pi (r+1)^2` to within 2 %). With #336 discs are within 8 % of exact from
+  1 px up; below that the fringe model leaves a +-1 px^2 residual (the sub-pixel
+  half of femtovg/femtovg#327).
+* Strokes thinner than a pixel drew at the square of their width ratio
+  (nanovg's hairline rule): 0.2 px lines at 0.18x, 0.5 px at 0.25x. Skia scales
+  alpha linearly and both browsers render exact coverage; the `hairline-coverage`
+  branch does the same (0.99-1.01x after).
+
+Corpus effect on top of everything above: #336 takes the mean pixel difference
+vs Chromium from 2.33 % to 0.93 % and structural from 0.053 % to 0.027 %; the
+hairline fix to 0.85 % / 0.026 % (Firefox 0.74 % / 0.025 %). Evidence
+`busey-eyes-subpixel.png`; metrics `busey-336-metrics.json`,
+`busey-all-fixes-metrics.json`.
