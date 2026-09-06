@@ -171,11 +171,12 @@ whatever the backend supports. Skipping on primitive kind alone is wrong in the
 other direction: two portraits are wrapped whole in an `feDropShadow` group,
 and dropping those erased the entire face.
 
-*Known gap:* `feComposite operator="in" in2="SourceGraphic"` uses the source as
-a **stencil**, so its colour never reaches the output even though the chain
-does consume it. The input test above keeps that subtree and still paints the
-black rect (`claude-opus-5.svg`, 3.65% structural). Deciding it properly needs
-the filter graph evaluated, not just scanned.
+*The case the input test cannot decide:* `feComposite operator="in"
+in2="SourceGraphic"` uses the source as a **stencil**, so its colour never
+reaches the output even though the chain does consume it. The input test keeps
+that subtree and paints the black rect (`claude-opus-5.svg`, 3.65% structural).
+The answer is not a cleverer scan but running the chain - see the next section,
+which takes that file to 0.01%.
 
 **2. An SVG viewport clips - scissor to it.** Content is `overflow: hidden` at
 the viewport. Skip the scissor and anything pushed past the edge spills into
@@ -187,3 +188,57 @@ frame, 5.19% structural, against 1.86%/0.04% with it.
 With both rules the corpus lands at browser parity: mean structural difference
 **0.24%** against Chromium, against a Chromium-vs-Firefox envelope of 0.19%,
 and 26 of 27 files under 0.5%.
+
+## Running feTurbulence chains and group shadows
+
+Two more mappings, added with `ImageFilter::Turbulence` (fork branch
+`fe-turbulence`) and the `begin_layer` shadow rule on #322. Both are in
+`_logos_full.rs` and both can be switched off for A/B runs (`NO_TURBULENCE=1`,
+`NO_SHADOW=1`); `PLAN_DUMP=1` prints each translated chain and `NOISE_ONLY=1`
+draws a chain's output opaque and in place.
+
+**3. `feTurbulence -> feColorMatrix* [-> feComposite in Source*]` runs as a
+chain.** Every grain and skin-texture filter in the corpus has this shape. The
+filter region is mapped to device pixels through the group's transform and a
+noise image of that size is generated with a `transform` that puts the noise
+in the group's user space, so it scales with the artwork like a browser's
+does. The chain runs in the primitives' `color-interpolation-filters` space
+(linearRGB unless the file says otherwise) and ends with
+`ImageFilter::LinearRgbToSrgb`, which is what makes the constant-colour rows
+of a grain matrix (`0.55 0.36 0.24` in linear) come out as the browser's
+`(0.77, 0.63, 0.53)` rather than a much darker tint. A chain that never
+consumes the source replaces it: the noise image is drawn alone under the
+group's opacity and mask. `feComposite operator="in" in2="SourceGraphic"` (or
+`SourceAlpha`) is Porter-Duff source-in against the source, which femtovg has
+as `CompositeOperation::SourceIn`: the group gets a layer, the source draws
+into it, the noise draws over it with `SourceIn`, and `end_layer` applies the
+group opacity. The one pitfall met on the way: a layer shifts device space to
+its own origin through the state transform, so a device-space rect drawn after
+`reset_transform()` lands in the wrong place - draw the noise through the
+group's own transform, as the paths are drawn.
+
+Still unrunnable, by design of the backend rather than the harness: chains that
+end in `feBlend mode="multiply"` against the source (fugu-ultra, gpt-5-2-pro,
+gpt-5-6-sol, gpt-5-6-sol-pro, glm-5v-turbo) need separable blend modes
+(femtovg/femtovg#332) - their effect is a darkening of a few percent, below the
+20/255 threshold, which is why those files sit at 0.00-0.31% regardless - and
+`feDisplacementMap` (ox-alpha's hair). Those groups still draw their source
+unfiltered, per rule 1.
+
+**4. `feDropShadow` on a group is the shadow state around `begin_layer`.** Set
+`shadow_color`/`shadow_offset`/`shadow_blur` (offset and 2σ blur scaled to
+device pixels) before `begin_layer`, and the layer's result casts one shadow
+at `end_layer`; inside the layer the state resets, so children are not each
+shadowed. The group needs a layer for this even at full opacity. Before the
+#322 fix the shadow was suppressed at the composite, so these groups drew
+shadowless.
+
+Corpus effect (`busey-turbulence-metrics.json`, same refs and thresholds as
+above): mean structural vs Chromium **0.237% -> 0.053%**, vs Firefox 0.223% ->
+0.051% - inside the 0.19% browser-vs-browser envelope by a factor of three.
+Attribution by switching one mapping off at a time: the group shadow alone
+takes the mean to 0.205% (gemini-3-1-pro-preview 0.35 -> 0.03,
+-custom-tools 0.47 -> 0.03, kimi-k3 / nex-n2-pro / qwen3-8-flash to 0.00),
+turbulence alone to 0.087% (claude-opus-5 3.65 -> 0.01, qwen3-8-max 0.46 ->
+0.04). Evidence: `busey-turbulence.png` (full frames with diff overlays) and
+`busey-turbulence-detail.png` (3x crops against both browsers).
