@@ -151,3 +151,39 @@ structural percent), and attaches the real-world driver file.
 `/private/tmp` is wiped between sessions on this machine (worktrees, harness
 sources, corpus copies): keep anything worth keeping in this branch. Per-
 worktree `CARGO_TARGET_DIR`s are ~2.3 GB each - share one across worktrees.
+
+## Mapping SVG filters onto a backend that cannot run them all
+
+Two rules, both learned from the BuseyBench corpus (`corpus/buseybench/`, 27
+AI-generated 1024x1024 portraits), where getting either wrong moves a single
+render by 5-9% of the frame. `_logos_full.rs` implements both, behind
+`SKIP_UNSUPPORTED_FILTERS=1` and `VIEWPORT_CLIP=1`.
+
+**1. A filter that never consumes the source replaces it - drop the subtree.**
+An `feTurbulence`/`feFlood`/`feImage` chain synthesises its output from
+nothing, so the shape carrying the filter is scaffolding the author never meant
+to be seen - and since such a rect usually has no `fill`, it defaults to
+**black**. Drawing it unfiltered paints a black wash over the artwork: three
+corpus portraits came out 15-18% too dark that way. Classify by input, not by
+primitive kind - if no primitive takes `SourceGraphic` or `SourceAlpha`, skip
+the subtree; otherwise (`feDropShadow`, `feGaussianBlur`) draw it, applying
+whatever the backend supports. Skipping on primitive kind alone is wrong in the
+other direction: two portraits are wrapped whole in an `feDropShadow` group,
+and dropping those erased the entire face.
+
+*Known gap:* `feComposite operator="in" in2="SourceGraphic"` uses the source as
+a **stencil**, so its colour never reaches the output even though the chain
+does consume it. The input test above keeps that subtree and still paints the
+black rect (`claude-opus-5.svg`, 3.65% structural). Deciding it properly needs
+the filter graph evaluated, not just scanned.
+
+**2. An SVG viewport clips - scissor to it.** Content is `overflow: hidden` at
+the viewport. Skip the scissor and anything pushed past the edge spills into
+the page; the visible case is a blurred shape larger than the viewBox.
+`qwen3-8-flash.svg` strokes a 470px-radius ellipse at 260px width under a 34px
+blur, and without the clip its halo covers the surrounding page - 8.97% of the
+frame, 5.19% structural, against 1.86%/0.04% with it.
+
+With both rules the corpus lands at browser parity: mean structural difference
+**0.24%** against Chromium, against a Chromium-vs-Firefox envelope of 0.19%,
+and 26 of 27 files under 0.5%.

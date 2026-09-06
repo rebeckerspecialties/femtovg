@@ -175,12 +175,51 @@ fn dump(children: &[usvg::Node], depth: usize) {
 
 static PATH_COUNTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 
+/// Does this filter *replace* its source graphic rather than augment it?
+///
+/// A chain that never consumes `SourceGraphic` or `SourceAlpha` synthesises
+/// its output from nothing - `feTurbulence`, `feFlood`, `feImage` - so the
+/// shape it hangs off is scaffolding the author never intended to be seen
+/// (typically a fill-less rect, which defaults to black). A backend that
+/// cannot run the chain must drop that subtree, or it paints the scaffolding.
+/// A chain that does consume the source - `feDropShadow`, `feGaussianBlur` -
+/// only decorates it, so the subtree must still be drawn.
+fn replaces_source(f: &usvg::filter::Filter) -> bool {
+    use usvg::filter::{Input, Kind};
+    let consumes = |i: &Input| matches!(i, Input::SourceGraphic | Input::SourceAlpha);
+    !f.primitives().iter().any(|p| match p.kind() {
+        Kind::Blend(k) => consumes(k.input1()) || consumes(k.input2()),
+        Kind::Composite(k) => consumes(k.input1()) || consumes(k.input2()),
+        Kind::DisplacementMap(k) => consumes(k.input1()) || consumes(k.input2()),
+        Kind::ColorMatrix(k) => consumes(k.input()),
+        Kind::ComponentTransfer(k) => consumes(k.input()),
+        Kind::DropShadow(k) => consumes(k.input()),
+        Kind::GaussianBlur(k) => consumes(k.input()),
+        Kind::Morphology(k) => consumes(k.input()),
+        Kind::Offset(k) => consumes(k.input()),
+        Kind::Tile(k) => consumes(k.input()),
+        Kind::ConvolveMatrix(k) => consumes(k.input()),
+        Kind::DiffuseLighting(k) => consumes(k.input()),
+        Kind::SpecularLighting(k) => consumes(k.input()),
+        Kind::Merge(k) => k.inputs().iter().any(consumes),
+        Kind::Flood(_) | Kind::Image(_) | Kind::Turbulence(_) => false,
+    })
+}
+
 fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale: f32, masks: &MaskMap) {
     use usvg::tiny_skia_path::PathSegment;
     for node in children {
         match node {
             usvg::Node::Group(group) => {
                 if std::env::var("NO_BLEND").is_ok() && group.blend_mode() != usvg::BlendMode::Normal {
+                    continue;
+                }
+                // A filter this backend cannot execute must take its subtree
+                // with it: a filter's source graphic is routinely a shape that
+                // is never meant to be seen (a fill-less rect that exists only
+                // to be replaced by feTurbulence output), so drawing it raw is
+                // worse than drawing nothing.
+                if std::env::var("SKIP_UNSUPPORTED_FILTERS").is_ok() && group.filters().iter().any(|f| replaces_source(f)) {
                     continue;
                 }
                 let clipped = group.clip_path().is_some() && std::env::var("NO_CLIP").is_err();
@@ -369,6 +408,12 @@ fn main() {
     let size = tree.size();
     let fit = 200.0 / size.width().max(size.height());
     canvas.translate(130.0, 30.0);
+    // An SVG viewport clips its content (overflow is hidden by default). Skip
+    // this and anything the artwork pushes past its own edge - most visibly a
+    // heavily blurred shape larger than the viewBox - spills into the page.
+    if std::env::var("VIEWPORT_CLIP").is_ok() {
+        canvas.scissor(0.0, 0.0, 200.0 / fit * fit, 200.0 / fit * fit);
+    }
     canvas.scale(fit, fit);
     let mut masks = MaskMap::new();
     precapture_masks(&mut canvas, tree.root().children(), W as usize, H as usize, scale * fit, &mut masks);

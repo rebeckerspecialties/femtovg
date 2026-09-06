@@ -1,0 +1,317 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bg-grad" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#2a1a10"/>
+      <stop offset="60%" stop-color="#0f0805"/>
+      <stop offset="100%" stop-color="#050201"/>
+    </radialGradient>
+
+    <!-- Skin Gradients -->
+    <linearGradient id="skin-base" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f5d0a9"/>
+      <stop offset="50%" stop-color="#e0ac7e"/>
+      <stop offset="100%" stop-color="#c48a5e"/>
+    </linearGradient>
+
+    <radialGradient id="skin-highlight" cx="40%" cy="30%" r="60%">
+      <stop offset="0%" stop-color="#ffead0"/>
+      <stop offset="40%" stop-color="#f5d0a9" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#f5d0a9" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="skin-shadow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#8a5a3a" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#5a3520" stop-opacity="0.9"/>
+    </linearGradient>
+
+    <!-- Hair Gradients -->
+    <linearGradient id="hair-base" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fdf6e3"/>
+      <stop offset="40%" stop-color="#e6d5b8"/>
+      <stop offset="100%" stop-color="#b8a080"/>
+    </linearGradient>
+
+    <linearGradient id="hair-dark" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#b8a080"/>
+      <stop offset="100%" stop-color="#7a6550"/>
+    </linearGradient>
+
+    <!-- Eye Gradients -->
+    <radialGradient id="iris-grad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#4a8aee"/>
+      <stop offset="70%" stop-color="#1a3a6e"/>
+      <stop offset="100%" stop-color="#0a1a3a"/>
+    </radialGradient>
+
+    <radialGradient id="sclera-grad" cx="50%" cy="50%" r="50%">
+      <stop offset="60%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#d0d8e0"/>
+    </radialGradient>
+
+    <!-- Mouth Gradients -->
+    <linearGradient id="lip-upper" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#d06050"/>
+      <stop offset="100%" stop-color="#a03020"/>
+    </linearGradient>
+
+    <linearGradient id="lip-lower" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e07060"/>
+      <stop offset="100%" stop-color="#b04030"/>
+    </linearGradient>
+
+    <linearGradient id="tongue-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ff8080"/>
+      <stop offset="100%" stop-color="#cc4040"/>
+    </linearGradient>
+
+    <!-- Filters -->
+    <filter id="blur-sm" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+    <filter id="blur-md" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+    <filter id="blur-lg" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="20"/>
+    </filter>
+    <filter id="shadow-soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+
+    <!-- Clipping Paths -->
+    <clipPath id="face-clip">
+      <path d="M 320,300 C 320,200 400,140 512,140 C 624,140 704,200 704,300 C 704,380 730,450 720,520 C 710,600 680,680 640,740 C 600,800 560,840 512,840 C 464,840 424,800 384,740 C 344,680 314,600 304,520 C 294,450 320,380 320,300 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" fill="url(#bg-grad)"/>
+
+  <!-- Background Glow behind head -->
+  <ellipse cx="512" cy="480" rx="280" ry="360" fill="#ffaa55" opacity="0.08" filter="url(#blur-lg)"/>
+
+  <!-- Back Hair (Messy, voluminous) -->
+  <g id="hair-back" filter="url(#shadow-soft)">
+    <path d="M 250,350 C 200,250 280,100 450,80 C 550,60 700,100 780,250 C 820,350 780,500 750,550 C 720,600 680,650 650,700 L 600,650 C 650,550 680,450 650,350 C 600,200 500,150 400,200 C 320,250 300,350 320,450 C 330,500 350,550 380,600 L 320,650 C 280,550 250,450 250,350 Z" fill="url(#hair-dark)"/>
+    <path d="M 280,320 C 240,220 320,120 480,100 C 580,80 720,120 780,240 C 820,320 780,450 750,500 C 720,550 680,600 650,650 L 620,620 C 660,520 690,420 660,320 C 610,170 510,120 410,170 C 330,220 310,320 330,420 C 340,470 360,520 390,570 L 350,620 C 310,520 280,420 280,320 Z" fill="url(#hair-base)"/>
+  </g>
+
+  <!-- Neck & Ears -->
+  <g id="neck-ears">
+    <!-- Neck -->
+    <path d="M 380,700 L 380,900 L 644,900 L 644,700 C 600,750 560,780 512,780 C 464,780 424,750 380,700 Z" fill="url(#skin-base)"/>
+    <!-- Neck Shadow -->
+    <path d="M 380,700 L 380,900 L 644,900 L 644,700 C 600,750 560,780 512,780 C 464,780 424,750 380,700 Z" fill="url(#skin-shadow)" opacity="0.6"/>
+    <!-- Neck Creases -->
+    <path d="M 420,780 Q 512,820 604,780" fill="none" stroke="#8a5a3a" stroke-width="4" opacity="0.5" filter="url(#blur-sm)"/>
+    <path d="M 430,820 Q 512,860 594,820" fill="none" stroke="#8a5a3a" stroke-width="5" opacity="0.4" filter="url(#blur-sm)"/>
+    
+    <!-- Left Ear -->
+    <path d="M 320,420 C 280,400 260,450 270,500 C 280,550 310,580 330,560 C 340,550 330,520 320,500 C 310,480 320,440 320,420 Z" fill="url(#skin-base)"/>
+    <path d="M 310,450 C 290,460 280,490 290,520" fill="none" stroke="#b08060" stroke-width="3" opacity="0.6"/>
+    <path d="M 315,480 C 300,490 295,510 305,530" fill="none" stroke="#b08060" stroke-width="2" opacity="0.5"/>
+    
+    <!-- Right Ear -->
+    <path d="M 704,420 C 744,400 764,450 754,500 C 744,550 714,580 694,560 C 684,550 694,520 704,500 C 714,480 704,440 704,420 Z" fill="url(#skin-base)"/>
+    <path d="M 714,450 C 734,460 744,490 734,520" fill="none" stroke="#b08060" stroke-width="3" opacity="0.6"/>
+    <path d="M 709,480 C 724,490 729,510 719,530" fill="none" stroke="#b08060" stroke-width="2" opacity="0.5"/>
+  </g>
+
+  <!-- Face Base -->
+  <g id="face-base" clip-path="url(#face-clip)">
+    <!-- Main Skin -->
+    <rect x="200" y="100" width="624" height="824" fill="url(#skin-base)"/>
+    
+    <!-- Cheek/Forehead Highlight -->
+    <ellipse cx="480" cy="350" rx="200" ry="250" fill="url(#skin-highlight)"/>
+    
+    <!-- Jaw/Neck Shadow -->
+    <path d="M 300,600 Q 512,850 724,600 L 724,900 L 300,900 Z" fill="url(#skin-shadow)"/>
+    
+    <!-- Cheek Contours (Sagging) -->
+    <path d="M 340,520 Q 380,620 420,680" fill="none" stroke="#a07050" stroke-width="12" opacity="0.3" filter="url(#blur-md)"/>
+    <path d="M 684,520 Q 644,620 604,680" fill="none" stroke="#a07050" stroke-width="12" opacity="0.3" filter="url(#blur-md)"/>
+    
+    <!-- Nasolabial Folds (Deep) -->
+    <path d="M 420,480 Q 440,580 460,660" fill="none" stroke="#8a5a3a" stroke-width="8" opacity="0.5" filter="url(#blur-sm)"/>
+    <path d="M 604,480 Q 584,580 564,660" fill="none" stroke="#8a5a3a" stroke-width="8" opacity="0.5" filter="url(#blur-sm)"/>
+    
+    <!-- Forehead Wrinkles -->
+    <path d="M 380,220 Q 512,260 644,220" fill="none" stroke="#b08060" stroke-width="4" opacity="0.4" filter="url(#blur-sm)"/>
+    <path d="M 400,250 Q 512,290 624,250" fill="none" stroke="#b08060" stroke-width="5" opacity="0.3" filter="url(#blur-sm)"/>
+    <path d="M 420,280 Q 512,310 604,280" fill="none" stroke="#b08060" stroke-width="3" opacity="0.2" filter="url(#blur-sm)"/>
+    
+    <!-- Crow's Feet -->
+    <path d="M 340,380 L 280,360 M 340,390 L 270,390 M 340,400 L 280,420" fill="none" stroke="#b08060" stroke-width="3" opacity="0.4" filter="url(#blur-sm)"/>
+    <path d="M 684,380 L 744,360 M 684,390 L 754,390 M 684,400 L 744,420" fill="none" stroke="#b08060" stroke-width="3" opacity="0.4" filter="url(#blur-sm)"/>
+  </g>
+
+  <!-- Face Outline Stroke -->
+  <path d="M 320,300 C 320,200 400,140 512,140 C 624,140 704,200 704,300 C 704,380 730,450 720,520 C 710,600 680,680 640,740 C 600,800 560,840 512,840 C 464,840 424,800 384,740 C 344,680 314,600 304,520 C 294,450 320,380 320,300 Z" fill="none" stroke="#8a5a3a" stroke-width="2" opacity="0.5"/>
+
+  <!-- Nose -->
+  <g id="nose">
+    <!-- Nose Bridge Shadow -->
+    <path d="M 480,280 Q 470,380 460,480 L 480,480 Q 490,380 500,280 Z" fill="#a07050" opacity="0.4" filter="url(#blur-sm)"/>
+    <path d="M 544,280 Q 554,380 564,480 L 544,480 Q 534,380 524,280 Z" fill="#a07050" opacity="0.4" filter="url(#blur-sm)"/>
+    
+    <!-- Nose Tip -->
+    <ellipse cx="512" cy="500" rx="45" ry="35" fill="url(#skin-base)"/>
+    <ellipse cx="512" cy="500" rx="45" ry="35" fill="#c48a5e" opacity="0.5" filter="url(#blur-sm)"/>
+    
+    <!-- Nostrils -->
+    <path d="M 480,510 Q 490,530 505,520 Q 495,500 480,510 Z" fill="#3a2010"/>
+    <path d="M 544,510 Q 534,530 519,520 Q 529,500 544,510 Z" fill="#3a2010"/>
+    
+    <!-- Nose Highlight -->
+    <path d="M 505,300 Q 495,400 490,490" fill="none" stroke="#ffead0" stroke-width="6" opacity="0.6" filter="url(#blur-sm)"/>
+    <ellipse cx="512" cy="485" rx="15" ry="10" fill="#ffead0" opacity="0.5" filter="url(#blur-sm)"/>
+    
+    <!-- Philtrum -->
+    <path d="M 500,540 Q 512,560 524,540" fill="none" stroke="#a07050" stroke-width="3" opacity="0.5"/>
+  </g>
+
+  <!-- Eyes -->
+  <g id="eyes">
+    <!-- Left Eye Socket Shadow -->
+    <path d="M 340,360 Q 400,340 460,360 Q 450,420 400,430 Q 350,420 340,360 Z" fill="#8a5a3a" opacity="0.3" filter="url(#blur-md)"/>
+    <!-- Right Eye Socket Shadow -->
+    <path d="M 564,360 Q 624,340 684,360 Q 674,420 624,430 Q 574,420 564,360 Z" fill="#8a5a3a" opacity="0.3" filter="url(#blur-md)"/>
+
+    <!-- Left Eye -->
+    <g id="left-eye">
+      <!-- Sclera -->
+      <path d="M 350,380 Q 400,350 450,380 Q 400,420 350,380 Z" fill="url(#sclera-grad)"/>
+      <!-- Iris -->
+      <circle cx="400" cy="380" r="22" fill="url(#iris-grad)"/>
+      <!-- Pupil -->
+      <circle cx="400" cy="380" r="10" fill="#000000"/>
+      <!-- Reflection -->
+      <circle cx="392" cy="372" r="5" fill="#ffffff" opacity="0.9"/>
+      <circle cx="408" cy="388" r="2" fill="#ffffff" opacity="0.6"/>
+      <!-- Eyelid Crease -->
+      <path d="M 340,360 Q 400,330 460,360" fill="none" stroke="#8a5a3a" stroke-width="3" opacity="0.6"/>
+      <!-- Lower Lid -->
+      <path d="M 350,390 Q 400,420 450,390" fill="none" stroke="#b08060" stroke-width="2" opacity="0.5"/>
+      <!-- Bags under eyes -->
+      <path d="M 360,400 Q 400,430 440,400" fill="none" stroke="#a07050" stroke-width="4" opacity="0.4" filter="url(#blur-sm)"/>
+    </g>
+
+    <!-- Right Eye -->
+    <g id="right-eye">
+      <!-- Sclera -->
+      <path d="M 574,380 Q 624,350 674,380 Q 624,420 574,380 Z" fill="url(#sclera-grad)"/>
+      <!-- Iris -->
+      <circle cx="624" cy="380" r="22" fill="url(#iris-grad)"/>
+      <!-- Pupil -->
+      <circle cx="624" cy="380" r="10" fill="#000000"/>
+      <!-- Reflection -->
+      <circle cx="616" cy="372" r="5" fill="#ffffff" opacity="0.9"/>
+      <circle cx="632" cy="388" r="2" fill="#ffffff" opacity="0.6"/>
+      <!-- Eyelid Crease -->
+      <path d="M 564,360 Q 624,330 684,360" fill="none" stroke="#8a5a3a" stroke-width="3" opacity="0.6"/>
+      <!-- Lower Lid -->
+      <path d="M 574,390 Q 624,420 674,390" fill="none" stroke="#b08060" stroke-width="2" opacity="0.5"/>
+      <!-- Bags under eyes -->
+      <path d="M 584,400 Q 624,430 664,400" fill="none" stroke="#a07050" stroke-width="4" opacity="0.4" filter="url(#blur-sm)"/>
+    </g>
+  </g>
+
+  <!-- Eyebrows (Thick, Bushy, Arched) -->
+  <g id="eyebrows" filter="url(#shadow-soft)">
+    <!-- Left Eyebrow -->
+    <path d="M 320,320 Q 380,260 460,300 Q 420,340 380,330 Q 340,340 320,320 Z" fill="url(#hair-base)"/>
+    <path d="M 330,310 Q 380,270 440,300 Q 400,330 370,320 Q 340,330 330,310 Z" fill="url(#hair-dark)"/>
+    <!-- Eyebrow Hairs (Strokes) -->
+    <path d="M 340,315 L 360,285 M 360,310 L 380,275 M 380,305 L 400,280 M 400,305 L 420,285 M 420,310 L 440,295" fill="none" stroke="#7a6550" stroke-width="3" stroke-linecap="round"/>
+
+    <!-- Right Eyebrow -->
+    <path d="M 704,320 Q 644,260 564,300 Q 604,340 644,330 Q 684,340 704,320 Z" fill="url(#hair-base)"/>
+    <path d="M 694,310 Q 644,270 584,300 Q 624,330 654,320 Q 684,330 694,310 Z" fill="url(#hair-dark)"/>
+    <!-- Eyebrow Hairs (Strokes) -->
+    <path d="M 684,315 L 664,285 M 664,310 L 644,275 M 644,305 L 624,280 M 624,305 L 604,285 M 604,310 L 584,295" fill="none" stroke="#7a6550" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <!-- Mouth (Wide, Expressive Grin) -->
+  <g id="mouth">
+    <!-- Mouth Cavity Shadow -->
+    <path d="M 380,640 Q 512,600 644,640 Q 624,720 512,740 Q 400,720 380,640 Z" fill="#2a1010"/>
+    
+    <!-- Upper Lip -->
+    <path d="M 380,640 Q 450,620 512,630 Q 574,620 644,640 Q 574,660 512,650 Q 450,660 380,640 Z" fill="url(#lip-upper)"/>
+    <!-- Upper Lip Highlight -->
+    <path d="M 400,635 Q 450,625 512,635 Q 574,625 624,635" fill="none" stroke="#ffaaaa" stroke-width="3" opacity="0.5" filter="url(#blur-sm)"/>
+    
+    <!-- Lower Lip -->
+    <path d="M 400,700 Q 512,750 624,700 Q 574,730 512,740 Q 450,730 400,700 Z" fill="url(#lip-lower)"/>
+    <!-- Lower Lip Highlight -->
+    <path d="M 450,715 Q 512,735 574,715" fill="none" stroke="#ffaaaa" stroke-width="4" opacity="0.4" filter="url(#blur-sm)"/>
+    
+    <!-- Teeth -->
+    <g id="teeth">
+      <!-- Upper Teeth Base -->
+      <path d="M 390,645 Q 512,655 634,645 L 624,685 Q 512,695 400,685 Z" fill="#f0f0f0"/>
+      <!-- Teeth Shadows/Definition -->
+      <path d="M 420,647 L 420,682 M 450,650 L 450,685 M 480,652 L 480,687 M 512,653 L 512,688 M 544,652 L 544,687 M 574,650 L 574,685 M 604,647 L 604,682" fill="none" stroke="#d0d0d0" stroke-width="2"/>
+      <!-- Teeth Highlight -->
+      <path d="M 400,650 Q 512,660 624,650" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.8"/>
+      
+      <!-- Lower Teeth Base -->
+      <path d="M 410,690 Q 512,700 614,690 L 604,705 Q 512,715 420,705 Z" fill="#e0e0e0"/>
+      <!-- Lower Teeth Definition -->
+      <path d="M 440,692 L 440,703 M 470,694 L 470,705 M 500,695 L 500,706 M 524,695 L 524,706 M 554,694 L 554,705 M 584,692 L 584,703" fill="none" stroke="#c0c0c0" stroke-width="2"/>
+    </g>
+
+    <!-- Tongue -->
+    <path d="M 460,705 Q 512,685 564,705 Q 512,725 460,705 Z" fill="url(#tongue-grad)"/>
+    <path d="M 512,695 L 512,715" fill="none" stroke="#aa3030" stroke-width="2" opacity="0.5"/>
+    
+    <!-- Corner Creases -->
+    <path d="M 370,640 Q 360,660 380,680" fill="none" stroke="#8a5a3a" stroke-width="4" opacity="0.6" filter="url(#blur-sm)"/>
+    <path d="M 654,640 Q 664,660 644,680" fill="none" stroke="#8a5a3a" stroke-width="4" opacity="0.6" filter="url(#blur-sm)"/>
+    
+    <!-- Chin Dimple/Cleft -->
+    <path d="M 500,780 Q 512,790 524,780" fill="none" stroke="#a07050" stroke-width="3" opacity="0.5"/>
+  </g>
+
+  <!-- Front Hair (Messy, windswept) -->
+  <g id="hair-front" filter="url(#shadow-soft)">
+    <!-- Main Front Volume -->
+    <path d="M 280,320 C 260,200 350,100 512,100 C 650,100 760,200 744,320 C 730,400 680,350 650,300 C 600,220 500,180 400,220 C 320,260 300,350 320,420 C 330,460 350,500 380,540 L 340,580 C 300,500 280,400 280,320 Z" fill="url(#hair-base)"/>
+    
+    <!-- Darker Underlayers -->
+    <path d="M 300,300 C 280,180 380,120 512,120 C 620,120 720,180 720,300 C 700,350 650,300 620,250 C 580,180 480,160 380,200 C 320,240 320,320 340,400 C 350,440 370,480 400,520 L 360,560 C 320,480 300,380 300,300 Z" fill="url(#hair-dark)"/>
+    
+    <!-- Strands and Flyaways -->
+    <path d="M 320,200 Q 400,120 512,140 Q 600,120 680,200" fill="none" stroke="#fdf6e3" stroke-width="6" stroke-linecap="round"/>
+    <path d="M 350,250 Q 450,180 550,200 Q 650,180 700,250" fill="none" stroke="#e6d5b8" stroke-width="5" stroke-linecap="round"/>
+    <path d="M 280,350 Q 320,280 380,300 Q 450,320 500,280" fill="none" stroke="#fdf6e3" stroke-width="4" stroke-linecap="round"/>
+    <path d="M 744,350 Q 700,280 640,300 Q 580,320 530,280" fill="none" stroke="#fdf6e3" stroke-width="4" stroke-linecap="round"/>
+    
+    <!-- Highlight Strands -->
+    <path d="M 380,160 Q 450,140 512,160 Q 580,140 640,160" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.6" stroke-linecap="round"/>
+    <path d="M 300,280 Q 350,220 420,240" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.5" stroke-linecap="round"/>
+    <path d="M 724,280 Q 674,220 604,240" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Final Lighting & Atmosphere -->
+  <g id="lighting" pointer-events="none">
+    <!-- Top Left Rim Light -->
+    <path d="M 320,300 C 320,200 400,140 512,140 C 450,150 380,220 360,320 C 350,380 330,450 340,520 C 320,450 310,380 320,300 Z" fill="#ffffff" opacity="0.15" filter="url(#blur-md)"/>
+    
+    <!-- Right Cheek Highlight -->
+    <ellipse cx="620" cy="480" rx="60" ry="80" fill="#ffffff" opacity="0.1" filter="url(#blur-lg)" transform="rotate(-20 620 480)"/>
+    
+    <!-- Forehead Specular -->
+    <ellipse cx="480" cy="220" rx="80" ry="40" fill="#ffffff" opacity="0.15" filter="url(#blur-md)"/>
+    
+    <!-- Nose Tip Specular -->
+    <ellipse cx="505" cy="485" rx="10" ry="6" fill="#ffffff" opacity="0.7" filter="url(#blur-sm)"/>
+    
+    <!-- Eye Catchlights (Extra pop) -->
+    <circle cx="392" cy="372" r="3" fill="#ffffff" opacity="0.9"/>
+    <circle cx="616" cy="372" r="3" fill="#ffffff" opacity="0.9"/>
+  </g>
+
+</svg>

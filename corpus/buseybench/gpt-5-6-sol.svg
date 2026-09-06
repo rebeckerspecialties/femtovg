@@ -1,0 +1,240 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="Stylized vector portrait of Gary Busey">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="37%" r="72%">
+      <stop offset="0" stop-color="#536779"/>
+      <stop offset=".52" stop-color="#263643"/>
+      <stop offset="1" stop-color="#101820"/>
+    </radialGradient>
+    <linearGradient id="shirt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#222b32"/>
+      <stop offset=".55" stop-color="#10171c"/>
+      <stop offset="1" stop-color="#070b0e"/>
+    </linearGradient>
+    <linearGradient id="neckSkin" x1=".18" y1=".05" x2=".82" y2=".92">
+      <stop offset="0" stop-color="#c88761"/>
+      <stop offset=".34" stop-color="#e2a87e"/>
+      <stop offset=".67" stop-color="#b86e4d"/>
+      <stop offset="1" stop-color="#77422f"/>
+    </linearGradient>
+    <radialGradient id="faceSkin" cx="46%" cy="31%" r="72%">
+      <stop offset="0" stop-color="#f5c49a"/>
+      <stop offset=".35" stop-color="#e9a97e"/>
+      <stop offset=".7" stop-color="#ce815c"/>
+      <stop offset="1" stop-color="#8b4937"/>
+    </radialGradient>
+    <linearGradient id="faceSide" x1="0" y1=".3" x2="1" y2=".55">
+      <stop offset="0" stop-color="#743b31" stop-opacity=".72"/>
+      <stop offset=".48" stop-color="#c97959" stop-opacity=".08"/>
+      <stop offset="1" stop-color="#71372f" stop-opacity=".72"/>
+    </linearGradient>
+    <linearGradient id="earSkin" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e6a078"/>
+      <stop offset=".58" stop-color="#bd6b50"/>
+      <stop offset="1" stop-color="#7e4034"/>
+    </linearGradient>
+    <linearGradient id="hairGold" x1=".1" y1=".15" x2=".82" y2=".88">
+      <stop offset="0" stop-color="#fff1b2"/>
+      <stop offset=".26" stop-color="#d8b56e"/>
+      <stop offset=".58" stop-color="#a8783d"/>
+      <stop offset=".82" stop-color="#e3c47c"/>
+      <stop offset="1" stop-color="#76502d"/>
+    </linearGradient>
+    <linearGradient id="hairLight" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff9cf"/>
+      <stop offset=".45" stop-color="#e9cc82"/>
+      <stop offset="1" stop-color="#96622f"/>
+    </linearGradient>
+    <radialGradient id="eyeWhite" cx="52%" cy="42%" r="75%">
+      <stop offset="0" stop-color="#fffefa"/>
+      <stop offset=".72" stop-color="#e4e0d7"/>
+      <stop offset="1" stop-color="#a77768"/>
+    </radialGradient>
+    <radialGradient id="irisBlue" cx="38%" cy="34%" r="65%">
+      <stop offset="0" stop-color="#c7edf1"/>
+      <stop offset=".35" stop-color="#67a9b3"/>
+      <stop offset=".72" stop-color="#356977"/>
+      <stop offset="1" stop-color="#19323c"/>
+    </radialGradient>
+    <linearGradient id="lip" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9d4b47"/>
+      <stop offset=".55" stop-color="#7f3637"/>
+      <stop offset="1" stop-color="#4e2227"/>
+    </linearGradient>
+    <linearGradient id="teeth" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fffef2"/>
+      <stop offset=".55" stop-color="#f2e5c2"/>
+      <stop offset="1" stop-color="#cdb58d"/>
+    </linearGradient>
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feGaussianBlur stdDeviation="15"/>
+    </filter>
+    <filter id="smallBlur" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+    <filter id="skinTexture" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency=".024 .055" numOctaves="3" seed="17" result="noise"/>
+      <feColorMatrix in="noise" type="saturate" values="0" result="gray"/>
+      <feComponentTransfer in="gray" result="faint">
+        <feFuncA type="table" tableValues="0 .09"/>
+      </feComponentTransfer>
+      <feBlend in="SourceGraphic" in2="faint" mode="multiply"/>
+    </filter>
+    <clipPath id="faceClip">
+      <path d="M337 270C358 185 436 140 529 145C633 151 708 221 723 329L704 516C694 627 640 746 541 805C504 826 465 812 424 780C350 722 315 621 308 508L304 351C306 318 316 290 337 270Z"/>
+    </clipPath>
+    <clipPath id="mouthClip">
+      <path d="M367 637C415 613 474 608 529 614C586 610 645 622 676 652C650 720 601 759 532 768C460 763 403 729 367 637Z"/>
+    </clipPath>
+    <mask id="fadeMask">
+      <linearGradient id="fade" x1="0" y1="0" x2="0" y2="1">
+        <stop offset=".55" stop-color="white"/>
+        <stop offset="1" stop-color="black"/>
+      </linearGradient>
+      <rect width="1024" height="1024" fill="url(#fade)"/>
+    </mask>
+  </defs>
+
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <ellipse cx="515" cy="935" rx="394" ry="118" fill="#000" opacity=".5" filter="url(#softShadow)"/>
+  <path d="M95 1024C115 911 190 857 333 823L435 789L594 794L713 828C851 868 923 923 942 1024Z" fill="url(#shirt)"/>
+  <path d="M116 1024C148 922 220 881 355 844L436 822L515 930L594 821L690 846C811 880 882 928 916 1024Z" fill="#1b242a" opacity=".8"/>
+  <path d="M362 824L449 784L512 916L414 871Z" fill="#ddd7c5"/>
+  <path d="M663 827L577 785L512 916L611 871Z" fill="#e5dfcc"/>
+  <path d="M417 876L512 916L473 1024H371Z" fill="#12191e"/>
+  <path d="M607 876L512 916L553 1024H660Z" fill="#11181d"/>
+  <path d="M477 899L512 916L548 898L535 954L551 1024H473L489 953Z" fill="#5f2423"/>
+  <path d="M492 917L512 929L532 916L526 950H497Z" fill="#8d3931"/>
+
+  <path d="M410 705C418 768 408 810 384 839C419 884 466 904 513 914C562 902 611 879 641 837C612 798 605 755 611 694Z" fill="url(#neckSkin)"/>
+  <path d="M410 716C452 763 566 785 611 703L608 770C553 824 470 825 413 775Z" fill="#713c31" opacity=".35"/>
+  <path d="M424 817C464 843 549 854 609 807" fill="none" stroke="#6e3b30" stroke-width="8" opacity=".3"/>
+
+  <path d="M321 220C266 294 257 407 270 529C273 579 292 650 324 680C314 594 317 529 315 454L342 296Z" fill="url(#hairGold)"/>
+  <path d="M697 229C754 302 768 395 751 522C745 581 724 642 690 679C706 568 703 474 699 378L672 289Z" fill="url(#hairGold)"/>
+
+  <path d="M322 393C280 373 255 406 260 467C264 532 299 580 337 564L351 477L343 413Z" fill="url(#earSkin)"/>
+  <path d="M698 397C743 373 766 411 758 478C750 541 720 575 684 558L674 472L680 414Z" fill="url(#earSkin)"/>
+  <path d="M310 430C280 417 281 485 310 523C322 507 324 486 311 470C329 465 328 438 310 430Z" fill="none" stroke="#82463b" stroke-width="11" stroke-linecap="round"/>
+  <path d="M709 434C739 414 738 487 708 521C696 502 699 485 712 469C693 461 693 443 709 434Z" fill="none" stroke="#82463b" stroke-width="11" stroke-linecap="round"/>
+
+  <path d="M337 270C358 185 436 140 529 145C633 151 708 221 723 329L704 516C694 627 640 746 541 805C504 826 465 812 424 780C350 722 315 621 308 508L304 351C306 318 316 290 337 270Z" fill="url(#faceSkin)" stroke="#6c392f" stroke-width="5" filter="url(#skinTexture)"/>
+
+  <g clip-path="url(#faceClip)">
+    <path d="M300 266C357 277 370 341 358 422C346 508 364 656 438 782L339 748L278 519Z" fill="#733c31" opacity=".31"/>
+    <path d="M724 249C665 274 653 346 668 433C685 534 655 680 563 797L706 738L758 462Z" fill="#6d352e" opacity=".31"/>
+    <ellipse cx="500" cy="316" rx="132" ry="112" fill="#ffd4aa" opacity=".17" filter="url(#smallBlur)"/>
+    <path d="M395 333C430 287 481 266 523 269C568 267 619 293 645 343C587 318 456 315 395 333Z" fill="#fff2cf" opacity=".12"/>
+    <path d="M319 502C352 487 374 511 382 557C392 610 371 641 337 645Z" fill="#b75f49" opacity=".26"/>
+    <path d="M699 492C663 484 644 519 642 562C638 609 657 643 687 638Z" fill="#963f38" opacity=".25"/>
+    <path d="M407 725C449 780 536 797 606 744C573 807 493 843 423 784Z" fill="#6f382f" opacity=".32"/>
+    <path d="M339 356C353 302 386 259 420 235" fill="none" stroke="#ffd7ae" stroke-width="18" opacity=".18" stroke-linecap="round"/>
+    <path d="M659 343C649 287 617 243 587 220" fill="none" stroke="#71362e" stroke-width="16" opacity=".16" stroke-linecap="round"/>
+    <g opacity=".22" fill="#874238">
+      <circle cx="388" cy="486" r="4"/><circle cx="407" cy="502" r="3"/><circle cx="374" cy="521" r="3"/>
+      <circle cx="628" cy="493" r="4"/><circle cx="647" cy="515" r="3"/><circle cx="613" cy="525" r="3"/>
+      <circle cx="426" cy="579" r="3"/><circle cx="599" cy="584" r="3"/>
+    </g>
+  </g>
+
+  <path d="M292 330C302 226 339 167 406 126C450 99 507 93 554 105C609 113 663 143 696 195C730 247 737 307 718 365C693 303 668 264 629 238C586 210 535 192 477 202C416 210 367 250 331 325Z" fill="url(#hairGold)" stroke="#76502f" stroke-width="5"/>
+  <path d="M317 302C285 253 303 199 362 154C403 123 448 108 493 106C431 139 394 187 378 249Z" fill="url(#hairLight)"/>
+  <path d="M381 245C358 173 426 92 514 95C469 131 449 176 443 223Z" fill="url(#hairLight)"/>
+  <path d="M447 209C449 131 515 79 596 118C553 131 524 166 510 216Z" fill="url(#hairLight)"/>
+  <path d="M517 208C545 127 621 117 677 185C625 164 594 196 575 238Z" fill="url(#hairLight)"/>
+  <path d="M583 225C637 170 697 215 718 284C684 256 648 255 615 280Z" fill="url(#hairLight)"/>
+  <path d="M336 297C319 260 333 213 375 174" fill="none" stroke="#fff2b0" stroke-width="10" opacity=".7" stroke-linecap="round"/>
+  <path d="M383 236C382 185 418 134 467 119" fill="none" stroke="#fff7c5" stroke-width="11" opacity=".75" stroke-linecap="round"/>
+  <path d="M450 207C464 148 502 111 548 109" fill="none" stroke="#f8e4a1" stroke-width="9" opacity=".68" stroke-linecap="round"/>
+  <path d="M520 204C552 151 594 140 632 160" fill="none" stroke="#fff0aa" stroke-width="8" opacity=".62" stroke-linecap="round"/>
+  <path d="M594 237C637 205 679 230 701 274" fill="none" stroke="#ffe8a0" stroke-width="8" opacity=".6" stroke-linecap="round"/>
+  <g fill="none" stroke="#80542f" stroke-width="5" opacity=".62" stroke-linecap="round">
+    <path d="M310 324C296 274 315 224 351 187"/>
+    <path d="M350 279C347 210 389 146 442 119"/>
+    <path d="M410 230C417 169 461 112 514 103"/>
+    <path d="M488 207C513 147 554 118 601 126"/>
+    <path d="M552 218C590 166 637 169 675 204"/>
+    <path d="M619 254C659 229 697 257 717 306"/>
+  </g>
+  <path d="M305 342C317 299 342 267 376 244C357 284 349 326 350 379C333 354 320 344 305 342Z" fill="#b48549"/>
+  <path d="M718 346C705 300 681 270 646 246C666 291 674 327 671 376C688 353 704 343 718 346Z" fill="#a5753d"/>
+
+  <path d="M350 412C386 379 438 376 476 403C453 393 400 395 359 426Z" fill="#7b4b35" opacity=".55" filter="url(#smallBlur)"/>
+  <path d="M550 402C590 374 646 381 675 417C634 394 587 392 550 414Z" fill="#74432f" opacity=".56" filter="url(#smallBlur)"/>
+  <path d="M348 404C386 370 438 370 476 395" fill="none" stroke="#815735" stroke-width="15" stroke-linecap="round"/>
+  <path d="M550 394C590 367 642 374 676 408" fill="none" stroke="#7b5031" stroke-width="15" stroke-linecap="round"/>
+  <g fill="none" stroke="#c99b5b" stroke-width="3" opacity=".7" stroke-linecap="round">
+    <path d="M350 396L375 379"/><path d="M370 390L398 375"/><path d="M396 383L426 375"/><path d="M424 381L454 389"/>
+    <path d="M553 388L580 374"/><path d="M578 381L608 374"/><path d="M606 378L638 388"/><path d="M632 386L662 402"/>
+  </g>
+
+  <path d="M346 438C379 408 431 408 468 438C439 473 378 472 346 438Z" fill="url(#eyeWhite)" stroke="#663d37" stroke-width="5"/>
+  <path d="M551 437C586 407 642 411 675 443C640 474 582 471 551 437Z" fill="url(#eyeWhite)" stroke="#623934" stroke-width="5"/>
+  <ellipse cx="412" cy="439" rx="22" ry="27" fill="url(#irisBlue)" stroke="#284954" stroke-width="3"/>
+  <ellipse cx="610" cy="440" rx="22" ry="27" fill="url(#irisBlue)" stroke="#284954" stroke-width="3"/>
+  <ellipse cx="414" cy="442" rx="9" ry="14" fill="#11181a"/>
+  <ellipse cx="608" cy="443" rx="9" ry="14" fill="#11181a"/>
+  <circle cx="405" cy="431" r="6" fill="#fff"/>
+  <circle cx="600" cy="432" r="6" fill="#fff"/>
+  <path d="M346 439C379 411 430 410 468 438" fill="none" stroke="#492c2b" stroke-width="8" stroke-linecap="round"/>
+  <path d="M552 438C587 408 642 413 675 443" fill="none" stroke="#492c2b" stroke-width="8" stroke-linecap="round"/>
+  <path d="M355 459C389 481 435 478 463 452" fill="none" stroke="#9f594b" stroke-width="5" opacity=".75"/>
+  <path d="M558 456C593 481 640 478 668 450" fill="none" stroke="#9b5547" stroke-width="5" opacity=".75"/>
+  <path d="M364 478C396 492 435 487 455 471" fill="none" stroke="#774038" stroke-width="3" opacity=".45"/>
+  <path d="M565 473C597 490 633 487 657 469" fill="none" stroke="#774038" stroke-width="3" opacity=".45"/>
+
+  <path d="M493 425C485 478 468 526 455 564C470 589 493 602 520 597C541 594 556 582 566 568C547 528 535 478 527 425Z" fill="#b7684e" opacity=".3"/>
+  <path d="M505 420C501 471 485 526 474 557C483 569 498 575 512 573" fill="none" stroke="#8d4b3d" stroke-width="9" opacity=".55" stroke-linecap="round"/>
+  <path d="M521 426C524 475 539 523 548 555C541 570 528 578 512 576" fill="none" stroke="#6d3832" stroke-width="7" opacity=".45" stroke-linecap="round"/>
+  <path d="M474 563C485 551 499 553 511 561C525 551 540 553 550 566C534 585 491 586 474 563Z" fill="#8b493f"/>
+  <path d="M482 558C493 566 502 566 511 562C523 567 534 568 543 561" fill="none" stroke="#efb18a" stroke-width="4" opacity=".55"/>
+  <path d="M487 488C495 470 504 461 510 456" fill="none" stroke="#ffd0a2" stroke-width="6" opacity=".35" stroke-linecap="round"/>
+
+  <path d="M348 619C388 597 423 596 458 606C492 615 526 604 553 607C602 601 652 618 681 647C671 710 614 769 534 782C454 778 382 733 348 657C342 642 342 630 348 619Z" fill="#713238" opacity=".28"/>
+  <path d="M367 637C415 613 474 608 529 614C586 610 645 622 676 652C650 720 601 759 532 768C460 763 403 729 367 637Z" fill="url(#lip)" stroke="#642c31" stroke-width="6"/>
+  <g clip-path="url(#mouthClip)">
+    <path d="M367 645C416 623 470 625 528 630C586 623 635 631 674 654L651 708C616 734 566 748 526 747C468 742 415 718 389 683Z" fill="#28191d"/>
+    <path d="M378 641C425 625 477 628 528 632C581 627 630 634 667 653C654 681 631 697 607 708C559 723 492 719 441 702C411 691 390 669 378 641Z" fill="url(#teeth)" stroke="#c9ab82" stroke-width="3"/>
+    <path d="M402 695C445 713 493 719 531 720C576 720 614 711 644 695C622 733 582 754 529 758C476 754 431 733 402 695Z" fill="#f5e4bf"/>
+    <path d="M403 697C447 712 488 718 530 719C574 718 615 709 642 695" fill="none" stroke="#a8876c" stroke-width="3"/>
+    <g fill="none" stroke="#bda27f" stroke-width="2.5" opacity=".9">
+      <path d="M420 632L423 693"/>
+      <path d="M454 629L455 706"/>
+      <path d="M490 630L489 715"/>
+      <path d="M527 631L527 719"/>
+      <path d="M564 630L565 715"/>
+      <path d="M601 632L600 708"/>
+      <path d="M635 639L632 693"/>
+    </g>
+    <path d="M386 644C420 634 451 636 477 639" fill="none" stroke="#fff" stroke-width="7" opacity=".55" stroke-linecap="round"/>
+    <path d="M406 718C450 742 494 750 529 751C577 749 614 734 639 711C615 757 573 780 527 782C477 777 435 756 406 718Z" fill="#a74847"/>
+    <path d="M438 746C473 725 576 727 612 746C575 772 479 771 438 746Z" fill="#ce6860" opacity=".6"/>
+  </g>
+  <path d="M367 637C417 608 474 609 529 615C587 607 643 622 676 652" fill="none" stroke="#7b3839" stroke-width="13" stroke-linecap="round"/>
+  <path d="M367 641C399 632 422 630 445 633" fill="none" stroke="#d47c6b" stroke-width="5" opacity=".55" stroke-linecap="round"/>
+  <path d="M383 700C420 752 468 775 531 781C594 771 637 744 662 700" fill="none" stroke="#5f2a2e" stroke-width="7" opacity=".8"/>
+  <path d="M349 620C371 606 388 593 399 577" fill="none" stroke="#955044" stroke-width="5" opacity=".55"/>
+  <path d="M679 644C662 615 645 600 624 582" fill="none" stroke="#85443d" stroke-width="5" opacity=".55"/>
+
+  <g fill="none" stroke-linecap="round">
+    <path d="M349 545C370 564 386 574 407 579" stroke="#8a493d" stroke-width="5" opacity=".45"/>
+    <path d="M670 548C653 567 635 577 615 582" stroke="#804138" stroke-width="5" opacity=".45"/>
+    <path d="M357 582C375 592 388 596 403 596" stroke="#7f4038" stroke-width="3" opacity=".45"/>
+    <path d="M664 585C646 594 634 599 619 599" stroke="#743a34" stroke-width="3" opacity=".45"/>
+    <path d="M373 750C401 786 435 808 466 819" stroke="#744036" stroke-width="4" opacity=".48"/>
+    <path d="M651 748C626 786 592 807 560 819" stroke="#6e3933" stroke-width="4" opacity=".48"/>
+  </g>
+
+  <g opacity=".35" fill="none" stroke="#6d3932" stroke-width="3" stroke-linecap="round">
+    <path d="M368 493C393 502 424 501 447 490"/>
+    <path d="M576 491C600 502 631 502 652 491"/>
+    <path d="M385 516C406 524 426 522 443 514"/>
+    <path d="M582 515C603 524 624 523 642 514"/>
+    <path d="M421 362C443 350 467 346 486 350"/>
+    <path d="M538 350C560 344 585 350 603 361"/>
+  </g>
+
+  <g mask="url(#fadeMask)" opacity=".25">
+    <path d="M168 1024C188 908 277 862 396 839" fill="none" stroke="#748691" stroke-width="5"/>
+    <path d="M856 1024C833 912 745 865 628 839" fill="none" stroke="#748691" stroke-width="5"/>
+  </g>
+</svg>

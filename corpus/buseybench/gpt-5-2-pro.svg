@@ -1,0 +1,543 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="Vector portrait of Gary Busey">
+  <defs>
+    <!-- Soft shadow -->
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="8" result="b"/>
+      <feColorMatrix in="b" type="matrix" values="
+        0 0 0 0 0
+        0 0 0 0 0
+        0 0 0 0 0
+        0 0 0 .35 0" result="s"/>
+      <feOffset in="s" dx="0" dy="10" result="o"/>
+      <feMerge>
+        <feMergeNode in="o"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Subtle skin pore texture -->
+    <filter id="skinNoise" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="
+        0 0 0 0 0
+        0 0 0 0 0
+        0 0 0 0 0
+        0 0 0 .07 0" result="a"/>
+      <feComposite in="a" in2="SourceGraphic" operator="in" result="na"/>
+      <feBlend in="SourceGraphic" in2="na" mode="multiply"/>
+    </filter>
+
+    <!-- Eye shine blur -->
+    <filter id="shine" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="2"/>
+    </filter>
+
+    <!-- Mouth/teeth subtle blur -->
+    <filter id="microBlur" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="0.7"/>
+    </filter>
+
+    <!-- Gradients -->
+    <radialGradient id="bgGlow" cx="50%" cy="38%" r="70%">
+      <stop offset="0%" stop-color="#1b2540"/>
+      <stop offset="55%" stop-color="#0f1426"/>
+      <stop offset="100%" stop-color="#080a12"/>
+    </radialGradient>
+
+    <radialGradient id="skinGrad" cx="48%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#ffd3b3"/>
+      <stop offset="40%" stop-color="#f4b58e"/>
+      <stop offset="78%" stop-color="#d8906e"/>
+      <stop offset="100%" stop-color="#b46d55"/>
+    </radialGradient>
+
+    <radialGradient id="cheekWarmth" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#f07d6a" stop-opacity="0.28"/>
+      <stop offset="70%" stop-color="#f07d6a" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#f07d6a" stop-opacity="0"/>
+    </radialGradient>
+
+    <linearGradient id="hairGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffeaa8"/>
+      <stop offset="35%" stop-color="#f6d37a"/>
+      <stop offset="65%" stop-color="#d9aa4e"/>
+      <stop offset="100%" stop-color="#a87b2b"/>
+    </linearGradient>
+
+    <linearGradient id="hairShade" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#6d4f1b" stop-opacity="0.25"/>
+      <stop offset="60%" stop-color="#2a1e0a" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#120c03" stop-opacity="0.45"/>
+    </linearGradient>
+
+    <radialGradient id="eyeWhiteGrad" cx="45%" cy="40%" r="70%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="70%" stop-color="#f2f4f7"/>
+      <stop offset="100%" stop-color="#cfd6df"/>
+    </radialGradient>
+
+    <radialGradient id="irisBlue" cx="45%" cy="40%" r="70%">
+      <stop offset="0%" stop-color="#7fd0ff"/>
+      <stop offset="45%" stop-color="#2e89c9"/>
+      <stop offset="100%" stop-color="#0f3b64"/>
+    </radialGradient>
+
+    <radialGradient id="pupilGrad" cx="40%" cy="35%" r="70%">
+      <stop offset="0%" stop-color="#2b2b2b"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+
+    <linearGradient id="lipGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#c45a55"/>
+      <stop offset="55%" stop-color="#8f3a36"/>
+      <stop offset="100%" stop-color="#6c2624"/>
+    </linearGradient>
+
+    <radialGradient id="toothGrad" cx="50%" cy="25%" r="80%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="65%" stop-color="#f3f2ee"/>
+      <stop offset="100%" stop-color="#d8d0c6"/>
+    </radialGradient>
+
+    <linearGradient id="noseShade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#8a4a3b" stop-opacity="0.0"/>
+      <stop offset="55%" stop-color="#8a4a3b" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#5f2f27" stop-opacity="0.30"/>
+    </linearGradient>
+
+    <linearGradient id="beardHint" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3b2d2a" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#3b2d2a" stop-opacity="0.22"/>
+    </linearGradient>
+
+    <!-- Face clip -->
+    <clipPath id="faceClip">
+      <path d="M512 170
+               C640 170 744 250 770 372
+               C792 474 780 624 716 738
+               C654 848 578 908 512 908
+               C446 908 370 848 308 738
+               C244 624 232 474 254 372
+               C280 250 384 170 512 170 Z"/>
+    </clipPath>
+
+    <!-- Hairline mask to blend forehead -->
+    <mask id="hairlineMask">
+      <rect x="0" y="0" width="1024" height="1024" fill="#fff"/>
+      <!-- soften hairline into forehead -->
+      <path d="M250 320
+               C300 210 410 150 512 150
+               C616 150 724 210 776 322
+               C710 300 650 292 600 300
+               C560 248 540 240 512 240
+               C484 240 462 252 424 302
+               C360 290 308 296 250 320 Z"
+            fill="#000" opacity="0.20"/>
+      <path d="M260 322
+               C312 230 412 178 512 178
+               C616 178 712 230 766 324
+               C708 312 650 312 604 324
+               C570 272 542 260 512 260
+               C482 260 456 272 420 326
+               C368 312 312 312 260 322 Z"
+            fill="#000" opacity="0.10"/>
+    </mask>
+
+    <!-- Rim light -->
+    <filter id="rim" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="b"/>
+      <feColorMatrix in="b" type="matrix" values="
+        1 0 0 0 0
+        0 1 0 0 0
+        0 0 1 0 0
+        0 0 0 .35 0" result="a"/>
+      <feOffset in="a" dx="0" dy="0" result="o"/>
+      <feMerge>
+        <feMergeNode in="o"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" fill="url(#bgGlow)"/>
+  <ellipse cx="512" cy="540" rx="330" ry="420" fill="#000" opacity="0.22" filter="url(#softShadow)"/>
+
+  <!-- Hair (distinctive swept blond) -->
+  <g filter="url(#softShadow)">
+    <path d="M230 370
+             C240 250 344 150 512 140
+             C680 150 790 260 796 388
+             C800 470 778 512 760 548
+             C754 474 720 430 666 392
+             C704 464 710 536 690 592
+             C662 540 628 504 584 478
+             C606 530 604 600 576 658
+             C552 606 520 574 480 560
+             C498 614 480 676 438 720
+             C428 662 402 622 364 596
+             C376 660 360 722 324 764
+             C310 700 284 644 244 600
+             C214 554 206 468 230 370 Z"
+          fill="url(#hairGrad)"/>
+    <!-- dark undercuts / depth -->
+    <path d="M250 420
+             C292 332 380 284 512 282
+             C642 284 726 332 770 424
+             C744 398 708 380 664 370
+             C700 424 706 484 690 536
+             C670 496 640 470 606 454
+             C620 496 620 546 602 592
+             C580 550 552 526 524 516
+             C534 552 526 594 506 630
+             C482 600 454 586 430 582
+             C442 616 436 656 418 690
+             C396 656 372 640 350 632
+             C356 676 346 720 328 750
+             C312 688 284 638 250 606
+             C226 568 230 492 250 420 Z"
+          fill="url(#hairShade)" opacity="0.72"/>
+    <!-- flyaways -->
+    <g opacity="0.40" stroke="#fff0b8" stroke-width="4" stroke-linecap="round">
+      <path d="M332 226 C300 260 282 294 274 340" fill="none"/>
+      <path d="M408 198 C360 236 334 270 318 320" fill="none"/>
+      <path d="M502 182 C456 214 428 248 412 306" fill="none"/>
+      <path d="M600 192 C628 222 654 258 664 308" fill="none"/>
+      <path d="M684 224 C722 262 742 304 752 350" fill="none"/>
+    </g>
+  </g>
+
+  <!-- Face base -->
+  <g clip-path="url(#faceClip)" filter="url(#skinNoise)">
+    <path d="M512 170
+             C640 170 744 250 770 372
+             C792 474 780 624 716 738
+             C654 848 578 908 512 908
+             C446 908 370 848 308 738
+             C244 624 232 474 254 372
+             C280 250 384 170 512 170 Z"
+          fill="url(#skinGrad)"/>
+
+    <!-- Forehead highlight -->
+    <path d="M350 300
+             C390 246 450 220 512 220
+             C576 220 640 250 678 306
+             C630 290 576 292 512 298
+             C450 292 400 292 350 300 Z"
+          fill="#ffffff" opacity="0.14" mask="url(#hairlineMask)"/>
+
+    <!-- Cheek warmth -->
+    <ellipse cx="374" cy="610" rx="150" ry="110" fill="url(#cheekWarmth)"/>
+    <ellipse cx="650" cy="610" rx="150" ry="110" fill="url(#cheekWarmth)"/>
+
+    <!-- Jaw/neck hint shadow at bottom (inside clip) -->
+    <path d="M310 780
+             C380 860 452 908 512 908
+             C572 908 644 860 714 780
+             C704 840 652 920 512 920
+             C372 920 320 840 310 780 Z"
+          fill="#5a2b22" opacity="0.20"/>
+
+    <!-- Subtle beard/stubble hint -->
+    <path d="M320 710
+             C350 790 420 850 512 850
+             C604 850 674 790 704 710
+             C666 770 610 790 512 790
+             C414 790 358 770 320 710 Z"
+          fill="url(#beardHint)" opacity="0.65"/>
+  </g>
+
+  <!-- Ears -->
+  <g filter="url(#softShadow)" opacity="0.98">
+    <path d="M240 470
+             C200 496 186 548 198 600
+             C214 668 262 686 292 670
+             C270 640 262 600 266 560
+             C270 520 270 494 240 470 Z"
+          fill="#e9a680"/>
+    <path d="M784 470
+             C824 496 838 548 826 600
+             C810 668 762 686 732 670
+             C754 640 762 600 758 560
+             C754 520 754 494 784 470 Z"
+          fill="#e9a680"/>
+    <path d="M235 544
+             C222 568 224 604 242 622
+             C256 636 272 632 282 618
+             C264 606 258 588 262 566
+             C264 552 250 536 235 544 Z"
+          fill="#b46d55" opacity="0.45"/>
+    <path d="M789 544
+             C802 568 800 604 782 622
+             C768 636 752 632 742 618
+             C760 606 766 588 762 566
+             C760 552 774 536 789 544 Z"
+          fill="#b46d55" opacity="0.45"/>
+  </g>
+
+  <!-- Brows (bushy, expressive) -->
+  <g filter="url(#softShadow)">
+    <path d="M300 430
+             C338 400 396 386 450 398
+             C478 404 494 416 504 428
+             C460 418 404 418 360 436
+             C338 444 318 450 300 430 Z"
+          fill="#a7782c" opacity="0.95"/>
+    <path d="M724 430
+             C686 400 628 386 574 398
+             C546 404 530 416 520 428
+             C564 418 620 418 664 436
+             C686 444 706 450 724 430 Z"
+          fill="#a7782c" opacity="0.95"/>
+    <!-- darker brow roots -->
+    <path d="M308 432
+             C350 412 402 406 452 416
+             C474 420 492 430 500 440
+             C456 432 404 432 360 448
+             C338 456 322 456 308 432 Z"
+          fill="#5e4218" opacity="0.35"/>
+    <path d="M716 432
+             C674 412 622 406 572 416
+             C550 420 532 430 524 440
+             C568 432 620 432 664 448
+             C686 456 702 456 716 432 Z"
+          fill="#5e4218" opacity="0.35"/>
+  </g>
+
+  <!-- Eyes -->
+  <g filter="url(#softShadow)">
+    <!-- Left sclera -->
+    <path d="M328 510
+             C350 472 402 452 454 464
+             C490 472 512 500 506 530
+             C500 560 468 584 424 586
+             C376 588 336 560 328 510 Z"
+          fill="url(#eyeWhiteGrad)"/>
+    <!-- Right sclera -->
+    <path d="M696 510
+             C674 472 622 452 570 464
+             C534 472 512 500 518 530
+             C524 560 556 584 600 586
+             C648 588 688 560 696 510 Z"
+          fill="url(#eyeWhiteGrad)"/>
+
+    <!-- Irises -->
+    <ellipse cx="430" cy="528" rx="42" ry="44" fill="url(#irisBlue)"/>
+    <ellipse cx="594" cy="528" rx="42" ry="44" fill="url(#irisBlue)"/>
+
+    <!-- Pupils -->
+    <ellipse cx="430" cy="532" rx="18" ry="20" fill="url(#pupilGrad)"/>
+    <ellipse cx="594" cy="532" rx="18" ry="20" fill="url(#pupilGrad)"/>
+
+    <!-- Catchlights -->
+    <circle cx="416" cy="514" r="10" fill="#ffffff" opacity="0.90" filter="url(#shine)"/>
+    <circle cx="580" cy="514" r="10" fill="#ffffff" opacity="0.90" filter="url(#shine)"/>
+    <circle cx="440" cy="548" r="5" fill="#ffffff" opacity="0.35" filter="url(#shine)"/>
+    <circle cx="604" cy="548" r="5" fill="#ffffff" opacity="0.35" filter="url(#shine)"/>
+
+    <!-- Upper lids -->
+    <path d="M322 508
+             C346 470 402 448 458 460
+             C488 466 510 486 512 506
+             C486 484 456 478 424 482
+             C384 486 350 496 322 508 Z"
+          fill="#a76252" opacity="0.35"/>
+    <path d="M702 508
+             C678 470 622 448 566 460
+             C536 466 514 486 512 506
+             C538 484 568 478 600 482
+             C640 486 674 496 702 508 Z"
+          fill="#a76252" opacity="0.35"/>
+
+    <!-- Lower lid lines -->
+    <path d="M340 566
+             C364 590 414 602 454 594"
+          fill="none" stroke="#7d3b31" stroke-width="6" opacity="0.22" stroke-linecap="round"/>
+    <path d="M684 566
+             C660 590 610 602 570 594"
+          fill="none" stroke="#7d3b31" stroke-width="6" opacity="0.22" stroke-linecap="round"/>
+
+    <!-- Crow's feet -->
+    <path d="M300 528 C278 532 270 546 266 560" fill="none" stroke="#6f3029" stroke-width="5" opacity="0.20" stroke-linecap="round"/>
+    <path d="M302 548 C282 558 276 574 276 590" fill="none" stroke="#6f3029" stroke-width="5" opacity="0.15" stroke-linecap="round"/>
+    <path d="M724 528 C746 532 754 546 758 560" fill="none" stroke="#6f3029" stroke-width="5" opacity="0.20" stroke-linecap="round"/>
+    <path d="M722 548 C742 558 748 574 748 590" fill="none" stroke="#6f3029" stroke-width="5" opacity="0.15" stroke-linecap="round"/>
+  </g>
+
+  <!-- Nose (prominent) -->
+  <g filter="url(#softShadow)">
+    <path d="M512 512
+             C540 558 560 602 574 646
+             C584 680 566 706 530 714
+             C520 716 504 716 494 714
+             C458 706 440 680 450 646
+             C464 602 484 558 512 512 Z"
+          fill="#f0ad87" opacity="0.65"/>
+    <!-- Ridge highlight -->
+    <path d="M500 488
+             C494 560 494 610 498 660
+             C500 686 496 698 488 708
+             C504 700 520 700 536 708
+             C528 698 524 686 526 660
+             C530 610 530 560 524 488
+             C520 468 504 468 500 488 Z"
+          fill="#fff" opacity="0.10"/>
+    <!-- Side shadow -->
+    <path d="M520 502
+             C548 562 560 608 566 646
+             C572 686 558 704 536 710
+             C550 682 548 664 540 636
+             C528 596 520 554 520 502 Z"
+          fill="url(#noseShade)" opacity="0.75"/>
+    <!-- Nostrils -->
+    <path d="M462 676
+             C474 660 492 654 512 654
+             C532 654 550 660 562 676
+             C544 690 528 694 512 694
+             C496 694 480 690 462 676 Z"
+          fill="#7a3a31" opacity="0.30"/>
+    <path d="M478 676
+             C486 670 498 668 512 668
+             C526 668 538 670 546 676
+             C536 684 524 686 512 686
+             C500 686 488 684 478 676 Z"
+          fill="#5a2621" opacity="0.24"/>
+  </g>
+
+  <!-- Smile lines (iconic) -->
+  <g opacity="0.26" stroke="#6f3029" stroke-width="8" stroke-linecap="round" filter="url(#softShadow)">
+    <path d="M380 660 C356 694 348 734 364 772"/>
+    <path d="M644 660 C668 694 676 734 660 772"/>
+  </g>
+
+  <!-- Mouth (big grin with teeth) -->
+  <g filter="url(#softShadow)">
+    <!-- Outer mouth shape -->
+    <path d="M360 742
+             C410 804 460 832 512 832
+             C564 832 614 804 664 742
+             C646 720 624 704 600 694
+             C568 682 540 678 512 678
+             C484 678 456 682 424 694
+             C400 704 378 720 360 742 Z"
+          fill="url(#lipGrad)"/>
+
+    <!-- Teeth -->
+    <path d="M388 748
+             C430 792 468 812 512 812
+             C556 812 594 792 636 748
+             C606 726 568 714 512 714
+             C456 714 418 726 388 748 Z"
+          fill="url(#toothGrad)" filter="url(#microBlur)"/>
+
+    <!-- Tooth separations -->
+    <g opacity="0.22" stroke="#8a7f74" stroke-width="3" stroke-linecap="round">
+      <path d="M450 726 C448 752 450 776 456 800" fill="none"/>
+      <path d="M476 720 C474 750 476 778 482 804" fill="none"/>
+      <path d="M502 716 C500 748 502 780 506 806" fill="none"/>
+      <path d="M522 716 C524 748 522 780 518 806" fill="none"/>
+      <path d="M548 720 C550 750 548 778 542 804" fill="none"/>
+      <path d="M574 726 C576 752 574 776 568 800" fill="none"/>
+    </g>
+
+    <!-- Gum / inner mouth shadow -->
+    <path d="M388 748
+             C418 726 456 714 512 714
+             C568 714 606 726 636 748
+             C628 758 618 766 608 772
+             C578 754 548 746 512 746
+             C476 746 446 754 416 772
+             C406 766 396 758 388 748 Z"
+          fill="#6a1f1e" opacity="0.28"/>
+
+    <!-- Lower lip shadow -->
+    <path d="M386 778
+             C438 822 478 840 512 840
+             C546 840 586 822 638 778
+             C632 806 588 862 512 862
+             C436 862 392 806 386 778 Z"
+          fill="#2a0d0c" opacity="0.16"/>
+
+    <!-- Lip highlight -->
+    <path d="M390 752
+             C432 786 470 802 512 802
+             C554 802 592 786 634 752"
+          fill="none" stroke="#ffd2c7" stroke-width="8" opacity="0.18" stroke-linecap="round"/>
+  </g>
+
+  <!-- Chin highlight -->
+  <path d="M430 846
+           C456 872 484 884 512 884
+           C540 884 568 872 594 846
+           C574 870 548 900 512 900
+           C476 900 450 870 430 846 Z"
+        fill="#fff" opacity="0.08" filter="url(#rim)"/>
+
+  <!-- Hair overlaps forehead slightly for realism -->
+  <g mask="url(#hairlineMask)" opacity="0.98">
+    <path d="M244 360
+             C284 248 388 184 512 178
+             C638 184 744 250 780 366
+             C728 340 662 334 608 344
+             C574 300 544 284 512 284
+             C480 284 450 302 416 348
+             C360 334 298 338 244 360 Z"
+          fill="url(#hairGrad)" opacity="0.85"/>
+    <path d="M270 366
+             C310 274 398 220 512 216
+             C628 220 712 274 752 372
+             C708 354 654 352 612 364
+             C584 320 548 304 512 304
+             C476 304 442 322 412 368
+             C368 352 316 354 270 366 Z"
+          fill="url(#hairShade)" opacity="0.35"/>
+  </g>
+
+  <!-- Neck -->
+  <g filter="url(#softShadow)">
+    <path d="M396 900
+             C424 858 454 838 512 838
+             C570 838 600 858 628 900
+             C654 938 664 984 664 1024
+             L360 1024
+             C360 984 370 938 396 900 Z"
+          fill="#c78463"/>
+    <path d="M420 910
+             C452 886 480 878 512 878
+             C544 878 572 886 604 910
+             C582 904 550 900 512 900
+             C474 900 442 904 420 910 Z"
+          fill="#000" opacity="0.10"/>
+  </g>
+
+  <!-- Collar / shirt suggestion -->
+  <g opacity="0.95" filter="url(#softShadow)">
+    <path d="M280 1024
+             C304 952 346 906 410 886
+             C384 920 372 966 372 1024 Z"
+          fill="#0e141f"/>
+    <path d="M744 1024
+             C720 952 678 906 614 886
+             C640 920 652 966 652 1024 Z"
+          fill="#0e141f"/>
+    <path d="M420 880
+             C456 860 484 852 512 852
+             C540 852 568 860 604 880
+             C576 896 548 906 512 906
+             C476 906 448 896 420 880 Z"
+          fill="#1b2536"/>
+    <path d="M442 888
+             C468 874 490 868 512 868
+             C534 868 556 874 582 888
+             C558 900 536 906 512 906
+             C488 906 466 900 442 888 Z"
+          fill="#d7d9dd" opacity="0.20"/>
+  </g>
+
+  <!-- Global vignette -->
+  <radialGradient id="vign" cx="50%" cy="45%" r="70%">
+    <stop offset="60%" stop-color="#000" stop-opacity="0"/>
+    <stop offset="100%" stop-color="#000" stop-opacity="0.42"/>
+  </radialGradient>
+  <rect width="1024" height="1024" fill="url(#vign)"/>
+</svg>
