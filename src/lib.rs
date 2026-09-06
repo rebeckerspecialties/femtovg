@@ -1120,8 +1120,13 @@ where
     ///
     /// Inside the layer, `global_alpha` resets to 1 (the outer alpha folds
     /// into the composite), the composite operation resets to source-over,
-    /// and shadows keep working. The composite honors the scissor and
-    /// composite operation in effect at `begin_layer` time. Layers nest;
+    /// and the shadow state resets to none. All three are applied to the
+    /// layer's *result* instead: the composite honors the alpha, composite
+    /// operation, scissor and shadow in effect at `begin_layer` time, so a
+    /// shadow set before `begin_layer` is cast once by the whole group - the
+    /// Canvas 2D `beginLayer()` rule for its layer rendering attributes, and
+    /// what SVG's `feDropShadow` on a `<g>` means. Set the shadow state
+    /// again inside the layer to shadow individual draws as well. Layers nest;
     /// each level costs one transient image (plus one more if filtered),
     /// released at the next flush through the same pool seam the filter
     /// chain and shadow passes use. When the backing store cannot be
@@ -1193,6 +1198,16 @@ where
         self.state_mut().transform = layer_transform;
         self.state_mut().alpha = 1.0;
         self.state_mut().composite_operation = CompositeOperationState::default();
+        // Shadow state is a layer rendering attribute too: it applies to the
+        // layer's result at end_layer, so it must not also apply to every
+        // draw inside, or the layer's children would each cast their own
+        // shadow and then the layer would cast one more over the lot.
+        {
+            let state = self.state_mut();
+            state.shadow_color = Color::rgbaf(0.0, 0.0, 0.0, 0.0);
+            state.shadow_blur = 0.0;
+            state.shadow_offset = [0.0, 0.0];
+        }
         if !keep_scissor {
             self.state_mut().scissor = Scissor::default();
         }
@@ -1258,12 +1273,17 @@ where
 
         // Composite in plain device space at the captured origin; the state
         // restored above supplies the outer scissor and composite operation.
+        // The restore above put back the shadow state that was current at
+        // begin_layer, and this composite deliberately runs under it: the
+        // shadow pass builds coverage from the paint's real alpha, so the
+        // layer image casts one shadow for the whole group, the way Canvas
+        // 2D's beginLayer applies the shadow to the layer's result and SVG's
+        // feDropShadow applies to a filtered group. Inside the layer the
+        // shadow state was reset, so nothing has been shadowed twice.
         let saved_transform = self.state().transform;
         let saved_alpha = self.state().alpha;
-        let saved_shadow = self.state().shadow_color;
         self.state_mut().transform = Transform2D::identity();
         self.state_mut().alpha = 1.0;
-        self.state_mut().shadow_color = Color::rgbaf(0.0, 0.0, 0.0, 0.0);
 
         let mut layer_rect = Path::new();
         layer_rect.rect(minx, miny, record.width as f32, record.height as f32);
@@ -1271,7 +1291,6 @@ where
 
         self.state_mut().transform = saved_transform;
         self.state_mut().alpha = saved_alpha;
-        self.state_mut().shadow_color = saved_shadow;
     }
 
     /// Multiplies `layer`'s alpha by the mask coverage, in layer space.
