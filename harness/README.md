@@ -270,3 +270,33 @@ vs Chromium from 2.33 % to 0.93 % and structural from 0.053 % to 0.027 %; the
 hairline fix to 0.85 % / 0.026 % (Firefox 0.74 % / 0.025 %). Evidence
 `busey-eyes-subpixel.png`; metrics `busey-336-metrics.json`,
 `busey-all-fixes-metrics.json`.
+
+## Other framings: 1080p (`FRAME_W`, `FRAME_H`, `BOX`, `BOX_X`, `BOX_Y`)
+
+`_logos_full.rs` and `make_ref.py` read the same five variables, so a browser
+page and a femtovg render can be framed identically at any size; `compare.py`
+now compares over the common area and `boxstats.py` reports percentages of the
+frame and of the SVG box separately, plus the mean delta. 1080p portrait: 
+`FRAME_W=1920 FRAME_H=1080 BOX=1080 BOX_X=420 BOX_Y=0`, `--window-size=1920,1080`
+for the browsers (Firefox needs `--profile $(mktemp -d)` to screenshot headless).
+
+**What 1080p found on gpt-6-astra (2026-09-07).** At 460x260 the file is at
+0.45 % of its box above 20/255 and 0.000 % structural against both browsers.
+At 1080p it is **7.6 % / 3.1 % structural** - and none of it is antialiasing,
+blur kernels or filters: it is #322's transient-image budget. The file opens
+162 layers in one frame (opacity groups and blurred shading), each sized to
+the 1080 px viewport scissor plus blur padding (~5 MB), some 800 MB requested
+against the 256 MiB default; past the budget a layer degrades to pass-through,
+which silently drops its blur *and* its group opacity, so the shading blobs
+paint sharp and dark. `TRANSIENT_BUDGET_MB=4096` takes the same render to
+**0.18 % / 0.000 %** (mean delta 1.4/255; the browser envelope is 0.02 %).
+Sizing layers to their own bounding box (`LAYER_BBOX_SCISSOR=1`) does not
+rescue it on its own - the sum still exceeds the budget and the later, more
+visible layers are the ones that degrade (10.5 % / 5.5 %) - so the fix is
+reuse, not sizing: a layer's image is free for the next layer as soon as its
+end_layer composite is recorded, since commands run in order. Evidence
+`busey-astra-1080p.png` (frames and diff maps) and `busey-astra-1080p-detail.png`
+(3x cheek crops). Ruled out by ablation on the reference side: capping the
+browser's blur sigma at femtovg's 8 px changes the diff by 0.01 points;
+removing every stroke from both sides removes 2.3 points of ribbons but no
+structure.

@@ -18,8 +18,11 @@ from PIL import Image
 
 args = [a for a in sys.argv[1:] if not a.startswith("--")]
 thr = int(sys.argv[sys.argv.index("--threshold") + 1]) if "--threshold" in sys.argv else 20
-a = np.asarray(Image.open(args[0]).convert("RGB"), dtype=int)[:260, :460]
-c = np.asarray(Image.open(args[1]).convert("RGB"), dtype=int)[:260, :460]
+a = np.asarray(Image.open(args[0]).convert("RGB"), dtype=int)
+c = np.asarray(Image.open(args[1]).convert("RGB"), dtype=int)
+# Compare over the common area: a browser screenshot can come back a row or column larger.
+h, w = min(a.shape[0], c.shape[0]), min(a.shape[1], c.shape[1])
+a, c = a[:h, :w], c[:h, :w]
 
 def erode(m, it=2):
     for _ in range(it):

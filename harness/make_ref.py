@@ -30,8 +30,12 @@ else:  # no viewBox: use width/height as the user space
 # Carry root presentation attributes (fill="none" etc.) onto the nested svg -
 # dropping them once produced a 48% false diff.
 keep = " ".join(a for a in re.findall(r'\b(?:fill|stroke|fill-rule|opacity|style)="[^"]*"', attrs))
+import os
+FW = os.environ.get("FRAME_W", "460"); FH = os.environ.get("FRAME_H", "260")
+BOX = os.environ.get("BOX", "200"); BX = os.environ.get("BOX_X", "130"); BY = os.environ.get("BOX_Y", "30")
+PX = float(FW) / 2; PY_ = float(FH) / 2
 print(f'''<!doctype html><body style="margin:0;background:#fff">
-<svg width="460" height="260" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<g transform="translate(230,130) scale({scale}) translate(-230,-130)"><svg x="130" y="30" width="200" height="200" viewBox="{vb}" preserveAspectRatio="xMinYMin meet" {keep}>
+<svg width="{FW}" height="{FH}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g transform="translate({PX:g},{PY_:g}) scale({scale}) translate({-PX:g},{-PY_:g})"><svg x="{BX}" y="{BY}" width="{BOX}" height="{BOX}" viewBox="{vb}" preserveAspectRatio="xMinYMin meet" {keep}>
 {inner}
 </svg></g></svg>''')

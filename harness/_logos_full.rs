@@ -8,8 +8,23 @@ use femtovg::{
     MaskKind, Paint, Path, PixelFormat, RenderTarget, Transform2D, TurbulenceKind,
 };
 
-const W: u32 = 460;
-const H: u32 = 260;
+/// Frame and layout, overridable for other framings (1080p: FRAME_W=1920
+/// FRAME_H=1080 BOX=1080 BOX_X=420 BOX_Y=0); make_ref.py reads the same names.
+fn env_f32(name: &str, default: f32) -> f32 {
+    std::env::var(name).ok().and_then(|v| v.parse().ok()).unwrap_or(default)
+}
+fn frame_w() -> u32 {
+    env_f32("FRAME_W", 460.0) as u32
+}
+fn frame_h() -> u32 {
+    env_f32("FRAME_H", 260.0) as u32
+}
+fn box_size() -> f32 {
+    env_f32("BOX", 200.0)
+}
+fn box_at() -> (f32, f32) {
+    (env_f32("BOX_X", 130.0), env_f32("BOX_Y", 30.0))
+}
 
 fn ts_to_t2d(t: usvg::Transform) -> Transform2D {
     Transform2D([t.sx, t.ky, t.kx, t.sy, t.tx, t.ty])
@@ -263,13 +278,13 @@ fn turbulence_plan(canvas: &Canvas<WGPURenderer>, group: &usvg::Group) -> Option
         .map(|c| c.0)
         .fold(f32::NEG_INFINITY, f32::max)
         .ceil()
-        .min(W as f32);
+        .min(frame_w() as f32);
     let y1 = corners
         .iter()
         .map(|c| c.1)
         .fold(f32::NEG_INFINITY, f32::max)
         .ceil()
-        .min(H as f32);
+        .min(frame_h() as f32);
     if !(x1 > x0 && y1 > y0) {
         return None;
     }
@@ -427,6 +442,7 @@ fn dump(children: &[usvg::Node], depth: usize) {
 }
 
 static PATH_COUNTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+static LAYERS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 
 /// Does this filter *replace* its source graphic rather than augment it?
 ///
@@ -566,11 +582,24 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                     canvas.set_shadow_blur(2.0 * ds.std_dev_x().get().max(ds.std_dev_y().get()) * scale);
                 }
                 let stencil = plan.as_ref().is_some_and(|p| p.stencil);
-                match group_effects(canvas, group, W as usize, H as usize, scale, masks, shadowed || stencil) {
+                match group_effects(canvas, group, frame_w() as usize, frame_h() as usize, scale, masks, shadowed || stencil) {
                     Some(fx) => {
+                        // Size the layer to the group's own layer bounding box (usvg
+                        // includes the filter region and strokes), the way a browser
+                        // sizes a filter's raster, instead of to the whole viewport.
+                        let bbox_scissor = std::env::var("LAYER_BBOX_SCISSOR").is_ok();
+                        if bbox_scissor {
+                            canvas.save();
+                            let bb = group.abs_layer_bounding_box();
+                            canvas.intersect_scissor(bb.x(), bb.y(), bb.width(), bb.height());
+                        }
+                        LAYERS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                         canvas.begin_layer(&fx);
                         draw_filtered(canvas, group, plan, scale, masks);
                         canvas.end_layer();
+                        if bbox_scissor {
+                            canvas.restore();
+                        }
                     }
                     None => draw_filtered(canvas, group, plan, scale, masks),
                 }
@@ -674,7 +703,11 @@ fn main() {
 
     let renderer = WGPURenderer::new(device.clone(), queue.clone());
     let mut canvas = Canvas::new(renderer).unwrap();
-    canvas.set_size(W, H, 1.0);
+    canvas.set_size(frame_w(), frame_h(), 1.0);
+    // Experiments: lift the transient-image budget (MiB), and report layer counts.
+    if let Some(mb) = std::env::var("TRANSIENT_BUDGET_MB").ok().and_then(|v| v.parse::<usize>().ok()) {
+        canvas.set_transient_image_budget(mb << 20);
+    }
 
     let tree = {
         let mut opt = usvg::Options::default();
@@ -688,8 +721,8 @@ fn main() {
     let target = device.create_texture(&wgpu::TextureDescriptor {
         label: None,
         size: wgpu::Extent3d {
-            width: W,
-            height: H,
+            width: frame_w(),
+            height: frame_h(),
             depth_or_array_layers: 1,
         },
         mip_level_count: 1,
@@ -701,32 +734,33 @@ fn main() {
     });
 
     let bg = if dark { Color::rgb(32, 34, 37) } else { Color::white() };
-    canvas.clear_rect(0, 0, W, H, bg);
+    canvas.clear_rect(0, 0, frame_w(), frame_h(), bg);
     canvas.save();
     let (px, py) = std::env::var("PIVOT")
         .ok()
         .and_then(|s| s.split_once(',').map(|(a, b)| (a.parse().unwrap(), b.parse().unwrap())))
-        .unwrap_or((230.0f32, 130.0f32));
+        .unwrap_or((frame_w() as f32 / 2.0, frame_h() as f32 / 2.0));
     canvas.translate(px, py);
     canvas.scale(scale, scale);
     canvas.translate(-px, -py);
 
     let size = tree.size();
-    let fit = 200.0 / size.width().max(size.height());
-    canvas.translate(130.0, 30.0);
+    let fit = box_size() / size.width().max(size.height());
+    let (box_x, box_y) = box_at();
+    canvas.translate(box_x, box_y);
     // An SVG viewport clips its content (overflow is hidden by default). Skip
     // this and anything the artwork pushes past its own edge - most visibly a
     // heavily blurred shape larger than the viewBox - spills into the page.
     if std::env::var("VIEWPORT_CLIP").is_ok() {
-        canvas.scissor(0.0, 0.0, 200.0 / fit * fit, 200.0 / fit * fit);
+        canvas.scissor(0.0, 0.0, box_size(), box_size());
     }
     canvas.scale(fit, fit);
     let mut masks = MaskMap::new();
     precapture_masks(
         &mut canvas,
         tree.root().children(),
-        W as usize,
-        H as usize,
+        frame_w() as usize,
+        frame_h() as usize,
         scale * fit,
         &mut masks,
     );
@@ -737,12 +771,12 @@ fn main() {
     let commands = canvas.flush_to_output(&target);
     queue.submit(commands);
 
-    let unpadded = W * 4;
+    let unpadded = frame_w() * 4;
     let align = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
     let padded = unpadded.div_ceil(align) * align;
     let readback = device.create_buffer(&wgpu::BufferDescriptor {
         label: None,
-        size: (padded * H) as u64,
+        size: (padded * frame_h()) as u64,
         usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
         mapped_at_creation: false,
     });
@@ -759,12 +793,12 @@ fn main() {
             layout: wgpu::TexelCopyBufferLayout {
                 offset: 0,
                 bytes_per_row: Some(padded),
-                rows_per_image: Some(H),
+                rows_per_image: Some(frame_h()),
             },
         },
         wgpu::Extent3d {
-            width: W,
-            height: H,
+            width: frame_w(),
+            height: frame_h(),
             depth_or_array_layers: 1,
         },
     );
@@ -774,13 +808,16 @@ fn main() {
     slice.map_async(wgpu::MapMode::Read, |_| {});
     device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
     let mapped = slice.get_mapped_range().unwrap();
-    let mut ppm = format!("P6\n{W} {H}\n255\n").into_bytes();
-    for row in 0..H as usize {
+    let mut ppm = format!("P6\n{} {}\n255\n", frame_w(), frame_h()).into_bytes();
+    for row in 0..frame_h() as usize {
         let src = row * padded as usize;
-        for px in 0..W as usize {
+        for px in 0..frame_w() as usize {
             let i = src + px * 4;
             ppm.extend_from_slice(&mapped[i..i + 3]);
         }
     }
     std::fs::write(out, ppm).unwrap();
+    if std::env::var("LAYER_STATS").is_ok() {
+        eprintln!("layers begun: {}", LAYERS.load(std::sync::atomic::Ordering::Relaxed));
+    }
 }
