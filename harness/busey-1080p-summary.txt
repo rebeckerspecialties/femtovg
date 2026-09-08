@@ -1,0 +1,69 @@
+file                                   layers blur  req MB bbox MB pool pk |       default |        lifted |  vs ff lifted |   env
+qwen3-8-flash                             119   53    1306*    142    24.0 | 68.99%/62.65% |  1.12%/ 0.36% |  1.17%/ 0.39% | 0.04%
+claude-opus-5                              92   45    1069*    106    19.6 | 27.40%/25.09% |  0.15%/ 0.00% |  0.16%/ 0.00% | 0.04%
+gpt-5-2-pro                                53   16     470*     58    37.9 | 13.99%/10.92% | 10.49%/ 6.80% | 10.16%/ 6.42% | 0.14%
+claude-fable-5-1                          178   54    1585*    109    23.6 | 13.84%/ 9.96% |  3.36%/ 0.97% |  3.48%/ 0.99% | 0.05%
+qwen3-8-2-4t-a95b                         200  108    2428*     83    24.0 | 16.03%/ 8.70% |  0.27%/ 0.01% |  0.18%/ 0.00% | 0.17%
+qwen3-8-max                                94   39     981*     47    22.6 | 11.41%/ 7.16% |  0.08%/ 0.00% |  0.06%/ 0.00% | 0.03%
+fugu-ultra                                124    8     663*     23    22.6 | 11.47%/ 7.16% |  0.37%/ 0.00% |  0.22%/ 0.00% | 0.21%
+gemini-3-1-pro-preview                     98   92    1741*     62    22.6 | 11.87%/ 6.08% |  2.16%/ 0.53% |  1.99%/ 0.52% | 0.59%
+gemini-3-1-pro-preview-custom-tools        75   54    1105*     56    36.7 | 11.90%/ 5.64% |  5.70%/ 2.71% |  5.35%/ 2.68% | 0.58%
+gpt-5-6-sol-pro                            41    9     318*     45    39.1 |  7.79%/ 5.48% |  4.45%/ 2.58% |  4.50%/ 2.64% | 0.30%
+kimi-k3                                    50    8     340*     42    23.9 |  7.96%/ 5.22% |  0.42%/ 0.09% |  0.24%/ 0.10% | 0.23%
+kimi-k2-6                                  55   29     661*     34    19.6 |  6.14%/ 4.69% |  0.14%/ 0.00% |  0.15%/ 0.00% | 0.05%
+gemini-3-7-flash                           57    9     384*     17    24.0 |  6.39%/ 4.64% |  2.03%/ 0.73% |  2.14%/ 0.87% | 0.12%
+gemini-3-8-flash                          118   42    1108*     38    23.0 |  7.48%/ 4.33% |  0.78%/ 0.00% |  0.39%/ 0.00% | 0.71%
+glm-5-3                                   129   58    1409*     77    19.6 |  5.51%/ 3.44% |  0.04%/ 0.00% |  0.10%/ 0.02% | 0.06%
+gpt-5-6-terra-pro                          31    9     271*     35    19.6 |  5.04%/ 3.20% |  5.04%/ 3.20% |  5.05%/ 3.19% | 0.03%
+gpt-6-astra                               162   31    1173*    110    19.6 |  7.62%/ 3.14% |  0.18%/ 0.00% |  0.19%/ 0.00% | 0.02%
+glm-5-3-flash                              79   22     678*     78    23.6 |  4.42%/ 2.52% |  0.20%/ 0.00% |  0.12%/ 0.00% | 0.13%
+grok-4-5                                   76   20     618*     49    22.6 |  4.00%/ 2.17% |  0.20%/ 0.00% |  0.25%/ 0.00% | 0.07%
+qwen3-8-27b                               100   39    1026*     78    19.6 |  4.26%/ 2.10% |  0.04%/ 0.00% |  0.06%/ 0.00% | 0.02%
+glm-5v-turbo                               57   25     624*     56    23.6 |  5.00%/ 2.00% |  2.95%/ 0.83% |  2.92%/ 0.81% | 0.14%
+nex-n2-pro                                102    3     498*     29    27.2 |  3.88%/ 1.23% |  0.51%/ 0.05% |  0.36%/ 0.03% | 0.14%
+muse-spark-1-3-contributor                 59   20     550*     45    19.6 |  1.98%/ 1.02% |  0.33%/ 0.02% |  0.38%/ 0.02% | 0.09%
+ox-alpha                                   94   27     815*     28    19.6 |  2.24%/ 0.62% |  0.23%/ 0.00% |  0.16%/ 0.00% | 0.11%
+muse-spark-1-3                             49   24     565*     22    19.6 |  1.11%/ 0.52% |  0.15%/ 0.00% |  0.16%/ 0.00% | 0.04%
+gpt-5-6-sol                                48    4     272*     14    19.6 |  0.21%/ 0.02% |  0.11%/ 0.00% |  0.12%/ 0.00% | 0.02%
+gpt-5-6-luna-pro                           33    7     250      51    19.6 |  0.08%/ 0.00% |  0.08%/ 0.00% |  0.08%/ 0.00% | 0.05%
+
+MEAN over 27 files, % of SVG box: default 9.93% / 7.026% structural; lifted 1.54% / 0.699%; vs Firefox lifted 1.49% / 0.693%; envelope 0.154%
+files requesting more than the 256 MiB budget per frame (viewport-sized layers): 26/27: qwen3-8-flash, claude-opus-5, gpt-5-2-pro, claude-fable-5-1, qwen3-8-2-4t-a95b, qwen3-8-max, fugu-ultra, gemini-3-1-pro-preview, gemini-3-1-pro-preview-custom-tools, gpt-5-6-sol-pro, kimi-k3, kimi-k2-6, gemini-3-7-flash, gemini-3-8-flash, glm-5-3, gpt-5-6-terra-pro, gpt-6-astra, glm-5-3-flash, grok-4-5, qwen3-8-27b, glm-5v-turbo, nex-n2-pro, muse-spark-1-3-contributor, ox-alpha, muse-spark-1-3, gpt-5-6-sol
+files where lifting the budget changes the result (>=0.05 structural or >=0.5 px points): 24
+  qwen3-8-flash                          68.99%/62.65% ->  1.12%/ 0.36%
+  claude-opus-5                          27.40%/25.09% ->  0.15%/ 0.00%
+  gpt-5-2-pro                            13.99%/10.92% -> 10.49%/ 6.80%
+  claude-fable-5-1                       13.84%/ 9.96% ->  3.36%/ 0.97%
+  qwen3-8-2-4t-a95b                      16.03%/ 8.70% ->  0.27%/ 0.01%
+  qwen3-8-max                            11.41%/ 7.16% ->  0.08%/ 0.00%
+  fugu-ultra                             11.47%/ 7.16% ->  0.37%/ 0.00%
+  gemini-3-1-pro-preview                 11.87%/ 6.08% ->  2.16%/ 0.53%
+  gemini-3-1-pro-preview-custom-tools    11.90%/ 5.64% ->  5.70%/ 2.71%
+  gpt-5-6-sol-pro                         7.79%/ 5.48% ->  4.45%/ 2.58%
+  kimi-k3                                 7.96%/ 5.22% ->  0.42%/ 0.09%
+  kimi-k2-6                               6.14%/ 4.69% ->  0.14%/ 0.00%
+  gemini-3-7-flash                        6.39%/ 4.64% ->  2.03%/ 0.73%
+  gemini-3-8-flash                        7.48%/ 4.33% ->  0.78%/ 0.00%
+  glm-5-3                                 5.51%/ 3.44% ->  0.04%/ 0.00%
+  gpt-6-astra                             7.62%/ 3.14% ->  0.18%/ 0.00%
+  glm-5-3-flash                           4.42%/ 2.52% ->  0.20%/ 0.00%
+  grok-4-5                                4.00%/ 2.17% ->  0.20%/ 0.00%
+  qwen3-8-27b                             4.26%/ 2.10% ->  0.04%/ 0.00%
+  glm-5v-turbo                            5.00%/ 2.00% ->  2.95%/ 0.83%
+  nex-n2-pro                              3.88%/ 1.23% ->  0.51%/ 0.05%
+  muse-spark-1-3-contributor              1.98%/ 1.02% ->  0.33%/ 0.02%
+  ox-alpha                                2.24%/ 0.62% ->  0.23%/ 0.00%
+  muse-spark-1-3                          1.11%/ 0.52% ->  0.15%/ 0.00%
+files still above 0.05% structural with the budget lifted: 10
+  gpt-5-2-pro                            10.49%/ 6.80%  layers 53
+  gpt-5-6-terra-pro                       5.04%/ 3.20%  layers 31
+  gemini-3-1-pro-preview-custom-tools     5.70%/ 2.71%  layers 75
+  gpt-5-6-sol-pro                         4.45%/ 2.58%  layers 41
+  claude-fable-5-1                        3.36%/ 0.97%  layers 178
+  glm-5v-turbo                            2.95%/ 0.83%  layers 57
+  gemini-3-7-flash                        2.03%/ 0.73%  layers 57
+  gemini-3-1-pro-preview                  2.16%/ 0.53%  layers 98
+  qwen3-8-flash                           1.12%/ 0.36%  layers 119
+  kimi-k3                                 0.42%/ 0.09%  layers 50
+
+bbox-sized + pool peak (MB) max over corpus: 21.5; viewport-sized + pool peak max: 39.1; bbox traffic max 365 MB/frame

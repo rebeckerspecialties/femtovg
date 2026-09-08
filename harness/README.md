@@ -300,3 +300,21 @@ end_layer composite is recorded, since commands run in order. Evidence
 browser's blur sigma at femtovg's 8 px changes the diff by 0.01 points;
 removing every stroke from both sides removes 2.3 points of ribbons but no
 structure.
+
+**Corpus-wide at 1080p (`busey_1080.py`, `summ_1080.py`, `busey-1080p-metrics.json`,
+`busey-1080p-summary.txt`).** 26 of 27 files request more than the 256 MiB
+transient budget per frame with viewport-sized layers (250 MB to 2.4 GB; 31 to
+200 layers each), and 24 of 27 render differently because of it. Mean over the
+corpus, % of the SVG box: **9.9 % / 7.0 % structural with the default budget,
+1.5 % / 0.7 % with it lifted** (Firefox 1.5 % / 0.7 %; envelope 0.15 %).
+qwen3-8-flash goes from 69 % / 63 % to 1.1 % / 0.4 %, claude-opus-5 from
+27 % / 25 % to 0.15 % / 0.00 %. `poolsim.py` models a frame from `LAYER_LOG=1`:
+no file nests layers deeper than one, so a pool that frees a layer's images at
+`end_layer` peaks at 20-39 MB viewport-sized and 20-22 MB bounding-box-sized
+(the largest single blurred layer, four images), against the gigabytes
+requested today; bounding-box sizing is what cuts the bytes moved per frame
+(3.2 GB to 285 MB on gpt-6-astra), which is the Raspberry Pi Zero's actual
+constraint. Ten files stay above 0.05 % structural with the budget lifted
+(gpt-5-2-pro 6.8 %, gpt-5-6-terra-pro 3.2 %, gemini-3-1-pro-preview-custom-tools
+2.7 %, gpt-5-6-sol-pro 2.6 %, ...) - those are separate 1080p-scale items,
+not yet attributed.

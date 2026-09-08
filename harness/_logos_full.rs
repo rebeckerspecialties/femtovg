@@ -113,6 +113,9 @@ fn capture_mask(
             femtovg::ImageFlags::PREMULTIPLIED | femtovg::ImageFlags::FLIP_Y,
         )
         .ok()?;
+    if std::env::var("LAYER_LOG").is_ok() {
+        eprintln!("MASK {canvas_w}x{canvas_h}");
+    }
     canvas.save();
     canvas.set_render_target(RenderTarget::Image(image));
     canvas.clear_rect(0, 0, canvas_w as u32, canvas_h as u32, Color::rgbaf(0.0, 0.0, 0.0, 0.0));
@@ -443,6 +446,40 @@ fn dump(children: &[usvg::Node], depth: usize) {
 
 static PATH_COUNTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 static LAYERS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+static DEPTH: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
+/// LAYER_LOG=1: one line per layer with what a pool simulator needs.
+fn log_layer(canvas: &Canvas<WGPURenderer>, group: &usvg::Group, scale: f32, kind: &str) {
+    if std::env::var("LAYER_LOG").is_err() {
+        return;
+    }
+    let bb = group.abs_layer_bounding_box();
+    let t = canvas.transform();
+    let (x0, y0) = t.transform_point(bb.x(), bb.y());
+    let (x1, y1) = t.transform_point(bb.right(), bb.bottom());
+    let (bx, by) = box_at();
+    let b = box_size();
+    let cx0 = x0.min(x1).max(bx);
+    let cy0 = y0.min(y1).max(by);
+    let cx1 = x0.max(x1).min(bx + b);
+    let cy1 = y0.max(y1).min(by + b);
+    let sigma = group
+        .filters()
+        .iter()
+        .flat_map(|f| f.primitives().iter())
+        .filter_map(|p| match p.kind() {
+            usvg::filter::Kind::GaussianBlur(g) => Some(g.std_dev_x().get().max(g.std_dev_y().get()) * scale),
+            _ => None,
+        })
+        .fold(0.0f32, f32::max);
+    let depth = DEPTH.load(std::sync::atomic::Ordering::Relaxed);
+    eprintln!(
+        "LAYER kind={kind} depth={depth} bbox={:.0}x{:.0} sigma={sigma:.2} opacity={:.3}",
+        (cx1 - cx0).max(0.0),
+        (cy1 - cy0).max(0.0),
+        group.opacity().get()
+    );
+}
 
 /// Does this filter *replace* its source graphic rather than augment it?
 ///
@@ -594,9 +631,15 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                             canvas.intersect_scissor(bb.x(), bb.y(), bb.width(), bb.height());
                         }
                         LAYERS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        log_layer(canvas, group, scale, "layer");
+                        DEPTH.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                         canvas.begin_layer(&fx);
                         draw_filtered(canvas, group, plan, scale, masks);
                         canvas.end_layer();
+                        DEPTH.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
+                        if std::env::var("LAYER_LOG").is_ok() {
+                            eprintln!("END depth={}", DEPTH.load(std::sync::atomic::Ordering::Relaxed));
+                        }
                         if bbox_scissor {
                             canvas.restore();
                         }
