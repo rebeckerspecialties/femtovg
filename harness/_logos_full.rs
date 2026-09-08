@@ -447,6 +447,7 @@ fn dump(children: &[usvg::Node], depth: usize) {
 static PATH_COUNTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 static LAYERS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 static DEPTH: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+static TRANSIENT_AT_FLUSH: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 
 /// LAYER_LOG=1: one line per layer with what a pool simulator needs.
 fn log_layer(canvas: &Canvas<WGPURenderer>, group: &usvg::Group, scale: f32, kind: &str) {
@@ -811,6 +812,7 @@ fn main() {
 
     canvas.restore();
 
+    TRANSIENT_AT_FLUSH.store(canvas.transient_image_bytes(), std::sync::atomic::Ordering::Relaxed);
     let commands = canvas.flush_to_output(&target);
     queue.submit(commands);
 
@@ -862,5 +864,6 @@ fn main() {
     std::fs::write(out, ppm).unwrap();
     if std::env::var("LAYER_STATS").is_ok() {
         eprintln!("layers begun: {}", LAYERS.load(std::sync::atomic::Ordering::Relaxed));
+        eprintln!("transient bytes held at flush: {}", TRANSIENT_AT_FLUSH.load(std::sync::atomic::Ordering::Relaxed));
     }
 }

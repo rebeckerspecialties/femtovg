@@ -318,3 +318,17 @@ constraint. Ten files stay above 0.05 % structural with the budget lifted
 (gpt-5-2-pro 6.8 %, gpt-5-6-terra-pro 3.2 %, gemini-3-1-pro-preview-custom-tools
 2.7 %, gpt-5-6-sol-pro 2.6 %, ...) - those are separate 1080p-scale items,
 not yet attributed.
+
+**Pool landed (#322, 2026-09-08).** With the within-frame transient pool
+(reuse after `end_layer`, stores rounded to 64 px) and the default 256 MiB
+budget, every corpus file at 1080p renders exactly as it did with the budget
+lifted - mean 1.5 % / 0.7 % structural of the box, gpt-6-astra 0.18 % /
+0.000 % - and `transient_image_bytes()` at the flush reads 20-94 MB (mean 49,
+gpt-6-astra 29) where the frames requested 0.25-2.4 GB before
+(`busey-1080p-pooled-metrics.json`, `LAYER_STATS=1`). Scissoring each group to
+usvg's layer bounding box on top (`LAYER_BBOX_SCISSOR=1`) is not a win now
+that nothing degrades: it multiplies size classes (mean 57 MB held) and the
+bbox excludes the reach of the group shadow the harness casts, so
+gemini-3-1-pro-preview goes from 2.2 % to 4.8 %
+(`busey-1080p-pooled-bbox-metrics.json`). The harness also reports the bytes
+held at the flush under `LAYER_STATS=1`.
