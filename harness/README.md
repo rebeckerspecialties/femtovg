@@ -332,3 +332,18 @@ bbox excludes the reach of the group shadow the harness casts, so
 gemini-3-1-pro-preview goes from 2.2 % to 4.8 %
 (`busey-1080p-pooled-bbox-metrics.json`). The harness also reports the bytes
 held at the flush under `LAYER_STATS=1`.
+
+**Pi Zero framing (2026-09-09, `pi_budget.py`, `busey-1080-pi-budget.json`).**
+The pooled build after #322's review round (8 px shadow stores, quadrature
+blur reach) holds 20-57 MB at the flush (mean 35) with the default budget.
+`TRANSIENT_BUDGET_MB` walks the budget down: at 48 MiB - the guidance for a
+Pi Zero, whose whole GPU share is 64-128 MB with 8 MB for the 1080p
+framebuffer - the corpus renders the same (mean 1.55 % / 0.699 %, one of
+2,373 layers passing through); 32 MiB costs 1.90 % / 0.914 % (57 layers pass
+through, more lose their filter scratch and composite unfiltered); 16 MiB
+6.78 % / 4.479 % (1,278 layers). `LAYER_STATS=1` now also prints the layers
+`begin_layer` refused (pass-through), which is what the ladder counts. The
+2x pivot zoom of gpt-6-astra (`_logos_full 2.0 ...` against
+`make_ref.py ... 2.0`) matches Chromium at 0.20 % of the frame while holding
+50 MB: stores are bounded by the scissor under the zoom transform, the
+device-pixel-ratio case.

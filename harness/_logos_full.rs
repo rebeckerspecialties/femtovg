@@ -379,7 +379,7 @@ fn draw_filtered(
         return;
     };
     // Turbulence reads nothing from its source; it only sizes the quad.
-    canvas.filter_image_chain(noise, &plan.chain, noise);
+    let _ = canvas.filter_image_chain(noise, &plan.chain, noise);
     if plan.stencil {
         draw_nodes(canvas, group.children(), scale, masks);
         canvas.global_composite_operation(CompositeOperation::SourceIn);
@@ -447,6 +447,7 @@ fn dump(children: &[usvg::Node], depth: usize) {
 static PATH_COUNTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 static LAYERS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 static DEPTH: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+static PASS_THROUGH: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 static TRANSIENT_AT_FLUSH: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 
 /// LAYER_LOG=1: one line per layer with what a pool simulator needs.
@@ -634,7 +635,9 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                         LAYERS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                         log_layer(canvas, group, scale, "layer");
                         DEPTH.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                        canvas.begin_layer(&fx);
+                        if !canvas.begin_layer(&fx) {
+                            PASS_THROUGH.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        }
                         draw_filtered(canvas, group, plan, scale, masks);
                         canvas.end_layer();
                         DEPTH.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
@@ -865,5 +868,6 @@ fn main() {
     if std::env::var("LAYER_STATS").is_ok() {
         eprintln!("layers begun: {}", LAYERS.load(std::sync::atomic::Ordering::Relaxed));
         eprintln!("transient bytes held at flush: {}", TRANSIENT_AT_FLUSH.load(std::sync::atomic::Ordering::Relaxed));
+        eprintln!("layers passed through: {}", PASS_THROUGH.load(std::sync::atomic::Ordering::Relaxed));
     }
 }
