@@ -368,10 +368,37 @@ pub struct Canvas<T: Renderer> {
 
 #[derive(Clone, Debug)]
 struct ClipEntry {
-    path: Path,
     fill_rule: FillRule,
-    transform: Transform2D,
     target: RenderTarget,
+    // Device rect of the target's stencil plane that may hold clip or
+    // winding bits once this entry is applied: the running intersection of
+    // the clip bounds taken on the target. Every arm, resolve and disarm
+    // quad is bounded to it instead of spanning the whole target.
+    armed: Rect,
+    // The clip path's winding fans, flattened and transformed at clip time
+    // (one per contour, device space): a replay re-emits them as they are
+    // instead of cloning the path and expanding it again.
+    contours: Vec<Vec<Vertex>>,
+}
+
+/// Bounds of a clip entry's device-space fans.
+fn verts_bounds(contours: &[Vec<Vertex>]) -> Bounds {
+    let mut bounds = Bounds::default();
+    for vertex in contours.iter().flatten() {
+        bounds.minx = bounds.minx.min(vertex.x);
+        bounds.miny = bounds.miny.min(vertex.y);
+        bounds.maxx = bounds.maxx.max(vertex.x);
+        bounds.maxy = bounds.maxy.max(vertex.y);
+    }
+    bounds
+}
+
+fn rect_intersect(a: Rect, b: Rect) -> Rect {
+    let x0 = a.x.max(b.x);
+    let y0 = a.y.max(b.y);
+    let x1 = (a.x + a.w).min(b.x + b.w);
+    let y1 = (a.y + a.h).min(b.y + b.h);
+    Rect::new(x0, y0, (x1 - x0).max(0.0), (y1 - y0).max(0.0))
 }
 
 /// Effects applied to a layer when [`Canvas::end_layer`] composites it back.
@@ -629,7 +656,8 @@ where
         // plane and draw nothing. Re-arm it from the logical clip stack, which
         // survives the resize like the rest of the state.
         if self.clip_stack.iter().any(|entry| entry.target == RenderTarget::Screen) {
-            self.replay_clip_stack();
+            // The plane is undefined after a resize: disarm all of it first.
+            self.replay_clip_stack(Some(Rect::new(0.0, 0.0, width as f32, height as f32)));
         }
         if let Some(image) = self.layers.last().and_then(|layer| layer.image) {
             // Same size at a frame boundary: the open layer keeps capturing
@@ -722,12 +750,13 @@ where
     ///
     /// Call this at the end of each frame.
     pub fn flush_to_output(&mut self, output: impl Into<T::RenderOutput>) -> T::CommandBuffer {
-        let command_buffer = self.renderer.render(
-            output,
-            &mut self.images,
-            &self.verts,
-            std::mem::take(&mut self.commands),
-        );
+        // The renderer consumes the Vec. Hand it one sized like this frame
+        // rather than an empty one, or the next frame regrows it through a
+        // dozen reallocations and copies (1-2 MB of memcpy on a
+        // thousand-command frame).
+        let sized = Vec::with_capacity(self.commands.len());
+        let commands = std::mem::replace(&mut self.commands, sized);
+        let command_buffer = self.renderer.render(output, &mut self.images, &self.verts, commands);
         self.verts.clear();
         self.gradients
             .release_old_gradients(&mut self.images, &mut self.renderer);
@@ -804,9 +833,10 @@ where
         }
         let target = self.current_render_target;
         let popped_here = self.clip_stack[depth..].iter().any(|entry| entry.target == target);
+        let armed_before = self.clip_armed_rect(target);
         self.clip_stack.truncate(depth);
         if popped_here {
-            self.replay_clip_stack();
+            self.replay_clip_stack(armed_before);
         }
     }
 
@@ -1478,21 +1508,43 @@ where
         // storage-parity exactly once, so the filtered result is stored
         // upright and must be sampled WITHOUT the FLIP_Y flag the raw capture
         // needs.
-        let source = if record.effects.filters.is_empty() {
-            image
+        // A lone Gaussian blur - the common SVG feGaussianBlur group - keeps
+        // the capture's storage parity (its two passes flip twice), so its
+        // result samples upright through FLIP_Y exactly like the capture and
+        // needs no parity pass: one filter pass and two pass switches fewer
+        // per blurred layer, and the result shares the capture's pool class.
+        let lone_blur = match record.effects.filters.as_slice() {
+            [ImageFilter::GaussianBlur { sigma }] if sigma.is_finite() && *sigma > 0.0 => Some(*sigma),
+            _ => None,
+        };
+        // (source image, whether its storage parity is the capture's)
+        let (source, capture_parity) = if record.effects.filters.is_empty() {
+            (image, true)
+        } else if let Some(sigma) = lone_blur {
+            match self.acquire_transient_image(
+                record.width,
+                record.height,
+                ImageFlags::PREMULTIPLIED | ImageFlags::FLIP_Y,
+            ) {
+                Ok(filtered) => {
+                    self.filter_image(filtered, ImageFilter::GaussianBlur { sigma }, image);
+                    (filtered, true)
+                }
+                Err(_) => (image, true),
+            }
         } else {
             match self.acquire_transient_image(record.width, record.height, ImageFlags::PREMULTIPLIED) {
                 Ok(filtered) => match self.filter_image_chain(filtered, &record.effects.filters, image) {
-                    Ok(()) => filtered,
+                    Ok(()) => (filtered, false),
                     // No budget for the chain's scratches: composite the
                     // unfiltered capture rather than a blank result.
                     Err(_) => {
                         self.release_transient_image(filtered);
-                        image
+                        (image, true)
                     }
                 },
                 // Degrade to the unfiltered layer rather than dropping content.
-                Err(_) => image,
+                Err(_) => (image, true),
             }
         };
 
@@ -1509,7 +1561,7 @@ where
         // The mask applies after the filter chain - SVG's order for a group
         // carrying both - and multiplies the layer's alpha in place.
         if let (Some(mask), Some(images)) = (record.effects.mask, record.mask_images) {
-            self.apply_layer_mask(source, &record, mask, images, source != image);
+            self.apply_layer_mask(source, &record, mask, images, !capture_parity);
         }
         let tint = Color::rgbaf(1.0, 1.0, 1.0, alpha);
         let mut layer_paint =
@@ -1572,11 +1624,129 @@ where
         let saved_alpha = self.state().alpha;
         self.state_mut().transform = Transform2D::identity();
         self.state_mut().alpha = 1.0;
-        let mut rect = Path::new();
-        rect.rect(x, y, width, height);
-        self.fill_path_internal(&rect, paint, false, FillRule::NonZero);
+        self.fill_rect_internal(x, y, width, height, paint);
         self.state_mut().transform = saved_transform;
         self.state_mut().alpha = saved_alpha;
+    }
+
+    /// `fill_path_internal` for a rect without antialiasing: emits the two
+    /// triangles the rect path would expand to, in the order `expand_fill`
+    /// fans them, without building a `Path`, flattening it into a
+    /// `PathCache` and expanding that. Every layer composite, shadow blit and
+    /// mask draw ends here, so on a frame of hundreds of layers the path
+    /// route was hundreds of tessellations and thousands of allocations that
+    /// all produced these same six vertices.
+    fn fill_rect_internal(&mut self, x: f32, y: f32, width: f32, height: f32, paint: &PaintFlavor) {
+        let mut paint_flavor = paint.clone();
+        let transform = self.state().transform;
+        let canvas_width = self.width() as f32;
+        let canvas_height = self.height() as f32;
+
+        // The corners in the order Path::rect winds them, transformed.
+        let mut corners = [(x, y), (x, y + height), (x + width, y + height), (x + width, y)]
+            .map(|(px, py)| transform.transform_point(px, py));
+        let mut bounds = Bounds::default();
+        for (px, py) in corners {
+            bounds.minx = bounds.minx.min(px);
+            bounds.miny = bounds.miny.min(py);
+            bounds.maxx = bounds.maxx.max(px);
+            bounds.maxy = bounds.maxy.max(py);
+        }
+
+        // The drop shadow under the rect, built from the real paint exactly
+        // as fill_path_internal does it (render_shadow mutes shadows while
+        // the closure runs, so this does not recurse).
+        if self.shadow_enabled() {
+            if self.shadow_could_be_visible(bounds) {
+                let shadow_flavor = paint_flavor.clone();
+                self.render_shadow(bounds, |canvas| {
+                    canvas.fill_rect_internal(x, y, width, height, &shadow_flavor);
+                });
+            }
+        }
+
+        // Early out if the rect is outside the canvas bounds, as a path fill would.
+        if bounds.maxx < 0.0 || bounds.minx > canvas_width || bounds.maxy < 0.0 || bounds.miny > canvas_height {
+            return;
+        }
+        // A rect of no extent has no fill (its path has fewer than three points).
+        if !(bounds.maxx > bounds.minx && bounds.maxy > bounds.miny) {
+            return;
+        }
+
+        paint_flavor.mul_alpha(self.state().alpha);
+        let scissor = self.state().scissor;
+
+        // The unclipped image copy a plain composite is (see fill_path_internal):
+        // the corners stay an axis-aligned rect under a transform without
+        // rotation or skew.
+        let axis_aligned = transform.0[1] == 0.0 && transform.0[2] == 0.0;
+        if let (true, Some(scissor_rect), true, true) = (
+            axis_aligned,
+            scissor.as_rect(canvas_width, canvas_height),
+            paint_flavor.is_straight_tinted_image(false),
+            !self.clip_active(),
+        ) {
+            let path_rect = Rect::new(
+                bounds.minx,
+                bounds.miny,
+                bounds.maxx - bounds.minx,
+                bounds.maxy - bounds.miny,
+            );
+            if scissor_rect.contains_rect(&path_rect) {
+                self.render_unclipped_image_blit(&path_rect, &transform, &paint_flavor);
+            } else if let Some(intersection) = path_rect.intersection(&scissor_rect) {
+                self.render_unclipped_image_blit(&intersection, &transform, &paint_flavor);
+            }
+            return;
+        }
+
+        // expand_fill normalizes a clockwise contour before fanning it (#308);
+        // a mirrored transform hands the corners over that way.
+        let area: f32 = (0..4)
+            .map(|i| {
+                let (x0, y0) = corners[i];
+                let (x1, y1) = corners[(i + 1) % 4];
+                (x1 - x0) * (y1 + y0)
+            })
+            .sum();
+        if area < 0.0 {
+            corners.reverse();
+        }
+
+        let params = Params::new(
+            &self.images,
+            &transform,
+            &paint_flavor,
+            &GlyphTexture::default(),
+            &scissor,
+            self.fringe_width,
+            self.fringe_width,
+            -1.0,
+        );
+        let mut cmd = Command::new(CommandType::ConvexFill { params });
+        cmd.fill_rule = FillRule::NonZero;
+        cmd.composite_operation = self.state().composite_operation;
+        if let PaintFlavor::Image { id, .. } = paint_flavor {
+            cmd.image = Some(id);
+        } else if let Some(paint::GradientColors::MultiStop { stops }) = paint_flavor.gradient_colors() {
+            cmd.image = self
+                .gradients
+                .lookup_or_add(stops, &mut self.images, &mut self.renderer)
+                .ok();
+        }
+
+        // The fan expand_fill builds: centre at the first corner.
+        let offset = self.verts.len();
+        let [c0, c1, c2, c3] = corners;
+        for (px, py) in [c0, c1, c2, c0, c2, c3] {
+            self.verts.push(Vertex::new(px, py, 0.5, 1.0));
+        }
+        cmd.drawables.push(Drawable {
+            fill_verts: Some((offset, 6)),
+            stroke_verts: None,
+        });
+        self.append_cmd(cmd);
     }
 
     /// Acquires a mask's coverage transients for a layer store of
@@ -1720,17 +1890,38 @@ where
     /// follow-up.
     pub fn clip_path(&mut self, path: &Path, fill_rule: FillRule) {
         let target = self.current_render_target;
-        if !self.clip_active() {
-            // The first clip on this target arms its plane.
-            self.emit_clip_reset(true);
-        }
         let transform = self.state().transform;
-        self.emit_clip_fill(path, fill_rule, &transform);
+        // Flatten, transform and expand once; the fans are what the stencil
+        // pass draws, now and on every replay.
+        let (contours, bounds) = {
+            let mut cache = path.cache(&transform, self.tess_tol, self.dist_tol);
+            // No fringe: the clip edge is a hard stencil edge.
+            cache.expand_fill(0.0, LineJoin::Miter, 2.4);
+            let contours: Vec<Vec<Vertex>> = cache
+                .contours
+                .iter()
+                .filter(|contour| !contour.fill.is_empty())
+                .map(|contour| contour.fill.clone())
+                .collect();
+            (contours, self.clip_rect_of(cache.bounds))
+        };
+        // The quads only need to reach pixels whose plane bits may be set:
+        // the region armed so far, or for the first clip the new bounds.
+        let armed_before = self.clip_armed_rect(target);
+        let quad = armed_before.unwrap_or(bounds);
+        if armed_before.is_none() {
+            // The first clip on this target arms its plane - only where the
+            // clip can be visible; everything outside stays disarmed (zero),
+            // which the clip test reads as clipped.
+            self.emit_clip_reset(true, bounds);
+        }
+        self.emit_clip_fill(&contours, fill_rule, quad);
+        let armed = rect_intersect(quad, bounds);
         self.clip_stack.push(ClipEntry {
-            path: path.clone(),
             fill_rule,
-            transform,
             target,
+            armed,
+            contours,
         });
         self.state_mut().clip_depth = self.clip_stack.len();
     }
@@ -1739,68 +1930,119 @@ where
     /// the stack: disarmed when no clip on it survives, otherwise reset to
     /// visible and re-intersected with the survivors (a few stencil-only
     /// draws, no color work).
-    fn replay_clip_stack(&mut self) {
+    fn replay_clip_stack(&mut self, armed_before: Option<Rect>) {
         let target = self.current_render_target;
-        let entries: Vec<ClipEntry> = self
-            .clip_stack
-            .iter()
-            .filter(|entry| entry.target == target)
-            .cloned()
-            .collect();
-        if entries.is_empty() {
-            self.emit_clip_reset(false);
+        // Take the stack while re-emitting (the emits need &mut self); the
+        // stencil bookkeeping commands never consult it.
+        let stack = std::mem::take(&mut self.clip_stack);
+        let survivors_on_target = stack.iter().filter(|entry| entry.target == target).count();
+        let (w, h) = self.render_target_size();
+        let whole = Rect::new(0.0, 0.0, w, h);
+        if survivors_on_target == 0 {
+            // Disarm: zero the plane where the popped clips armed it.
+            self.emit_clip_reset(false, armed_before.unwrap_or(whole));
+            self.clip_stack = stack;
             return;
         }
-        self.emit_clip_reset(true);
-        for entry in &entries {
-            self.emit_clip_fill(&entry.path, entry.fill_rule, &entry.transform);
+        // Recompute the survivors' running intersection against the current
+        // target size (a resize changes the clamp) and write it back.
+        let mut rects = Vec::with_capacity(survivors_on_target);
+        let mut armed: Option<Rect> = None;
+        for entry in stack.iter().filter(|entry| entry.target == target) {
+            let bounds = self.clip_rect_of(verts_bounds(&entry.contours));
+            let cumulative = armed.map_or(bounds, |rect| rect_intersect(rect, bounds));
+            rects.push(cumulative);
+            armed = Some(cumulative);
+        }
+        let survivors = armed.unwrap_or(whole);
+        // Bits may be set anywhere the popped clips had armed; nesting only
+        // shrinks that region, so it normally sits inside the survivors'
+        // rect and the re-arm below overwrites it. Zero it first otherwise
+        // (a resize, or an undefined plane).
+        if let Some(before) = armed_before {
+            if !survivors.contains_rect(&before) {
+                self.emit_clip_reset(false, before);
+            }
+        }
+        self.emit_clip_reset(true, survivors);
+        for entry in stack.iter().filter(|entry| entry.target == target) {
+            self.emit_clip_fill(&entry.contours, entry.fill_rule, survivors);
+        }
+        self.clip_stack = stack;
+        let mut written = rects.into_iter();
+        for entry in self.clip_stack.iter_mut().filter(|entry| entry.target == target) {
+            if let Some(rect) = written.next() {
+                entry.armed = rect;
+            }
         }
     }
 
-    /// Pushes a triangle strip over the whole current render target and
-    /// returns its vertex range: the stencil quads that arm, disarm and
-    /// resolve the clip plane must reach every pixel of the target, which
-    /// for a layer store is the store, not the canvas.
-    fn push_target_quad(&mut self) -> (usize, usize) {
-        let offset = self.verts.len();
+    /// The rect of `target`'s stencil plane that may hold clip or winding
+    /// bits: the innermost clip's armed rect, `None` when no clip is on it.
+    fn clip_armed_rect(&self, target: RenderTarget) -> Option<Rect> {
+        self.clip_stack
+            .iter()
+            .rev()
+            .find(|entry| entry.target == target)
+            .map(|entry| entry.armed)
+    }
+
+    /// A clip's device-space bounds on the current target, padded a pixel
+    /// and clamped to the target; empty for a degenerate path (which clips
+    /// everything).
+    fn clip_rect_of(&self, bounds: Bounds) -> Rect {
         let (w, h) = self.render_target_size();
-        self.verts.push(Vertex::new(0.0, h, 0.5, 1.0));
-        self.verts.push(Vertex::new(w, h, 0.5, 1.0));
-        self.verts.push(Vertex::new(0.0, 0.0, 0.5, 1.0));
-        self.verts.push(Vertex::new(w, 0.0, 0.5, 1.0));
+        let finite = [bounds.minx, bounds.miny, bounds.maxx, bounds.maxy]
+            .iter()
+            .all(|v| v.is_finite());
+        if !finite || bounds.maxx <= bounds.minx || bounds.maxy <= bounds.miny {
+            return Rect::new(0.0, 0.0, 0.0, 0.0);
+        }
+        let x0 = (bounds.minx - 1.0).floor().clamp(0.0, w);
+        let y0 = (bounds.miny - 1.0).floor().clamp(0.0, h);
+        let x1 = (bounds.maxx + 1.0).ceil().clamp(0.0, w);
+        let y1 = (bounds.maxy + 1.0).ceil().clamp(0.0, h);
+        Rect::new(x0, y0, (x1 - x0).max(0.0), (y1 - y0).max(0.0))
+    }
+
+    /// Pushes a triangle strip over `rect` (device space of the current
+    /// target) and returns its vertex range: the stencil quads that arm,
+    /// disarm and resolve the clip plane reach every pixel whose plane bits
+    /// may be set, which is the armed rect, not the whole target.
+    fn push_rect_quad(&mut self, rect: Rect) -> (usize, usize) {
+        let offset = self.verts.len();
+        let (x0, y0, x1, y1) = (rect.x, rect.y, rect.x + rect.w, rect.y + rect.h);
+        self.verts.push(Vertex::new(x0, y1, 0.5, 1.0));
+        self.verts.push(Vertex::new(x1, y1, 0.5, 1.0));
+        self.verts.push(Vertex::new(x0, y0, 0.5, 1.0));
+        self.verts.push(Vertex::new(x1, y0, 0.5, 1.0));
         (offset, 4)
     }
 
-    fn emit_clip_reset(&mut self, visible: bool) {
+    fn emit_clip_reset(&mut self, visible: bool, rect: Rect) {
         let mut cmd = Command::new(CommandType::ClipReset { visible });
-        cmd.triangles_verts = Some(self.push_target_quad());
+        cmd.triangles_verts = Some(self.push_rect_quad(rect));
         self.append_cmd(cmd);
     }
 
-    fn emit_clip_fill(&mut self, path: &Path, fill_rule: FillRule, transform: &Transform2D) {
-        let mut path_cache = path.cache(transform, self.tess_tol, self.dist_tol);
-        // No fringe: the clip edge is a hard stencil edge.
-        path_cache.expand_fill(0.0, LineJoin::Miter, 2.4);
-
+    fn emit_clip_fill(&mut self, contours: &[Vec<Vertex>], fill_rule: FillRule, quad: Rect) {
         let mut cmd = Command::new(CommandType::ClipFill);
         cmd.fill_rule = fill_rule;
 
         let mut offset = self.verts.len();
-        cmd.drawables.reserve_exact(path_cache.contours.len());
-        for contour in &path_cache.contours {
+        cmd.drawables.reserve_exact(contours.len());
+        for fill in contours {
             let mut drawable = Drawable::default();
-            if !contour.fill.is_empty() {
-                drawable.fill_verts = Some((offset, contour.fill.len()));
-                self.verts.extend_from_slice(&contour.fill);
-                offset += contour.fill.len();
-            }
+            drawable.fill_verts = Some((offset, fill.len()));
+            self.verts.extend_from_slice(fill);
+            offset += fill.len();
             cmd.drawables.push(drawable);
         }
 
         // The resolve quads must reach every pixel whose clip bit may clear -
-        // the WHOLE previously-visible region, not just the new path's
-        // bounds - so they span the target.
-        cmd.triangles_verts = Some(self.push_target_quad());
+        // the whole previously-visible region, not just the new path's
+        // bounds - which is the armed rect the caller passes.
+        cmd.triangles_verts = Some(self.push_rect_quad(quad));
         self.append_cmd(cmd);
     }
 
@@ -2039,10 +2281,11 @@ where
             // Only skip when even the offset+blurred shadow cannot reach the
             // target; an off-screen shape may still cast an on-screen shadow.
             if self.shadow_could_be_visible(bounds) {
-                let path = path.clone();
+                // The cache borrow above has ended; the closure borrows the
+                // path, it does not need its own copy.
                 let shadow_flavor = paint_flavor.clone();
-                self.render_shadow(bounds, move |canvas| {
-                    canvas.fill_path_internal(&path, &shadow_flavor, anti_alias, fill_rule);
+                self.render_shadow(bounds, |canvas| {
+                    canvas.fill_path_internal(path, &shadow_flavor, anti_alias, fill_rule);
                 });
             }
         }
@@ -2249,11 +2492,9 @@ where
             // on-screen for a shape whose own bounds are off-screen, so we must
             // not cull on the shape's bounds alone.
             if self.shadow_could_be_visible(bounds) {
-                let path = path.clone();
-                let stroke = stroke.clone();
                 let shadow_flavor = paint_flavor.clone();
-                self.render_shadow(bounds, move |canvas| {
-                    canvas.stroke_path_internal(&path, &shadow_flavor, anti_alias, &stroke);
+                self.render_shadow(bounds, |canvas| {
+                    canvas.stroke_path_internal(path, &shadow_flavor, anti_alias, stroke);
                 });
             }
         }
@@ -3413,8 +3654,10 @@ where
     ///
     /// Call this at the end of each frame.
     pub fn flush(&mut self) {
+        let sized = Vec::with_capacity(self.commands.len());
+        let commands = std::mem::replace(&mut self.commands, sized);
         self.renderer
-            .render_surfaceless(&mut self.images, &self.verts, std::mem::take(&mut self.commands));
+            .render_surfaceless(&mut self.images, &self.verts, commands);
         self.verts.clear();
         self.gradients
             .release_old_gradients(&mut self.images, &mut self.renderer);
@@ -5405,11 +5648,12 @@ fn layer_bounds_follow_the_scissor() {
     canvas.restore();
 
     // Two plain layers cost one transient each (their sizes differ, so no
-    // reuse); the blurred layer costs its capture, the filtered target, and
-    // the chain's single ping-pong scratch. All five are free again once
-    // their layers have ended, and the flush deletes them.
-    assert_eq!(canvas.transients.images.len(), 5);
-    assert_eq!(canvas.transients.free.len(), 5);
+    // reuse); the blurred layer costs its capture and its blurred result (a
+    // lone blur keeps the capture's parity: no chain scratch, no parity
+    // pass). All four are free again once their layers have ended, and the
+    // flush deletes them.
+    assert_eq!(canvas.transients.images.len(), 4);
+    assert_eq!(canvas.transients.free.len(), 4);
     canvas.flush_to_output(());
     assert_eq!(canvas.transients.images.len(), 0);
     assert_eq!(canvas.transients.free.len(), 0);
@@ -5549,26 +5793,27 @@ fn sibling_layers_reuse_backing_stores() {
     canvas.end_layer();
     assert_eq!(canvas.transients.images.len(), 2);
 
-    // Blurred siblings: capture, filtered target and one chain scratch, once.
+    // Blurred siblings: capture and blurred result, once (a lone blur needs
+    // no chain scratch).
     let blur = LayerEffects::new().with_filters(&[ImageFilter::GaussianBlur { sigma: 2.0 }]);
     for _ in 0..4 {
         assert!(canvas.begin_layer(&blur));
         canvas.end_layer();
     }
     let padded = 384 * 256 * 4; // 336 x 216 padded, rounded
-    assert_eq!(canvas.transients.images.len(), 2 + 3);
-    assert_eq!(canvas.transient_image_bytes(), 2 * bytes + 3 * padded);
+    assert_eq!(canvas.transients.images.len(), 2 + 2);
+    assert_eq!(canvas.transient_image_bytes(), 2 * bytes + 2 * padded);
 
     // Everything is free between layers, nothing after the flush.
-    assert_eq!(canvas.transients.free.len(), 5);
+    assert_eq!(canvas.transients.free.len(), 4);
     canvas.flush_to_output(());
     assert_eq!(canvas.transients.images.len(), 0);
     assert_eq!(canvas.transient_image_bytes(), 0);
 }
 
-/// A budget that fits exactly one blurred layer's images (capture, filtered
-/// target, scratch) is enough for any number of sibling blurred layers: none
-/// degrades to pass-through. Before the pool, the fourth would have.
+/// A budget that fits exactly one blurred layer's images (capture and blurred
+/// result) is enough for any number of sibling blurred layers: none degrades
+/// to pass-through. Before the pool, the third would have.
 #[test]
 fn a_budget_for_one_layer_fits_a_frame_of_them() {
     use crate::ImageFilter;
@@ -5576,7 +5821,7 @@ fn a_budget_for_one_layer_fits_a_frame_of_them() {
     let mut canvas = Canvas::new(renderer).unwrap();
     canvas.set_size(256, 256, 1.0);
     let padded = 320 * 320 * 4; // 272 x 272 padded, rounded
-    canvas.set_transient_image_budget(3 * padded);
+    canvas.set_transient_image_budget(2 * padded);
     let blur = LayerEffects::new().with_filters(&[ImageFilter::GaussianBlur { sigma: 2.0 }]);
     for i in 0..200 {
         assert!(canvas.begin_layer(&blur));
@@ -5586,13 +5831,14 @@ fn a_budget_for_one_layer_fits_a_frame_of_them() {
         );
         canvas.end_layer();
     }
-    assert_eq!(canvas.transients.images.len(), 3);
-    assert_eq!(canvas.transient_image_bytes(), 3 * padded);
+    assert_eq!(canvas.transients.images.len(), 2);
+    assert_eq!(canvas.transient_image_bytes(), 2 * padded);
 }
 
-/// A budget that fits a blurred layer's capture and filtered target but not
-/// the chain's scratch composites the unfiltered capture, not a blank image:
-/// the chain reports the exhausted budget and the layer degrades to it.
+/// A budget that fits a filtered layer's capture and filtered target but not
+/// the chain's scratch (a blur followed by a color matrix needs one)
+/// composites the unfiltered capture, not a blank image: the chain reports
+/// the exhausted budget and the layer degrades to it.
 #[test]
 fn a_chain_without_scratch_budget_degrades_to_the_capture() {
     use crate::ImageFilter;
@@ -5601,7 +5847,8 @@ fn a_chain_without_scratch_budget_degrades_to_the_capture() {
     canvas.set_size(128, 128, 1.0);
     let padded = 192 * 192 * 4; // 144 x 144 padded, rounded
     canvas.set_transient_image_budget(2 * padded);
-    assert!(canvas.begin_layer(&LayerEffects::new().with_filters(&[ImageFilter::GaussianBlur { sigma: 2.0 }])));
+    let chain = [ImageFilter::GaussianBlur { sigma: 2.0 }, ImageFilter::identity()];
+    assert!(canvas.begin_layer(&LayerEffects::new().with_filters(&chain)));
     let capture = canvas.layers.last().unwrap().image.unwrap();
     canvas.end_layer();
     // The composite command samples the capture (FLIP_Y), not the filtered
