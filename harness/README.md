@@ -347,3 +347,13 @@ through, more lose their filter scratch and composite unfiltered); 16 MiB
 `make_ref.py ... 2.0`) matches Chromium at 0.20 % of the frame while holding
 50 MB: stores are bounded by the scissor under the zoom transform, the
 device-pixel-ratio case.
+
+**Rebase validation drivers (2026-09-12).** `mkrefs.py` renders the Chromium
+131 references for BuseyBench at 460x260, the Google Workspace icon ladder
+and the noodles file (`--force-device-scale-factor=1`, or a Retina host
+screenshots at 2x); `validate.py` and `validate_clip.py` run a harness binary
+(`BIN`) over those plus the clip scene and print the compare.py numbers. Run
+both against the previous build and the new one and diff the `.ppm` outputs:
+a refactor that changes no pixels is bit-identical (the #323 mask rewrite was
+on 36 of 40 frames, within 1/255 on the gradient-mask file; the #324 per-target
+clip rewrite on 32 of 32).
