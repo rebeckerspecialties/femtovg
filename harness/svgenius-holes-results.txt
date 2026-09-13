@@ -1,0 +1,24 @@
+PR #336 residual on SVGenius chair/phone - measurements (625x625, threshold 32/255, corpus PNG composited over white)
+Builds: master = upstream/master b3dd9a7 (wt-m336); #336 = origin/fill-winding 621583c (wt-fw, branch fw-eval, harness stubbed for clip/mask/turbulence);
+        full stack = /private/tmp/wt-all3 debug binary; fix = wt-fw branch hole-fringe 137e999 (#336 + hole-aware fringe orientation).
+
+px>32 vs corpus PNG (CairoSVG 2.7.1):        master    #336   full-stack   fix  | Chromium131-vs-corpus
+  chair   page_60_..._icon_1                 17587    6517     6517        164  |   113
+  phone   page_8_..._icon_10                 17564    6973     6973        260  |   904
+  notepad page_245_..._icon_6                15975    1433     1433         95  |   614
+  trees   page_34_..._icon_11                12119      53       53         53  |   299
+px>32 vs Chromium 131:                        17568    6594     6594        263  (chair);  17316 7033 7033 414 (phone)
+#336 vs full stack: 0 differing pixels on all four files.
+
+Edge attribution of #336-vs-Chromium diff pixels (attribute.py): chair 96.1% within 1 px of a hole-contour edge (all femtovg darker), 3.6% solid-edge (28 darker/212 lighter = AA);
+phone 94.4% hole edges; notepad 85.7%; trees (no holes) 0%. On master the hole-edge count is the same (5398 vs 5396) and the solid edges add 11089.
+Scanline: chair rear-right leg ring, row 500: ink master 31.36, #336 29.12, fix 27.38, Chromium 27.40, Cairo 27.38 (each hole edge +1.0 px in #336, +1 px on every edge in master).
+Synthetic rings (synth/): every ring construct (outer CW/hole CCW, outer CCW/hole CW, even-odd, half-pixel edges, nested island) is +1.0 px on each hole edge under #336 and exact with the fix; whole-frame px>32 vs Chromium 1460/944 -> 130/0 (the 130 are a shared-edge even-odd degeneracy present in #336 too).
+
+Corpus-wide (100 files, sweep/*.json): px>32 vs corpus PNG mean  master 1.329%  #336 0.638%  fix 0.032%   (PR body: 1.33% -> 0.64%); MAE 1.27 -> 0.64 -> 0.10
+  files above 0.5%: 69 -> 46 -> 0; fix worse than #336 on 0 files.
+  vs Chromium over the 93 files where Chromium and CairoSVG agree within 2%: mean 1.378% -> 0.726% -> 0.108%, median 1.140 -> 0.550 -> 0.066%.
+  (7 files with non-square viewBox are mis-framed by make_ref.py xMinYMin vs the corpus' xMidYMid: Chromium-vs-corpus 2-40%, femtovg agrees with the corpus there.)
+Hole census: 75/100 files have hole contours (218 wound CW, 206 CCW). Files without holes: master 4499 -> #336 85 -> fix 85 px mean. Files with holes: 5420 -> 3294 -> 138.
+  #336 is worse than master on 25 files (their holes: 173 CW / 7 CCW) and better on 50 (45 CW / 199 CCW): the hole edge is right only when its authored winding happens to match the fringe direction.
+Tests on the fix: cargo test --release --features wgpu: 253 passed, 0 failed (fill_winding_wgpu.rs 5/5).

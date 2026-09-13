@@ -1,0 +1,95 @@
+diff --git a/src/lib.rs b/src/lib.rs
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -5955,11 +6068,12 @@ fn layer_bounds_follow_the_scissor() {
+     canvas.restore();
+ 
+     // Two plain layers cost one transient each (their sizes differ, so no
+-    // reuse); the blurred layer costs its capture, the filtered target, and
+-    // the chain's single ping-pong scratch. All five are free again once
+-    // their layers have ended, and the flush deletes them.
+-    assert_eq!(canvas.transients.images.len(), 5);
+-    assert_eq!(canvas.transients.free.len(), 5);
++    // reuse); the blurred layer costs its capture and its blurred result (a
++    // lone blur keeps the capture's parity: no chain scratch, no parity
++    // pass). All four are free again once their layers have ended, and the
++    // flush deletes them.
++    assert_eq!(canvas.transients.images.len(), 4);
++    assert_eq!(canvas.transients.free.len(), 4);
+     canvas.flush_to_output(());
+     assert_eq!(canvas.transients.images.len(), 0);
+     assert_eq!(canvas.transients.free.len(), 0);
+@@ -6154,26 +6268,27 @@ fn sibling_layers_reuse_backing_stores() {
+     canvas.end_layer();
+     assert_eq!(canvas.transients.images.len(), 2);
+ 
+-    // Blurred siblings: capture, filtered target and one chain scratch, once.
++    // Blurred siblings: capture and blurred result, once (a lone blur needs
++    // no chain scratch).
+     let blur = LayerEffects::new().with_filters(&[ImageFilter::GaussianBlur { sigma: 2.0 }]);
+     for _ in 0..4 {
+         assert!(canvas.begin_layer(&blur));
+         canvas.end_layer();
+     }
+     let padded = 384 * 256 * 4; // 336 x 216 padded, rounded
+-    assert_eq!(canvas.transients.images.len(), 2 + 3);
+-    assert_eq!(canvas.transient_image_bytes(), 2 * bytes + 3 * padded);
++    assert_eq!(canvas.transients.images.len(), 2 + 2);
++    assert_eq!(canvas.transient_image_bytes(), 2 * bytes + 2 * padded);
+ 
+     // Everything is free between layers, nothing after the flush.
+-    assert_eq!(canvas.transients.free.len(), 5);
++    assert_eq!(canvas.transients.free.len(), 4);
+     canvas.flush_to_output(());
+     assert_eq!(canvas.transients.images.len(), 0);
+     assert_eq!(canvas.transient_image_bytes(), 0);
+ }
+ 
+-/// A budget that fits exactly one blurred layer's images (capture, filtered
+-/// target, scratch) is enough for any number of sibling blurred layers: none
+-/// degrades to pass-through. Before the pool, the fourth would have.
++/// A budget that fits exactly one blurred layer's images (capture and blurred
++/// result) is enough for any number of sibling blurred layers: none degrades
++/// to pass-through. Before the pool, the third would have.
+ #[test]
+ fn a_budget_for_one_layer_fits_a_frame_of_them() {
+     use crate::ImageFilter;
+@@ -6181,7 +6296,7 @@ fn a_budget_for_one_layer_fits_a_frame_of_them() {
+     let mut canvas = Canvas::new(renderer).unwrap();
+     canvas.set_size(256, 256, 1.0);
+     let padded = 320 * 320 * 4; // 272 x 272 padded, rounded
+-    canvas.set_transient_image_budget(3 * padded);
++    canvas.set_transient_image_budget(2 * padded);
+     let blur = LayerEffects::new().with_filters(&[ImageFilter::GaussianBlur { sigma: 2.0 }]);
+     for i in 0..200 {
+         assert!(canvas.begin_layer(&blur));
+@@ -6191,13 +6306,14 @@ fn a_budget_for_one_layer_fits_a_frame_of_them() {
+         );
+         canvas.end_layer();
+     }
+-    assert_eq!(canvas.transients.images.len(), 3);
+-    assert_eq!(canvas.transient_image_bytes(), 3 * padded);
++    assert_eq!(canvas.transients.images.len(), 2);
++    assert_eq!(canvas.transient_image_bytes(), 2 * padded);
+ }
+ 
+-/// A budget that fits a blurred layer's capture and filtered target but not
+-/// the chain's scratch composites the unfiltered capture, not a blank image:
+-/// the chain reports the exhausted budget and the layer degrades to it.
++/// A budget that fits a filtered layer's capture and filtered target but not
++/// the chain's scratch (a blur followed by a color matrix needs one)
++/// composites the unfiltered capture, not a blank image: the chain reports
++/// the exhausted budget and the layer degrades to it.
+ #[test]
+ fn a_chain_without_scratch_budget_degrades_to_the_capture() {
+     use crate::ImageFilter;
+@@ -6206,7 +6322,8 @@ fn a_chain_without_scratch_budget_degrades_to_the_capture() {
+     canvas.set_size(128, 128, 1.0);
+     let padded = 192 * 192 * 4; // 144 x 144 padded, rounded
+     canvas.set_transient_image_budget(2 * padded);
+-    assert!(canvas.begin_layer(&LayerEffects::new().with_filters(&[ImageFilter::GaussianBlur { sigma: 2.0 }])));
++    let chain = [ImageFilter::GaussianBlur { sigma: 2.0 }, ImageFilter::identity()];
++    assert!(canvas.begin_layer(&LayerEffects::new().with_filters(&chain)));
+     let capture = canvas.layers.last().unwrap().image.unwrap();
+     canvas.end_layer();
+     // The composite command samples the capture (FLIP_Y), not the filtered

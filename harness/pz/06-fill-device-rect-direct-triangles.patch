@@ -1,0 +1,133 @@
+diff --git a/src/lib.rs b/src/lib.rs
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -1824,13 +1824,126 @@ where
+         let saved_alpha = self.state().alpha;
+         self.state_mut().transform = Transform2D::identity();
+         self.state_mut().alpha = 1.0;
+-        let mut rect = Path::new();
+-        rect.rect(x, y, width, height);
+-        self.fill_path_internal(&rect, paint, false, FillRule::NonZero);
++        self.fill_rect_internal(x, y, width, height, paint);
+         self.state_mut().transform = saved_transform;
+         self.state_mut().alpha = saved_alpha;
+     }
+ 
++    /// `fill_path_internal` for a rect without antialiasing: emits the two
++    /// triangles the rect path would expand to, in the order `expand_fill`
++    /// fans them, without building a `Path`, flattening it into a
++    /// `PathCache` and expanding that. Every layer composite, shadow blit and
++    /// mask draw ends here, so on a frame of hundreds of layers the path
++    /// route was hundreds of tessellations and thousands of allocations that
++    /// all produced these same six vertices.
++    fn fill_rect_internal(&mut self, x: f32, y: f32, width: f32, height: f32, paint: &PaintFlavor) {
++        let mut paint_flavor = paint.clone();
++        let transform = self.state().transform;
++        let canvas_width = self.width() as f32;
++        let canvas_height = self.height() as f32;
++
++        // The corners in the order Path::rect winds them, transformed.
++        let mut corners = [(x, y), (x, y + height), (x + width, y + height), (x + width, y)]
++            .map(|(px, py)| transform.transform_point(px, py));
++        let mut bounds = Bounds::default();
++        for (px, py) in corners {
++            bounds.minx = bounds.minx.min(px);
++            bounds.miny = bounds.miny.min(py);
++            bounds.maxx = bounds.maxx.max(px);
++            bounds.maxy = bounds.maxy.max(py);
++        }
++
++        // The drop shadow under the rect, built from the real paint exactly
++        // as fill_path_internal does it (render_shadow mutes shadows while
++        // the closure runs, so this does not recurse).
++        if self.shadow_enabled() {
++            if self.shadow_could_be_visible(bounds) {
++                let shadow_flavor = paint_flavor.clone();
++                self.render_shadow(bounds, |canvas| {
++                    canvas.fill_rect_internal(x, y, width, height, &shadow_flavor);
++                });
++            }
++        }
++
++        // Early out if the rect is outside the canvas bounds, as a path fill would.
++        if bounds.maxx < 0.0 || bounds.minx > canvas_width || bounds.maxy < 0.0 || bounds.miny > canvas_height {
++            return;
++        }
++        // A rect of no extent has no fill (its path has fewer than three points).
++        if !(bounds.maxx > bounds.minx && bounds.maxy > bounds.miny) {
++            return;
++        }
++
++        paint_flavor.mul_alpha(self.state().alpha);
++        let scissor = self.state().scissor;
++
++        // The unclipped image copy a plain composite is (see fill_path_internal):
++        // the corners stay an axis-aligned rect under a transform without
++        // rotation or skew.
++        let axis_aligned = transform.0[1] == 0.0 && transform.0[2] == 0.0;
++        if let (true, Some(scissor_rect), true, true) = (
++            axis_aligned,
++            scissor.as_rect(canvas_width, canvas_height),
++            paint_flavor.is_straight_tinted_image(false),
++            !self.clip_active(),
++        ) {
++            let path_rect = Rect::new(bounds.minx, bounds.miny, bounds.maxx - bounds.minx, bounds.maxy - bounds.miny);
++            if scissor_rect.contains_rect(&path_rect) {
++                self.render_unclipped_image_blit(&path_rect, &transform, &paint_flavor);
++            } else if let Some(intersection) = path_rect.intersection(&scissor_rect) {
++                self.render_unclipped_image_blit(&intersection, &transform, &paint_flavor);
++            }
++            return;
++        }
++
++        // expand_fill normalizes a clockwise contour before fanning it (#308);
++        // a mirrored transform hands the corners over that way.
++        let area: f32 = (0..4)
++            .map(|i| {
++                let (x0, y0) = corners[i];
++                let (x1, y1) = corners[(i + 1) % 4];
++                (x1 - x0) * (y1 + y0)
++            })
++            .sum();
++        if area < 0.0 {
++            corners.reverse();
++        }
++
++        let params = Params::new(
++            &self.images,
++            &transform,
++            &paint_flavor,
++            &GlyphTexture::default(),
++            &scissor,
++            self.fringe_width,
++            self.fringe_width,
++            -1.0,
++        );
++        let mut cmd = Command::new(CommandType::ConvexFill { params });
++        cmd.fill_rule = FillRule::NonZero;
++        cmd.composite_operation = self.state().composite_operation;
++        if let PaintFlavor::Image { id, .. } = paint_flavor {
++            cmd.image = Some(id);
++        } else if let Some(paint::GradientColors::MultiStop { stops }) = paint_flavor.gradient_colors() {
++            cmd.image = self
++                .gradients
++                .lookup_or_add(stops, &mut self.images, &mut self.renderer)
++                .ok();
++        }
++
++        // The fan expand_fill builds: centre at the first corner.
++        let offset = self.verts.len();
++        let [c0, c1, c2, c3] = corners;
++        for (px, py) in [c0, c1, c2, c0, c2, c3] {
++            self.verts.push(Vertex::new(px, py, 0.5, 1.0));
++        }
++        cmd.drawables.push(Drawable {
++            fill_verts: Some((offset, 6)),
++            stroke_verts: None,
++        });
++        self.append_cmd(cmd);
++    }
++
+     /// Acquires a mask's coverage transients for a layer store of
+     /// `width` x `height`: the mask normalized into layer space, sampled
+     /// upright through FLIP_Y like a capture, and for luminance masks the

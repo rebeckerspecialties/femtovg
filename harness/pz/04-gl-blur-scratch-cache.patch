@@ -1,0 +1,86 @@
+diff --git a/src/renderer/opengl.rs b/src/renderer/opengl.rs
+index d3d2157..c138a5d 100644
+--- a/src/renderer/opengl.rs
++++ b/src/renderer/opengl.rs
+@@ -32,6 +32,9 @@ use framebuffer::Framebuffer;
+ mod uniform_array;
+ use uniform_array::UniformArray;
+ 
++/// Blur scratch textures kept across frames (distinct sizes).
++const BLUR_SCRATCH_CAPACITY: usize = 4;
++
+ /// Represents an OpenGL renderer.
+ #[allow(clippy::struct_excessive_bools)]
+ #[derive(Debug)]
+@@ -50,6 +53,9 @@ pub struct OpenGl {
+     vert_arr: Option<<glow::Context as glow::HasContext>::VertexArray>,
+     vert_buff: Option<<glow::Context as glow::HasContext>::Buffer>,
+     framebuffers: FnvHashMap<ImageId, Result<Framebuffer, ErrorKind>>,
++    // Scratch textures for the Gaussian blur's horizontal pass, kept across
++    // frames by size and reused, most recently used last.
++    blur_scratches: Vec<ImageId>,
+     context: Rc<glow::Context>,
+     screen_target: Option<Framebuffer>,
+     current_render_target: RenderTarget,
+@@ -251,6 +257,7 @@ impl OpenGl {
+             vert_arr: None,
+             vert_buff: None,
+             framebuffers: HashMap::default(),
++            blur_scratches: Vec::new(),
+             context,
+             screen_target: None,
+             current_render_target: RenderTarget::Screen,
+@@ -849,6 +856,35 @@ impl OpenGl {
+         self.main_program().set_view(self.view);
+     }
+ 
++    /// A scratch texture for a blur's horizontal pass, matching `info`'s
++    /// size, format and flags. Allocating and freeing one per blur (the
++    /// previous behaviour) costs a texture allocation, an FBO with its
++    /// stencil renderbuffer and a completeness check per blurred layer per
++    /// frame - on a Raspberry Pi a CMA allocation and a driver round trip
++    /// each. The few most recently used sizes are kept instead.
++    fn blur_scratch(&mut self, images: &mut ImageStore<GlTexture>, info: ImageInfo) -> ImageId {
++        let reusable = self.blur_scratches.iter().position(|&id| {
++            images.info(id).is_some_and(|scratch| {
++                scratch.width() == info.width()
++                    && scratch.height() == info.height()
++                    && scratch.format() == info.format()
++                    && scratch.flags() == info.flags()
++            })
++        });
++        if let Some(at) = reusable {
++            let id = self.blur_scratches.remove(at);
++            self.blur_scratches.push(id);
++            return id;
++        }
++        let id = images.alloc(self, info).expect("blur scratch texture");
++        self.blur_scratches.push(id);
++        if self.blur_scratches.len() > BLUR_SCRATCH_CAPACITY {
++            let evicted = self.blur_scratches.remove(0);
++            images.remove(self, evicted);
++        }
++        id
++    }
++
+     fn render_gaussian_blur(
+         &mut self,
+         images: &mut ImageStore<GlTexture>,
+@@ -889,7 +925,7 @@ impl OpenGl {
+         blur_params.image_blur_filter_direction = [1.0, 0.0];
+         blur_params.image_blur_filter_sigma = sigma;
+ 
+-        let horizontal_blur_buffer = images.alloc(self, source_image_info).unwrap();
++        let horizontal_blur_buffer = self.blur_scratch(images, source_image_info);
+         self.set_target(images, RenderTarget::Image(horizontal_blur_buffer));
+         self.main_program().set_view(self.view);
+ 
+@@ -920,7 +956,7 @@ impl OpenGl {
+ 
+         self.triangles(images, &cmd, &blur_params);
+ 
+-        images.remove(self, horizontal_blur_buffer);
++        // The scratch stays allocated for the next blur of this size.
+ 
+         // restore previous render target and view
+         self.set_target(images, original_render_target);
