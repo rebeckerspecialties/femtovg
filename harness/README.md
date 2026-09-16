@@ -375,3 +375,21 @@ both against the previous build and the new one and diff the `.ppm` outputs:
 a refactor that changes no pixels is bit-identical (the #323 mask rewrite was
 on 36 of 40 frames, within 1/255 on the gradient-mask file; the #324 per-target
 clip rewrite on 32 of 32).
+
+**Zoom triple sweep (2026-09-16).** `validate.py` now runs the corpus at
+1x, 2x and 4x (`--zooms`, default `1,2,4`; the pivot framing keeps the SVG
+centre at (230,130) at every zoom, so 2x and 4x are crops of the same
+artwork, the device-pixel-ratio case) and prints one table with a column
+per zoom plus the per-zoom mean and the files above 0.05 % structural.
+References are `chr_<name>_<zoom>.png` under `--refs`; `--make-refs`
+renders missing ones with `make_ref.py` and chrome-headless-shell.
+`--single-zoom Z` keeps the old behaviour (one zoom, the one-line summary,
+`chr_<name>.png` accepted, `--gws` for the icon ladder); `--files a,b,c`
+restricts the sweep; `--json` dumps the numbers. Three-file proof against
+the pre-review #323 build (Chromium 131, 460x260, px>20 / structural):
+
+    file                 zoom 1.0          zoom 2.0          zoom 4.0
+    gpt-6-astra          0.15 % / 0.000    0.21 % / 0.000    0.37 % / 0.000
+    kimi-k3              0.63 % / 0.000    1.45 % / 0.000    1.12 % / 0.005
+    qwen3-8-2-4t-a95b    0.62 % / 0.000    1.00 % / 0.000    0.92 % / 0.000
+    mean (3 files)       0.47 % / 0.000    0.89 % / 0.000    0.80 % / 0.002
