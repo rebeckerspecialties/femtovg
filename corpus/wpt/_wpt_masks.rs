@@ -1,0 +1,1135 @@
+//! Offscreen single-SVG-logo renderer for conformance cross-checks: maps usvg
+//! paths and gradients onto femtovg paints and renders one logo centered
+//! under a pivot zoom. Usage: `_logos <scale> <out.ppm> <logo.svg> [dark]`.
+//!
+//! Build modes. With no cfg flags the harness compiles against a tree that
+//! has only the #322/#323 APIs (layers, effects, masks): clip paths are then
+//! drawn unclipped and feTurbulence chains are left to the
+//! SKIP_UNSUPPORTED_FILTERS rule, and both are counted under LAYER_STATS.
+//! `--cfg harness_clip` enables `Canvas::clip_path` (#324) and
+//! `--cfg harness_turbulence` enables `ImageFilter::Turbulence` (#338):
+//! `cargo rustc --example _logos_full --features wgpu -- --cfg harness_clip --cfg harness_turbulence`
+//! (or the same two cfgs in RUSTFLAGS, which also rebuilds every dependency).
+#![cfg(feature = "wgpu")]
+#![allow(unexpected_cfgs)]
+
+#[cfg(harness_turbulence)]
+use femtovg::TurbulenceKind;
+use femtovg::{
+    renderer::WGPURenderer, Canvas, Color, CompositeOperation, FillRule, ImageFilter, ImageFlags, LayerEffects,
+    MaskKind, Paint, Path, PixelFormat, RenderTarget, Transform2D,
+};
+
+/// Frame and layout, overridable for other framings (1080p: FRAME_W=1920
+/// FRAME_H=1080 BOX=1080 BOX_X=420 BOX_Y=0); make_ref.py reads the same names.
+fn env_f32(name: &str, default: f32) -> f32 {
+    std::env::var(name).ok().and_then(|v| v.parse().ok()).unwrap_or(default)
+}
+fn frame_w() -> u32 {
+    env_f32("FRAME_W", 460.0) as u32
+}
+fn frame_h() -> u32 {
+    env_f32("FRAME_H", 260.0) as u32
+}
+fn box_size() -> f32 {
+    env_f32("BOX", 200.0)
+}
+fn box_at() -> (f32, f32) {
+    (env_f32("BOX_X", 130.0), env_f32("BOX_Y", 30.0))
+}
+
+fn ts_to_t2d(t: usvg::Transform) -> Transform2D {
+    Transform2D([t.sx, t.ky, t.kx, t.sy, t.tx, t.ty])
+}
+
+fn stop_list(stops: &[usvg::Stop]) -> Vec<(f32, Color)> {
+    stops
+        .iter()
+        .map(|s| {
+            let c = s.color();
+            let mut col = Color::rgb(c.red, c.green, c.blue);
+            col.set_alphaf(s.opacity().get());
+            (s.offset().get(), col)
+        })
+        .collect()
+}
+
+fn to_paint(p: &usvg::Paint) -> Option<Paint> {
+    if COVERAGE.load(std::sync::atomic::Ordering::Relaxed) {
+        return Some(Paint::color(Color::white()));
+    }
+    let mut paint = match p {
+        usvg::Paint::Color(c) => Paint::color(Color::rgb(c.red, c.green, c.blue)),
+        usvg::Paint::LinearGradient(g) => {
+            Paint::linear_gradient_stops(g.x1(), g.y1(), g.x2(), g.y2(), stop_list(g.stops()))
+                .with_gradient_transform(ts_to_t2d(g.transform()))
+        }
+        usvg::Paint::RadialGradient(g) => Paint::two_point_radial_gradient_stops(
+            g.fx(),
+            g.fy(),
+            0.0,
+            g.cx(),
+            g.cy(),
+            g.r().get(),
+            stop_list(g.stops()),
+        )
+        .with_gradient_transform(ts_to_t2d(g.transform())),
+        usvg::Paint::Pattern(_) => return None,
+    };
+    paint.set_anti_alias(true);
+    if std::env::var("GRAD_DUMP").is_ok() {
+        match p {
+            usvg::Paint::LinearGradient(g) => eprintln!(
+                "linear {} stops x1y1x2y2=({},{})-({},{}) transform={:?}",
+                g.stops().len(),
+                g.x1(),
+                g.y1(),
+                g.x2(),
+                g.y2(),
+                g.transform()
+            ),
+            usvg::Paint::RadialGradient(g) => eprintln!(
+                "radial {} stops c=({},{}) f=({},{}) r={} transform={:?}",
+                g.stops().len(),
+                g.cx(),
+                g.cy(),
+                g.fx(),
+                g.fy(),
+                g.r().get(),
+                g.transform()
+            ),
+            _ => {}
+        }
+    }
+    if std::env::var("FORCE_SOLID").is_ok() && !matches!(p, usvg::Paint::Color(_)) {
+        return Some(Paint::color(Color::rgb(200, 0, 200)));
+    }
+    Some(paint)
+}
+
+/// Renders `group`'s mask content into a canvas-sized image and returns it
+/// with the mask kind; the caller hands it to LayerEffects::with_mask.
+type MaskMap = std::collections::HashMap<usize, (femtovg::ImageId, MaskKind)>;
+
+fn capture_mask(
+    canvas: &mut Canvas<WGPURenderer>,
+    mask: &usvg::Mask,
+    group_transform: usvg::Transform,
+    canvas_w: usize,
+    canvas_h: usize,
+    scale: f32,
+    masks: &MaskMap,
+) -> Option<(femtovg::ImageId, MaskKind)> {
+    let image = canvas
+        .create_image_empty(
+            canvas_w,
+            canvas_h,
+            femtovg::PixelFormat::Rgba8,
+            femtovg::ImageFlags::PREMULTIPLIED | femtovg::ImageFlags::FLIP_Y,
+        )
+        .ok()?;
+    if std::env::var("LAYER_LOG").is_ok() {
+        eprintln!("MASK {canvas_w}x{canvas_h}");
+    }
+    canvas.save();
+    canvas.set_render_target(RenderTarget::Image(image));
+    canvas.clear_rect(0, 0, canvas_w as u32, canvas_h as u32, Color::rgbaf(0.0, 0.0, 0.0, 0.0));
+    // Mask content lives in the referencing group's user space.
+    canvas.set_transform(&ts_to_t2d(group_transform));
+    draw_nodes(canvas, mask.root().children(), scale, masks);
+    canvas.set_render_target(RenderTarget::Screen);
+    canvas.restore();
+    let kind = match mask.kind() {
+        usvg::MaskType::Luminance => MaskKind::Luminance,
+        usvg::MaskType::Alpha => MaskKind::Alpha,
+    };
+    Some((image, kind))
+}
+
+/// The chain of clipPaths a clipPath itself references through clip-path,
+/// nearest first.
+fn clip_ancestors(clip: &usvg::ClipPath) -> Vec<&usvg::ClipPath> {
+    let mut ancestors = Vec::new();
+    let mut next = clip.clip_path();
+    while let Some(c) = next {
+        ancestors.push(c);
+        next = c.clip_path();
+    }
+    ancestors
+}
+
+/// Set while a clipPath's content is rasterized as coverage: every paint
+/// becomes opaque white, so only geometry contributes.
+static COVERAGE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// A clipPath whose children carry clip-path of their own describes a union
+/// of per-child intersections, which no single stencil intersection
+/// expresses. Browsers rasterize such a clip as a mask (Blink's mask-based
+/// clipping); the harness does the same through #323's alpha layer mask.
+fn clip_needs_coverage(clip: &usvg::ClipPath) -> bool {
+    fn walk(nodes: &[usvg::Node]) -> bool {
+        nodes.iter().any(|n| match n {
+            usvg::Node::Group(g) => g.clip_path().is_some() || walk(g.children()),
+            _ => false,
+        })
+    }
+    walk(clip.root().children())
+}
+
+/// Key of a group's clip coverage in the mask map: the group's address plus
+/// one (groups are word-aligned, so it never collides with a mask entry).
+fn coverage_key(group: &usvg::Group) -> usize {
+    group as *const usvg::Group as usize + 1
+}
+
+/// Rasterizes a clipPath's content as coverage: each child drawn white under
+/// its own clip (an intersection, #324) into a canvas-sized image that the
+/// clipped group then applies as an alpha mask (#323).
+#[cfg(harness_clip)]
+fn capture_clip_coverage(
+    canvas: &mut Canvas<WGPURenderer>,
+    clip: &usvg::ClipPath,
+    group_transform: usvg::Transform,
+    canvas_w: usize,
+    canvas_h: usize,
+    scale: f32,
+    masks: &MaskMap,
+) -> Option<femtovg::ImageId> {
+    let image = canvas
+        .create_image_empty(
+            canvas_w,
+            canvas_h,
+            femtovg::PixelFormat::Rgba8,
+            femtovg::ImageFlags::PREMULTIPLIED | femtovg::ImageFlags::FLIP_Y,
+        )
+        .ok()?;
+    canvas.save();
+    canvas.set_render_target(RenderTarget::Image(image));
+    canvas.clear_rect(0, 0, canvas_w as u32, canvas_h as u32, Color::rgbaf(0.0, 0.0, 0.0, 0.0));
+    for c in clip_ancestors(clip).iter().rev() {
+        let mut ancestor = Path::new();
+        let mut rule = FillRule::NonZero;
+        collect_clip(
+            c.root().children(),
+            group_transform.pre_concat(c.transform()),
+            &mut ancestor,
+            &mut rule,
+        );
+        canvas.clip_path(&ancestor, rule);
+    }
+    // Clip content lives in the referencing group's user space.
+    canvas.set_transform(&ts_to_t2d(group_transform.pre_concat(clip.transform())));
+    COVERAGE.store(true, std::sync::atomic::Ordering::Relaxed);
+    draw_nodes(canvas, clip.root().children(), scale, masks);
+    COVERAGE.store(false, std::sync::atomic::Ordering::Relaxed);
+    canvas.set_render_target(RenderTarget::Screen);
+    canvas.restore();
+    Some(image)
+}
+
+/// All mask images are captured before any drawing so no capture has to
+/// restore into a live layer. `base` is the transform of the root the
+/// children's `abs_transform` is relative to: identity for the tree, the
+/// referencing group's transform for mask content, that plus the
+/// clipPath's transform for clip content, so a mask or coverage captured
+/// for a group nested in either lands where the draw puts the group.
+fn precapture_masks(
+    canvas: &mut Canvas<WGPURenderer>,
+    children: &[usvg::Node],
+    canvas_w: usize,
+    canvas_h: usize,
+    scale: f32,
+    out: &mut MaskMap,
+    base: usvg::Transform,
+) {
+    for node in children {
+        if let usvg::Node::Group(group) = node {
+            let at = base.pre_concat(group.abs_transform());
+            if let Some(mask) = group.mask() {
+                precapture_masks(canvas, mask.root().children(), canvas_w, canvas_h, scale, out, at);
+                if let Some(captured) = capture_mask(canvas, mask, at, canvas_w, canvas_h, scale, out) {
+                    out.insert(&**group as *const usvg::Group as usize, captured);
+                }
+            }
+            #[cfg(harness_clip)]
+            if let Some(clip) = group.clip_path() {
+                // Clip content can carry clips of its own (masks too): capture
+                // those first, innermost out, so this clip's coverage finds them.
+                for c in clip_ancestors(clip) {
+                    let clip_base = at.pre_concat(c.transform());
+                    precapture_masks(canvas, c.root().children(), canvas_w, canvas_h, scale, out, clip_base);
+                }
+                let clip_base = at.pre_concat(clip.transform());
+                precapture_masks(
+                    canvas,
+                    clip.root().children(),
+                    canvas_w,
+                    canvas_h,
+                    scale,
+                    out,
+                    clip_base,
+                );
+                if clip_needs_coverage(clip) {
+                    if let Some(image) = capture_clip_coverage(canvas, clip, at, canvas_w, canvas_h, scale, out) {
+                        out.insert(coverage_key(group), (image, MaskKind::Alpha));
+                    }
+                }
+            }
+            precapture_masks(canvas, group.children(), canvas_w, canvas_h, scale, out, base);
+        }
+        if let usvg::Node::Text(text) = node {
+            precapture_masks(
+                canvas,
+                text.flattened().children(),
+                canvas_w,
+                canvas_h,
+                scale,
+                out,
+                base,
+            );
+        }
+    }
+}
+
+fn group_effects(
+    canvas: &mut Canvas<WGPURenderer>,
+    group: &usvg::Group,
+    canvas_w: usize,
+    canvas_h: usize,
+    scale: f32,
+    masks: &MaskMap,
+    force_layer: bool,
+) -> Option<LayerEffects> {
+    let opacity = if std::env::var("NO_OPACITY").is_ok() {
+        1.0
+    } else {
+        group.opacity().get()
+    };
+    let mut blurs: Vec<ImageFilter> = Vec::new();
+    for f in group.filters() {
+        for prim in f.primitives() {
+            if let usvg::filter::Kind::GaussianBlur(b) = prim.kind() {
+                // usvg std-dev is in user units; layer filters run in device
+                // pixels, so scale by the composed canvas scale.
+                let sigma = b.std_dev_x().get().max(b.std_dev_y().get()) * scale;
+                if sigma > 0.0 {
+                    blurs.push(ImageFilter::GaussianBlur { sigma });
+                }
+            }
+        }
+    }
+    let _ = canvas;
+    let mask = masks.get(&(group as *const usvg::Group as usize)).copied();
+    if opacity >= 1.0 && blurs.is_empty() && mask.is_none() && !force_layer {
+        return None;
+    }
+    let mut fx = LayerEffects::new().with_opacity(opacity).with_filters(&blurs);
+    if let Some((image, kind)) = mask {
+        fx = fx.with_mask(image, kind, 0.0, 0.0, canvas_w as f32, canvas_h as f32);
+    }
+    Some(fx)
+}
+
+/// The group's `feDropShadow`, when its filter is one that shadows the source
+/// graphic: the shape SVG's `feDropShadow` shorthand produces.
+fn drop_shadow(group: &usvg::Group) -> Option<&usvg::filter::DropShadow> {
+    if std::env::var("NO_SHADOW").is_ok() {
+        return None;
+    }
+    let [f] = group.filters() else { return None };
+    f.primitives().iter().find_map(|p| match p.kind() {
+        usvg::filter::Kind::DropShadow(ds) if matches!(ds.input(), usvg::filter::Input::SourceGraphic) => Some(ds),
+        _ => None,
+    })
+}
+
+/// An `feTurbulence` chain this backend runs as a whole: the noise passes,
+/// the device rect of the filter region they fill, and whether the result
+/// is stencilled by the source (`feComposite operator="in" in2=Source*`)
+/// or replaces it outright.
+#[cfg_attr(not(harness_turbulence), allow(dead_code))]
+struct NoisePlan {
+    chain: Vec<ImageFilter>,
+    /// Device-pixel size of the noise image.
+    size: (f32, f32),
+    /// That image's rect in the group's user space, so it can be drawn
+    /// through the same transform as the group's paths - a layer shifts
+    /// device space to its own origin, so device coordinates are not stable.
+    user_rect: (f32, f32, f32, f32),
+    abs_transform: Transform2D,
+    stencil: bool,
+}
+
+#[cfg(harness_turbulence)]
+fn color_matrix(kind: &usvg::filter::ColorMatrixKind) -> Option<ImageFilter> {
+    use usvg::filter::ColorMatrixKind;
+    match kind {
+        ColorMatrixKind::Matrix(v) => Some(ImageFilter::ColorMatrix {
+            matrix: v[..20].try_into().ok()?,
+        }),
+        ColorMatrixKind::Saturate(s) => Some(ImageFilter::saturate(s.get())),
+        ColorMatrixKind::HueRotate(_) | ColorMatrixKind::LuminanceToAlpha => None,
+    }
+}
+
+/// Translates a group's filter into a NoisePlan when it is
+/// `feTurbulence -> feColorMatrix* [-> feComposite in Source*]`, the shape
+/// every grain/skin-texture filter in the BuseyBench corpus takes. The chain
+/// runs in the primitives' color-interpolation-filters space (linearRGB by
+/// default) and ends with the transfer back to sRGB, as a browser's does.
+#[cfg(harness_turbulence)]
+fn turbulence_plan(canvas: &Canvas<WGPURenderer>, group: &usvg::Group) -> Option<NoisePlan> {
+    use usvg::filter::{ColorInterpolation, CompositeOperator, Input, Kind};
+    if std::env::var("NO_TURBULENCE").is_ok() {
+        return None;
+    }
+    let [f] = group.filters() else { return None };
+    let prims = f.primitives();
+    let Kind::Turbulence(t) = prims.first()?.kind() else {
+        return None;
+    };
+
+    // The filter region in device pixels, clamped to the canvas, and the
+    // transform that maps the group's user space (where the noise lives)
+    // onto that image's pixels.
+    let mut device = canvas.transform();
+    device.premultiply(&ts_to_t2d(group.abs_transform()));
+    let r = f.rect();
+    let corners = [
+        (r.x(), r.y()),
+        (r.right(), r.y()),
+        (r.x(), r.bottom()),
+        (r.right(), r.bottom()),
+    ]
+    .map(|(x, y)| device.transform_point(x, y));
+    let x0 = corners
+        .iter()
+        .map(|c| c.0)
+        .fold(f32::INFINITY, f32::min)
+        .floor()
+        .max(0.0);
+    let y0 = corners
+        .iter()
+        .map(|c| c.1)
+        .fold(f32::INFINITY, f32::min)
+        .floor()
+        .max(0.0);
+    let x1 = corners
+        .iter()
+        .map(|c| c.0)
+        .fold(f32::NEG_INFINITY, f32::max)
+        .ceil()
+        .min(frame_w() as f32);
+    let y1 = corners
+        .iter()
+        .map(|c| c.1)
+        .fold(f32::NEG_INFINITY, f32::max)
+        .ceil()
+        .min(frame_h() as f32);
+    if !(x1 > x0 && y1 > y0) {
+        return None;
+    }
+    let mut noise_transform = Transform2D::translation(-x0, -y0);
+    noise_transform.premultiply(&device);
+    // The pixel rect back in user space, so the image lands 1:1 on the pixels it was made for.
+    let inverse = device.inverse();
+    let (ux0, uy0) = inverse.transform_point(x0, y0);
+    let (ux1, uy1) = inverse.transform_point(x1, y1);
+    let user_rect = (ux0.min(ux1), uy0.min(uy1), (ux1 - ux0).abs(), (uy1 - uy0).abs());
+    debug_assert!({
+        let (dx, dy) = device.transform_point(r.x(), r.y());
+        let (nx, ny) = noise_transform.transform_point(r.x(), r.y());
+        (nx - (dx - x0)).abs() < 1e-3 && (ny - (dy - y0)).abs() < 1e-3
+    });
+
+    let mut chain = vec![ImageFilter::Turbulence {
+        base_frequency: [t.base_frequency_x().get(), t.base_frequency_y().get()],
+        num_octaves: t.num_octaves(),
+        seed: t.seed(),
+        stitch_tiles: t.stitch_tiles(),
+        kind: match t.kind() {
+            usvg::filter::TurbulenceKind::FractalNoise => TurbulenceKind::FractalNoise,
+            usvg::filter::TurbulenceKind::Turbulence => TurbulenceKind::Turbulence,
+        },
+        transform: noise_transform,
+    }];
+    let mut interpolation = prims[0].color_interpolation();
+    let mut stencil = false;
+    for (i, p) in prims.iter().enumerate().skip(1) {
+        let previous = prims[i - 1].result();
+        let from_previous = |input: &Input| matches!(input, Input::Reference(name) if name == previous);
+        match p.kind() {
+            Kind::ColorMatrix(cm) if from_previous(cm.input()) => {
+                chain.push(color_matrix(cm.kind())?);
+                interpolation = p.color_interpolation();
+            }
+            Kind::Composite(c)
+                if i == prims.len() - 1
+                    && matches!(c.operator(), CompositeOperator::In)
+                    && from_previous(c.input1())
+                    && matches!(c.input2(), Input::SourceGraphic | Input::SourceAlpha) =>
+            {
+                stencil = true;
+            }
+            _ => return None,
+        }
+    }
+    if interpolation == ColorInterpolation::LinearRGB {
+        chain.push(ImageFilter::LinearRgbToSrgb);
+    }
+    if std::env::var("PLAN_DUMP").is_ok() {
+        eprintln!(
+            "noise plan: rect=({x0},{y0} {}x{}) stencil={stencil} chain={chain:?}",
+            x1 - x0,
+            y1 - y0
+        );
+    }
+    Some(NoisePlan {
+        chain,
+        size: (x1 - x0, y1 - y0),
+        user_rect,
+        abs_transform: ts_to_t2d(group.abs_transform()),
+        stencil,
+    })
+}
+
+/// Without `--cfg harness_turbulence` (a tree without #338) no chain can be
+/// run: the group is left to the SKIP_UNSUPPORTED_FILTERS rule, exactly as a
+/// chain this backend does not recognise, and counted so LAYER_STATS shows
+/// what the build left out.
+#[cfg(not(harness_turbulence))]
+fn turbulence_plan(_canvas: &Canvas<WGPURenderer>, group: &usvg::Group) -> Option<NoisePlan> {
+    let has_turbulence = group
+        .filters()
+        .iter()
+        .flat_map(|f| f.primitives().iter())
+        .any(|p| matches!(p.kind(), usvg::filter::Kind::Turbulence(_)));
+    if has_turbulence {
+        TURBULENCE_UNSUPPORTED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    }
+    None
+}
+
+/// Draws a group's children, or - under a NoisePlan - the filter's output in
+/// their place: the noise image alone when the chain replaces the source,
+/// or the source with the noise composited SourceIn when it stencils it.
+fn draw_filtered(
+    canvas: &mut Canvas<WGPURenderer>,
+    group: &usvg::Group,
+    plan: Option<NoisePlan>,
+    scale: f32,
+    masks: &MaskMap,
+) {
+    let Some(plan) = plan else {
+        draw_nodes(canvas, group.children(), scale, masks);
+        return;
+    };
+    let (w, h) = plan.size;
+    let Ok(noise) = canvas.create_image_empty(
+        w as usize,
+        h as usize,
+        PixelFormat::Rgba8,
+        ImageFlags::PREMULTIPLIED | ImageFlags::FLIP_Y,
+    ) else {
+        return;
+    };
+    // Turbulence reads nothing from its source; it only sizes the quad.
+    let _ = canvas.filter_image_chain(noise, &plan.chain, noise);
+    if plan.stencil {
+        draw_nodes(canvas, group.children(), scale, masks);
+        canvas.global_composite_operation(CompositeOperation::SourceIn);
+    }
+    if std::env::var("NOISE_ONLY").is_ok() {
+        // Debug: show the chain's output alone, opaque, in place.
+        canvas.global_composite_operation(CompositeOperation::SourceOver);
+    }
+    canvas.save();
+    canvas.set_transform(&plan.abs_transform);
+    let (x, y, uw, uh) = plan.user_rect;
+    let mut rect = Path::new();
+    rect.rect(x, y, uw, uh);
+    canvas.fill_path(&rect, &Paint::image(noise, x, y, uw, uh, 0.0, 1.0));
+    canvas.restore();
+}
+
+#[allow(dead_code)]
+fn dump(children: &[usvg::Node], depth: usize) {
+    for node in children {
+        match node {
+            usvg::Node::Group(g) => {
+                eprintln!(
+                    "{:indent$}Group mask={:?} clip={:?} blend={:?} filters={} opacity={} transform={:?}",
+                    "",
+                    g.mask().map(|m| format!("{:?} rect={:?}", m.kind(), m.rect())),
+                    g.clip_path().map(|c| format!(
+                        "transform={:?} children={}",
+                        c.transform(),
+                        c.root().children().len()
+                    )),
+                    g.blend_mode(),
+                    g.filters().len(),
+                    g.opacity().get(),
+                    g.transform(),
+                    indent = depth * 2
+                );
+                dump(g.children(), depth + 1);
+            }
+            usvg::Node::Path(p) => {
+                let b = p.abs_bounding_box();
+                eprintln!(
+                    "{:indent$}Path bbox=({:.0},{:.0} {:.0}x{:.0}) fill={} stroke={}",
+                    "",
+                    b.x(),
+                    b.y(),
+                    b.width(),
+                    b.height(),
+                    p.fill().is_some(),
+                    p.stroke().is_some(),
+                    indent = depth * 2
+                );
+            }
+            usvg::Node::Text(_) => eprintln!("{:indent$}Text(unconverted)", "", indent = depth * 2),
+            other => eprintln!(
+                "{:indent$}{:?}",
+                "",
+                format!("{other:?}").chars().take(60).collect::<String>(),
+                indent = depth * 2
+            ),
+        }
+    }
+}
+
+static PATH_COUNTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+static LAYERS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+static DEPTH: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+static PASS_THROUGH: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+static TRANSIENT_AT_FLUSH: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+/// Groups dropped by SKIP_UNSUPPORTED_FILTERS (a source-replacing filter this build cannot run).
+static FILTERS_SKIPPED: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+/// feTurbulence chains seen by a build without `harness_turbulence`.
+static TURBULENCE_UNSUPPORTED: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+/// Clip paths drawn unclipped by a build without `harness_clip`.
+static CLIPS_UNSUPPORTED: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
+/// LAYER_LOG=1: one line per layer with what a pool simulator needs.
+fn log_layer(canvas: &Canvas<WGPURenderer>, group: &usvg::Group, scale: f32, kind: &str) {
+    if std::env::var("LAYER_LOG").is_err() {
+        return;
+    }
+    let bb = group.abs_layer_bounding_box();
+    let t = canvas.transform();
+    let (x0, y0) = t.transform_point(bb.x(), bb.y());
+    let (x1, y1) = t.transform_point(bb.right(), bb.bottom());
+    let (bx, by) = box_at();
+    let b = box_size();
+    let cx0 = x0.min(x1).max(bx);
+    let cy0 = y0.min(y1).max(by);
+    let cx1 = x0.max(x1).min(bx + b);
+    let cy1 = y0.max(y1).min(by + b);
+    let sigma = group
+        .filters()
+        .iter()
+        .flat_map(|f| f.primitives().iter())
+        .filter_map(|p| match p.kind() {
+            usvg::filter::Kind::GaussianBlur(g) => Some(g.std_dev_x().get().max(g.std_dev_y().get()) * scale),
+            _ => None,
+        })
+        .fold(0.0f32, f32::max);
+    let depth = DEPTH.load(std::sync::atomic::Ordering::Relaxed);
+    eprintln!(
+        "LAYER kind={kind} depth={depth} bbox={:.0}x{:.0} sigma={sigma:.2} opacity={:.3}",
+        (cx1 - cx0).max(0.0),
+        (cy1 - cy0).max(0.0),
+        group.opacity().get()
+    );
+}
+
+/// Does this filter *replace* its source graphic rather than augment it?
+///
+/// A chain that never consumes `SourceGraphic` or `SourceAlpha` synthesises
+/// its output from nothing - `feTurbulence`, `feFlood`, `feImage` - so the
+/// shape it hangs off is scaffolding the author never intended to be seen
+/// (typically a fill-less rect, which defaults to black). A backend that
+/// cannot run the chain must drop that subtree, or it paints the scaffolding.
+/// A chain that does consume the source - `feDropShadow`, `feGaussianBlur` -
+/// only decorates it, so the subtree must still be drawn.
+fn replaces_source(f: &usvg::filter::Filter) -> bool {
+    use usvg::filter::{Input, Kind};
+    let consumes = |i: &Input| matches!(i, Input::SourceGraphic | Input::SourceAlpha);
+    !f.primitives().iter().any(|p| match p.kind() {
+        Kind::Blend(k) => consumes(k.input1()) || consumes(k.input2()),
+        Kind::Composite(k) => consumes(k.input1()) || consumes(k.input2()),
+        Kind::DisplacementMap(k) => consumes(k.input1()) || consumes(k.input2()),
+        Kind::ColorMatrix(k) => consumes(k.input()),
+        Kind::ComponentTransfer(k) => consumes(k.input()),
+        Kind::DropShadow(k) => consumes(k.input()),
+        Kind::GaussianBlur(k) => consumes(k.input()),
+        Kind::Morphology(k) => consumes(k.input()),
+        Kind::Offset(k) => consumes(k.input()),
+        Kind::Tile(k) => consumes(k.input()),
+        Kind::ConvolveMatrix(k) => consumes(k.input()),
+        Kind::DiffuseLighting(k) => consumes(k.input()),
+        Kind::SpecularLighting(k) => consumes(k.input()),
+        Kind::Merge(k) => k.inputs().iter().any(consumes),
+        Kind::Flood(_) | Kind::Image(_) | Kind::Turbulence(_) => false,
+    })
+}
+
+// Clip content may be nested in groups (usvg wraps a
+// <use> inside <clipPath> in a Group); walk the whole
+// subtree and bake every path's absolute transform.
+fn collect_clip(nodes: &[usvg::Node], base: usvg::Transform, combined: &mut Path, rule: &mut FillRule) {
+    use usvg::tiny_skia_path::PathSegment;
+    for node in nodes {
+        match node {
+            usvg::Node::Group(g) => collect_clip(g.children(), base, combined, rule),
+            usvg::Node::Path(p) => {
+                if let Some(f) = p.fill() {
+                    if matches!(f.rule(), usvg::FillRule::EvenOdd) {
+                        *rule = FillRule::EvenOdd;
+                    }
+                }
+                let ct = base.pre_concat(p.abs_transform());
+                let map = |x: f32, y: f32| (ct.sx * x + ct.kx * y + ct.tx, ct.ky * x + ct.sy * y + ct.ty);
+                for seg in p.data().segments() {
+                    match seg {
+                        PathSegment::MoveTo(q) => {
+                            let (x, y) = map(q.x, q.y);
+                            combined.move_to(x, y);
+                        }
+                        PathSegment::LineTo(q) => {
+                            let (x, y) = map(q.x, q.y);
+                            combined.line_to(x, y);
+                        }
+                        PathSegment::QuadTo(a, q) => {
+                            let (ax, ay) = map(a.x, a.y);
+                            let (x, y) = map(q.x, q.y);
+                            combined.quad_to(ax, ay, x, y);
+                        }
+                        PathSegment::CubicTo(a, b, q) => {
+                            let (ax, ay) = map(a.x, a.y);
+                            let (bx, by) = map(b.x, b.y);
+                            let (x, y) = map(q.x, q.y);
+                            combined.bezier_to(ax, ay, bx, by, x, y);
+                        }
+                        PathSegment::Close => combined.close(),
+                    }
+                }
+            }
+            usvg::Node::Text(t) => collect_clip(t.flattened().children(), base, combined, rule),
+            _ => {}
+        }
+    }
+}
+
+/// Pushes the group's clip path (#324's `Canvas::clip_path`) and reports
+/// whether a matching `restore` is owed.
+#[cfg(harness_clip)]
+fn push_clip(canvas: &mut Canvas<WGPURenderer>, group: &usvg::Group) -> bool {
+    let Some(clip) = group.clip_path().filter(|_| std::env::var("NO_CLIP").is_err()) else {
+        return false;
+    };
+    canvas.save();
+    let mut combined = Path::new();
+    let mut rule = FillRule::NonZero;
+    // A clipPath can itself carry clip-path (css-masking's
+    // clip-path-clip-nested-twice): its region is the intersection with the
+    // referenced clipPath's region, in the same user space. clip_path
+    // intersects, so take the ancestors first, outermost in.
+    for c in clip_ancestors(clip).iter().rev() {
+        let mut ancestor = Path::new();
+        let mut ancestor_rule = FillRule::NonZero;
+        collect_clip(
+            c.root().children(),
+            group.abs_transform().pre_concat(c.transform()),
+            &mut ancestor,
+            &mut ancestor_rule,
+        );
+        if std::env::var("CLIP_SHOW").is_err() {
+            canvas.clip_path(&ancestor, ancestor_rule);
+        }
+    }
+    collect_clip(
+        clip.root().children(),
+        group.abs_transform().pre_concat(clip.transform()),
+        &mut combined,
+        &mut rule,
+    );
+    if std::env::var("CLIP_SHOW").is_ok() {
+        // Debug: paint the clip region instead of clipping with it.
+        let mut show = Paint::color(Color::rgba(200, 0, 200, 90));
+        show.set_fill_rule(rule);
+        canvas.fill_path(&combined, &show);
+    } else {
+        canvas.clip_path(&combined, rule);
+    }
+    true
+}
+
+/// Without `--cfg harness_clip` (a tree without #324) the group is drawn
+/// unclipped and counted, so LAYER_STATS shows what the build left out.
+#[cfg(not(harness_clip))]
+fn push_clip(_canvas: &mut Canvas<WGPURenderer>, group: &usvg::Group) -> bool {
+    if group.clip_path().is_some() && std::env::var("NO_CLIP").is_err() {
+        CLIPS_UNSUPPORTED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    }
+    false
+}
+
+fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale: f32, masks: &MaskMap) {
+    use usvg::tiny_skia_path::PathSegment;
+    for node in children {
+        match node {
+            usvg::Node::Group(group) => {
+                if std::env::var("NO_BLEND").is_ok() && group.blend_mode() != usvg::BlendMode::Normal {
+                    continue;
+                }
+                // A filter this backend cannot execute must take its subtree
+                // with it: a filter's source graphic is routinely a shape that
+                // is never meant to be seen (a fill-less rect that exists only
+                // to be replaced by feTurbulence output), so drawing it raw is
+                // worse than drawing nothing.
+                let plan = turbulence_plan(canvas, group);
+                if std::env::var("SKIP_UNSUPPORTED_FILTERS").is_ok()
+                    && plan.is_none()
+                    && group.filters().iter().any(|f| replaces_source(f))
+                {
+                    FILTERS_SKIPPED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    continue;
+                }
+                let coverage = masks
+                    .get(&coverage_key(group))
+                    .map(|m| m.0)
+                    .filter(|_| std::env::var("NO_CLIP").is_err());
+                let clipped = match coverage {
+                    Some(image) => {
+                        canvas.save();
+                        let fx = LayerEffects::new().with_mask(
+                            image,
+                            MaskKind::Alpha,
+                            0.0,
+                            0.0,
+                            frame_w() as f32,
+                            frame_h() as f32,
+                        );
+                        LAYERS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        if !canvas.begin_layer(&fx) {
+                            PASS_THROUGH.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        }
+                        true
+                    }
+                    None => push_clip(canvas, group),
+                };
+                // A shadow set before begin_layer is cast once by the layer's
+                // result - the Canvas 2D layer rule, and what feDropShadow on
+                // a group means - so the group gets a layer and the shadow
+                // state around it.
+                canvas.save();
+                let shadowed = drop_shadow(group).is_some();
+                if let Some(ds) = drop_shadow(group) {
+                    let c = ds.color();
+                    let mut color = Color::rgb(c.red, c.green, c.blue);
+                    color.set_alphaf(ds.opacity().get());
+                    canvas.set_shadow_color(color);
+                    canvas.set_shadow_offset(ds.dx() * scale, ds.dy() * scale);
+                    // Canvas shadowBlur is two sigma; usvg's deviation is in user units.
+                    canvas.set_shadow_blur(2.0 * ds.std_dev_x().get().max(ds.std_dev_y().get()) * scale);
+                }
+                let stencil = plan.as_ref().is_some_and(|p| p.stencil);
+                match group_effects(
+                    canvas,
+                    group,
+                    frame_w() as usize,
+                    frame_h() as usize,
+                    scale,
+                    masks,
+                    shadowed || stencil,
+                ) {
+                    Some(fx) => {
+                        // Size the layer to the group's own layer bounding box (usvg
+                        // includes the filter region and strokes), the way a browser
+                        // sizes a filter's raster, instead of to the whole viewport.
+                        let bbox_scissor = std::env::var("LAYER_BBOX_SCISSOR").is_ok();
+                        if bbox_scissor {
+                            canvas.save();
+                            let bb = group.abs_layer_bounding_box();
+                            canvas.intersect_scissor(bb.x(), bb.y(), bb.width(), bb.height());
+                        }
+                        LAYERS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        log_layer(canvas, group, scale, "layer");
+                        DEPTH.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        if !canvas.begin_layer(&fx) {
+                            PASS_THROUGH.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        }
+                        draw_filtered(canvas, group, plan, scale, masks);
+                        canvas.end_layer();
+                        DEPTH.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
+                        if std::env::var("LAYER_LOG").is_ok() {
+                            eprintln!("END depth={}", DEPTH.load(std::sync::atomic::Ordering::Relaxed));
+                        }
+                        if bbox_scissor {
+                            canvas.restore();
+                        }
+                    }
+                    None => draw_filtered(canvas, group, plan, scale, masks),
+                }
+                canvas.restore();
+                if clipped {
+                    if coverage.is_some() {
+                        canvas.end_layer();
+                    }
+                    canvas.restore();
+                }
+            }
+            usvg::Node::Path(svg_path) => {
+                if let Ok(range) = std::env::var("PATH_RANGE") {
+                    let (lo, hi) = range.split_once(':').unwrap();
+                    let (lo, hi): (usize, usize) = (lo.parse().unwrap(), hi.parse().unwrap());
+                    let idx = PATH_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    if idx < lo || idx >= hi {
+                        continue;
+                    }
+                }
+                if std::env::var("PATH_DUMP").is_ok() {
+                    eprintln!(
+                        "--- path fill={:?} rule={:?}",
+                        svg_path
+                            .fill()
+                            .map(|f| format!("{:?}", f.paint()).chars().take(60).collect::<String>()),
+                        svg_path.fill().map(|f| f.rule())
+                    );
+                    for seg in svg_path.data().segments() {
+                        eprintln!("  {:?}", seg);
+                    }
+                }
+                let mut path = Path::new();
+                for seg in svg_path.data().segments() {
+                    match seg {
+                        PathSegment::MoveTo(p) => path.move_to(p.x, p.y),
+                        PathSegment::LineTo(p) => path.line_to(p.x, p.y),
+                        PathSegment::CubicTo(a, b, p) => path.bezier_to(a.x, a.y, b.x, b.y, p.x, p.y),
+                        PathSegment::QuadTo(a, p) => path.quad_to(a.x, a.y, p.x, p.y),
+                        PathSegment::Close => path.close(),
+                    }
+                }
+                canvas.save();
+                canvas.set_transform(&ts_to_t2d(svg_path.abs_transform()));
+                if let Some(fill) = svg_path.fill() {
+                    if let Some(mut paint) = to_paint(fill.paint()) {
+                        paint.set_fill_rule(match fill.rule() {
+                            usvg::FillRule::NonZero => FillRule::NonZero,
+                            usvg::FillRule::EvenOdd => FillRule::EvenOdd,
+                        });
+                        canvas.set_global_alpha(fill.opacity().get());
+                        canvas.fill_path(&path, &paint);
+                        canvas.set_global_alpha(1.0);
+                    }
+                }
+                if let Some(stroke) = svg_path.stroke() {
+                    if let Some(mut paint) = to_paint(stroke.paint()) {
+                        paint.set_line_width(stroke.width().get());
+                        paint.set_line_cap(match stroke.linecap() {
+                            usvg::LineCap::Butt => femtovg::LineCap::Butt,
+                            usvg::LineCap::Round => femtovg::LineCap::Round,
+                            usvg::LineCap::Square => femtovg::LineCap::Square,
+                        });
+                        paint.set_line_join(match stroke.linejoin() {
+                            usvg::LineJoin::Miter | usvg::LineJoin::MiterClip => femtovg::LineJoin::Miter,
+                            usvg::LineJoin::Round => femtovg::LineJoin::Round,
+                            usvg::LineJoin::Bevel => femtovg::LineJoin::Bevel,
+                        });
+                        paint.set_miter_limit(stroke.miterlimit().get());
+                        if let Some(dashes) = stroke.dasharray() {
+                            paint.set_line_dash(dashes);
+                            paint.set_line_dash_offset(stroke.dashoffset());
+                        }
+                        canvas.set_global_alpha(stroke.opacity().get());
+                        canvas.stroke_path(&path, &paint);
+                        canvas.set_global_alpha(1.0);
+                    }
+                }
+                canvas.restore();
+            }
+            // usvg keeps <text> as a Text node whose glyph outlines live in
+            // flattened(); without this arm text never draws.
+            usvg::Node::Text(text) => draw_nodes(canvas, text.flattened().children(), scale, masks),
+            _ => {}
+        }
+    }
+}
+
+fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    let scale: f32 = args[1].parse().expect("scale");
+    let out = &args[2];
+    let svg_path = &args[3];
+    let dark = args.get(4).map(String::as_str) == Some("dark");
+
+    let instance = wgpu::Instance::default();
+    let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions::default())).unwrap();
+    let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
+        label: None,
+        required_features: wgpu::Features::empty(),
+        required_limits: wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits()),
+        experimental_features: wgpu::ExperimentalFeatures::disabled(),
+        memory_hints: wgpu::MemoryHints::MemoryUsage,
+        trace: wgpu::Trace::default(),
+    }))
+    .unwrap();
+
+    let renderer = WGPURenderer::new(device.clone(), queue.clone());
+    let mut canvas = Canvas::new(renderer).unwrap();
+    canvas.set_size(frame_w(), frame_h(), 1.0);
+    // Experiments: lift the transient-image budget (MiB), and report layer counts.
+    if let Some(mb) = std::env::var("TRANSIENT_BUDGET_MB")
+        .ok()
+        .and_then(|v| v.parse::<usize>().ok())
+    {
+        canvas.set_transient_image_budget(mb << 20);
+    }
+
+    let tree = {
+        let mut opt = usvg::Options::default();
+        opt.fontdb_mut().load_system_fonts();
+        usvg::Tree::from_data(&std::fs::read(svg_path).unwrap(), &opt).unwrap()
+    };
+    if std::env::var("TREE_DUMP").is_ok() {
+        dump(tree.root().children(), 0);
+    }
+
+    let target = device.create_texture(&wgpu::TextureDescriptor {
+        label: None,
+        size: wgpu::Extent3d {
+            width: frame_w(),
+            height: frame_h(),
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format: wgpu::TextureFormat::Rgba8Unorm,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+        view_formats: &[],
+    });
+
+    let bg = if dark { Color::rgb(32, 34, 37) } else { Color::white() };
+    // FRAMES=n draws the scene n times (each frame clears and redraws), so
+    // state that leaks across frames shows up in the last one.
+    let frames: usize = std::env::var("FRAMES").ok().and_then(|v| v.parse().ok()).unwrap_or(1);
+    for _frame in 0..frames {
+        canvas.clear_rect(0, 0, frame_w(), frame_h(), bg);
+        canvas.save();
+        let (px, py) = std::env::var("PIVOT")
+            .ok()
+            .and_then(|s| s.split_once(',').map(|(a, b)| (a.parse().unwrap(), b.parse().unwrap())))
+            .unwrap_or((frame_w() as f32 / 2.0, frame_h() as f32 / 2.0));
+        canvas.translate(px, py);
+        canvas.scale(scale, scale);
+        canvas.translate(-px, -py);
+
+        let size = tree.size();
+        let fit = box_size() / size.width().max(size.height());
+        let (box_x, box_y) = box_at();
+        canvas.translate(box_x, box_y);
+        // An SVG viewport clips its content (overflow is hidden by default). Skip
+        // this and anything the artwork pushes past its own edge - most visibly a
+        // heavily blurred shape larger than the viewBox - spills into the page.
+        if std::env::var("VIEWPORT_CLIP").is_ok() {
+            canvas.scissor(0.0, 0.0, box_size(), box_size());
+        }
+        canvas.scale(fit, fit);
+        let mut masks = MaskMap::new();
+        precapture_masks(
+            &mut canvas,
+            tree.root().children(),
+            frame_w() as usize,
+            frame_h() as usize,
+            scale * fit,
+            &mut masks,
+            usvg::Transform::default(),
+        );
+        draw_nodes(&mut canvas, tree.root().children(), scale * fit, &masks);
+
+        canvas.restore();
+
+        TRANSIENT_AT_FLUSH.store(canvas.transient_image_bytes(), std::sync::atomic::Ordering::Relaxed);
+        let commands = canvas.flush_to_output(&target);
+        queue.submit(commands);
+        device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
+    }
+
+    let unpadded = frame_w() * 4;
+    let align = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
+    let padded = unpadded.div_ceil(align) * align;
+    let readback = device.create_buffer(&wgpu::BufferDescriptor {
+        label: None,
+        size: (padded * frame_h()) as u64,
+        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+        mapped_at_creation: false,
+    });
+    let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+    encoder.copy_texture_to_buffer(
+        wgpu::TexelCopyTextureInfo {
+            texture: &target,
+            mip_level: 0,
+            origin: wgpu::Origin3d::ZERO,
+            aspect: wgpu::TextureAspect::All,
+        },
+        wgpu::TexelCopyBufferInfo {
+            buffer: &readback,
+            layout: wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(padded),
+                rows_per_image: Some(frame_h()),
+            },
+        },
+        wgpu::Extent3d {
+            width: frame_w(),
+            height: frame_h(),
+            depth_or_array_layers: 1,
+        },
+    );
+    queue.submit(Some(encoder.finish()));
+
+    let slice = readback.slice(..);
+    slice.map_async(wgpu::MapMode::Read, |_| {});
+    device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
+    let mapped = slice.get_mapped_range().unwrap();
+    let mut ppm = format!("P6\n{} {}\n255\n", frame_w(), frame_h()).into_bytes();
+    for row in 0..frame_h() as usize {
+        let src = row * padded as usize;
+        for px in 0..frame_w() as usize {
+            let i = src + px * 4;
+            ppm.extend_from_slice(&mapped[i..i + 3]);
+        }
+    }
+    std::fs::write(out, ppm).unwrap();
+    if std::env::var("LAYER_STATS").is_ok() {
+        eprintln!("layers begun: {}", LAYERS.load(std::sync::atomic::Ordering::Relaxed));
+        eprintln!(
+            "transient bytes held at flush: {}",
+            TRANSIENT_AT_FLUSH.load(std::sync::atomic::Ordering::Relaxed)
+        );
+        eprintln!(
+            "layers passed through: {}",
+            PASS_THROUGH.load(std::sync::atomic::Ordering::Relaxed)
+        );
+        eprintln!(
+            "harness cfgs: clip={} turbulence={}",
+            cfg!(harness_clip),
+            cfg!(harness_turbulence)
+        );
+        eprintln!(
+            "filters skipped (SKIP_UNSUPPORTED_FILTERS): {}",
+            FILTERS_SKIPPED.load(std::sync::atomic::Ordering::Relaxed)
+        );
+        eprintln!(
+            "feTurbulence chains not run (no harness_turbulence): {}",
+            TURBULENCE_UNSUPPORTED.load(std::sync::atomic::Ordering::Relaxed)
+        );
+        eprintln!(
+            "clip paths drawn unclipped (no harness_clip): {}",
+            CLIPS_UNSUPPORTED.load(std::sync::atomic::Ordering::Relaxed)
+        );
+    }
+}
