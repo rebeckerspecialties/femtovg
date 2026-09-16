@@ -427,3 +427,48 @@ no-cfg build compiles and renders the two mask reductions bit-identically
 to the full build (they use neither feature), and the full-cfg build renders
 `qwen3-8-2-4t-a95b`, `gpt-6-astra`, `kimi-k3` and both reductions at 1x, 2x
 and 4x bit-identically to the binary built before the gates were added.
+
+## Mask reductions (`corpus/mask-*.svg`, 2026-09-16)
+
+Two files written for the #323 review, to show what the corpus cannot.
+The Google Workspace icon's mask (`google-workspace-48px.svg`) is
+`mask-type:alpha` and its radial gradient's stops (`#ff63a0` at 0.62,
+`#ff4c45` at 1, no `stop-opacity`) are fully opaque, so neither the stop
+colours nor its `gradientTransform="matrix(21.9576 0 0 19.2967 14.47 24.2)"`
+affect the coverage: the mask is 1 everywhere inside its path (confirmed by
+reading the file; the review is right).
+
+* `corpus/mask-luminance-radial-transform.svg` - a luminance mask whose
+  radial gradient carries `translate rotate scale` and stops black -> white
+  -> gray, over a solid blue rect (top half), and the same idea nested - a
+  masked group inside a translated masked group (bottom half). The halves
+  split at device row 130 at every pivot zoom. Chromium 131 and Firefox
+  agree on it (0.00 % / 0.000 %, max delta 2 at 1x).
+* `corpus/mask-nested-origin-reduction.svg` - the `qwen3-8-2-4t-a95b` skin
+  texture reduced to high contrast: the same `softDrop` feDropShadow group
+  (an outer layer) around the same `faceMask`-masked rect (an inner masked
+  layer), fill solid red instead of feTurbulence, opacity 1 instead of 0.14,
+  over a yellow face on blue. Correct output is an all-red face silhouette.
+  Chromium and Firefox agree (0.00 % / 0.000 %, max delta 13).
+
+Pre-review #323 build against Chromium 131 (px>20 / structural, 460x260):
+
+    file                                   zoom 1.0            zoom 2.0            zoom 4.0
+    mask-luminance-radial-transform        6.86 % / 6.140 %    10.22 % / 8.704 %   0.00 % / 0.000 %
+      rows < 130 (single mask)             0.00 % / 0.000 %    0.00 % / 0.000 %    0.00 % / 0.000 %
+      rows >= 130 (nested)                13.71 % / 12.281 %   20.44 % / 17.408 %  0.00 % / 0.000 %
+    mask-nested-origin-reduction           5.58 % / 5.099 %    13.01 % / 11.100 %  0.31 % / 0.023 %
+
+The single luminance mask matches at every zoom (max delta 2-3): stop
+colours and the gradient transform are honoured. The nested cases are
+displaced by the outer layer's capture origin, which under `VIEWPORT_CLIP`
+is the scissor-clipped box origin: (130,30) at 1x, (30,0) at 2x, (0,0) at
+4x. On the reduction at 1x that puts the inner mask entirely off its rect -
+femtovg paints 0 red pixels and 6,422 yellow where Chromium paints 6,521 red
+and 0 yellow (the whole face flips); at 2x the red silhouette lands 30 px to
+the right (bbox x 194-318 against 164-296, 6,955 yellow pixels exposed on
+the face's left edge); at 4x, with the origin at (0,0), it matches. The
+luminance file's nested blob is cut to a quarter at 1x and shifted at 2x the
+same way. This is the review's `a_nested_layers_mask_rect_is_root_device_space`
+finding made visible at opacity 1; in the corpus the same displacement
+hides under opacity 0.14 (see the ablation under Metric).

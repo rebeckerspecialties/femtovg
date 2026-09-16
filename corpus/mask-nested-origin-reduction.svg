@@ -1,0 +1,22 @@
+<svg viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<title>Nested-mask origin reduction of BuseyBench qwen3-8-2-4t-a95b</title>
+<desc>High-contrast reduction of the skin-texture rect in qwen3-8-2-4t-a95b.svg: the same
+feDropShadow group (an outer layer) containing the same faceMask-masked rect (an inner masked
+layer), with the feTurbulence fill replaced by solid red and opacity 0.14 raised to 1. Correct
+output: the face silhouette is entirely red on a blue field over a yellow base, with the soft
+drop shadow beneath it. If the inner mask is applied against the outer layer's capture origin
+instead of root device space, the red silhouette lands displaced: yellow shows through the face
+and red spills onto the blue field.</desc>
+<defs>
+<path id="facePath" d="M 512 208 C 432 210 372 252 354 322 C 344 366 350 420 344 470 C 339 516 346 586 366 646 C 382 696 402 748 436 786 C 458 810 484 822 514 823 C 546 822 572 810 594 786 C 628 746 646 696 662 644 C 682 586 688 518 682 470 C 676 422 682 368 672 324 C 654 254 594 210 512 208 Z"/>
+<mask id="faceMask"><use xmlns:xlink="http://www.w3.org/1999/xlink" xlink:href="#facePath" fill="#ffffff"/></mask>
+<filter id="softDrop" x="-20%" y="-20%" width="140%" height="150%">
+<feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#000000" flood-opacity="0.45"/>
+</filter>
+</defs>
+<rect width="1024" height="1024" fill="#1030c0"/>
+<g filter="url(#softDrop)">
+<use xlink:href="#facePath" fill="#ffd400"/>
+<rect x="280" y="190" width="460" height="660" fill="#ff0000" mask="url(#faceMask)" opacity="1"/>
+</g>
+</svg>
