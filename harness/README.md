@@ -60,6 +60,24 @@ Zoom ladders: 8-11 steps in and out (e.g. 0.6 .. 2.35) for a feature PR; a
   expectation (e.g. straight vs premultiplied midpoint over white).
 * Thin-fill / AA-fringe classes: compare coverage-weighted ink at 2x/4x/8x -
   a ratio that converges toward 1 as shapes thicken is the fringe signature.
+* `--threshold N` (default 20) and `--exact`. `--exact` adds a second line:
+  the count of pixels that differ at all (delta >= 1), their mean delta, the
+  bounding box of that set and the bounding box of the above-threshold set.
+  Use threshold 8 and `--exact` whenever the content under test is faint -
+  a group at opacity 0.14 can move a pixel by at most ~36/255 and mostly by
+  a few counts, so a *complete* displacement or drop of that group survives
+  neither 20/255 nor the erosion. Measured on `qwen3-8-2-4t-a95b` at 1x
+  against Chromium 131 with the pre-review #323 build, whose nested mask
+  (the `faceMask`-masked skin-texture rect at opacity 0.14 inside the
+  `softDrop` group) landed displaced by the outer layer's capture origin:
+  default `0.62 % / 0.000 %`, `--threshold 8` `1.98 % / 0.022 %`, `--exact`
+  33,144 px (27.71 %) at mean delta 3.34 over the whole 200x200 box - all
+  three read as "AA only". The probe that isolates it is an ablation: remove
+  the group from the SVG and diff with-vs-without on each side. Chromium:
+  7,228 px (6.04 %) change, bbox (185,50)-(277,191) = the face, max delta 35,
+  0.000 % structural even at threshold 8. femtovg: 0 px change - the group
+  contributed nothing. So for low-opacity layers report the ablation's
+  `--exact` count and bbox, not the sweep percentage.
 
 ## Bisecting (env probes built into `_logos_full.rs`)
 
