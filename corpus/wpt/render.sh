@@ -3,7 +3,7 @@
 # Chromium 131 test+ref at 1x and 2x, Firefox test+ref at 1x.
 # Usage: render.sh [case-name ...]   (default: all)
 set -u
-W=/private/tmp/claude-501/-Users-matt-src-femtovg/e8e3f9a7-e26b-426f-ad20-5815dcc2470f/scratchpad/wpt-masks
+W=${W:-$(cd "$(dirname "$0")" && pwd)}
 BIN=/private/tmp/wt-all3/target/debug/examples/_logos_full
 MK=/private/tmp/wt-da/harness/make_ref.py
 CHROME=$HOME/.cache/puppeteer/chrome-headless-shell/mac_arm-131.0.6778.204/chrome-headless-shell-mac-arm64/chrome-headless-shell
@@ -16,7 +16,7 @@ fi
 for name in $cases; do
   eval $(python3 - "$name" <<'EOF'
 import json, sys
-m = json.load(open("/private/tmp/claude-501/-Users-matt-src-femtovg/e8e3f9a7-e26b-426f-ad20-5815dcc2470f/scratchpad/wpt-masks/manifest.json"))[sys.argv[1]]
+m = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "manifest.json")))[sys.argv[1]]
 print(f"FW={m['frame_w']} FH={m['frame_h']} B={m['box']} BX={m['box_x']} BY={m['box_y']} REF={m['ref']}")
 EOF
 )
