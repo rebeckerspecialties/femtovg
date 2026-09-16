@@ -1,11 +1,23 @@
 //! Offscreen single-SVG-logo renderer for conformance cross-checks: maps usvg
 //! paths and gradients onto femtovg paints and renders one logo centered
 //! under a pivot zoom. Usage: `_logos <scale> <out.ppm> <logo.svg> [dark]`.
+//!
+//! Build modes. With no cfg flags the harness compiles against a tree that
+//! has only the #322/#323 APIs (layers, effects, masks): clip paths are then
+//! drawn unclipped and feTurbulence chains are left to the
+//! SKIP_UNSUPPORTED_FILTERS rule, and both are counted under LAYER_STATS.
+//! `--cfg harness_clip` enables `Canvas::clip_path` (#324) and
+//! `--cfg harness_turbulence` enables `ImageFilter::Turbulence` (#338):
+//! `cargo rustc --example _logos_full --features wgpu -- --cfg harness_clip --cfg harness_turbulence`
+//! (or the same two cfgs in RUSTFLAGS, which also rebuilds every dependency).
 #![cfg(feature = "wgpu")]
+#![allow(unexpected_cfgs)]
 
+#[cfg(harness_turbulence)]
+use femtovg::TurbulenceKind;
 use femtovg::{
     renderer::WGPURenderer, Canvas, Color, CompositeOperation, FillRule, ImageFilter, ImageFlags, LayerEffects,
-    MaskKind, Paint, Path, PixelFormat, RenderTarget, Transform2D, TurbulenceKind,
+    MaskKind, Paint, Path, PixelFormat, RenderTarget, Transform2D,
 };
 
 /// Frame and layout, overridable for other framings (1080p: FRAME_W=1920
@@ -212,6 +224,7 @@ fn drop_shadow(group: &usvg::Group) -> Option<&usvg::filter::DropShadow> {
 /// the device rect of the filter region they fill, and whether the result
 /// is stencilled by the source (`feComposite operator="in" in2=Source*`)
 /// or replaces it outright.
+#[cfg_attr(not(harness_turbulence), allow(dead_code))]
 struct NoisePlan {
     chain: Vec<ImageFilter>,
     /// Device-pixel size of the noise image.
@@ -224,6 +237,7 @@ struct NoisePlan {
     stencil: bool,
 }
 
+#[cfg(harness_turbulence)]
 fn color_matrix(kind: &usvg::filter::ColorMatrixKind) -> Option<ImageFilter> {
     use usvg::filter::ColorMatrixKind;
     match kind {
@@ -240,6 +254,7 @@ fn color_matrix(kind: &usvg::filter::ColorMatrixKind) -> Option<ImageFilter> {
 /// every grain/skin-texture filter in the BuseyBench corpus takes. The chain
 /// runs in the primitives' color-interpolation-filters space (linearRGB by
 /// default) and ends with the transfer back to sRGB, as a browser's does.
+#[cfg(harness_turbulence)]
 fn turbulence_plan(canvas: &Canvas<WGPURenderer>, group: &usvg::Group) -> Option<NoisePlan> {
     use usvg::filter::{ColorInterpolation, CompositeOperator, Input, Kind};
     if std::env::var("NO_TURBULENCE").is_ok() {
@@ -355,6 +370,23 @@ fn turbulence_plan(canvas: &Canvas<WGPURenderer>, group: &usvg::Group) -> Option
     })
 }
 
+/// Without `--cfg harness_turbulence` (a tree without #338) no chain can be
+/// run: the group is left to the SKIP_UNSUPPORTED_FILTERS rule, exactly as a
+/// chain this backend does not recognise, and counted so LAYER_STATS shows
+/// what the build left out.
+#[cfg(not(harness_turbulence))]
+fn turbulence_plan(_canvas: &Canvas<WGPURenderer>, group: &usvg::Group) -> Option<NoisePlan> {
+    let has_turbulence = group
+        .filters()
+        .iter()
+        .flat_map(|f| f.primitives().iter())
+        .any(|p| matches!(p.kind(), usvg::filter::Kind::Turbulence(_)));
+    if has_turbulence {
+        TURBULENCE_UNSUPPORTED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    }
+    None
+}
+
 /// Draws a group's children, or - under a NoisePlan - the filter's output in
 /// their place: the noise image alone when the chain replaces the source,
 /// or the source with the noise composited SourceIn when it stencils it.
@@ -449,6 +481,12 @@ static LAYERS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::
 static DEPTH: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 static PASS_THROUGH: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 static TRANSIENT_AT_FLUSH: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+/// Groups dropped by SKIP_UNSUPPORTED_FILTERS (a source-replacing filter this build cannot run).
+static FILTERS_SKIPPED: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+/// feTurbulence chains seen by a build without `harness_turbulence`.
+static TURBULENCE_UNSUPPORTED: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+/// Clip paths drawn unclipped by a build without `harness_clip`.
+static CLIPS_UNSUPPORTED: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 
 /// LAYER_LOG=1: one line per layer with what a pool simulator needs.
 fn log_layer(canvas: &Canvas<WGPURenderer>, group: &usvg::Group, scale: f32, kind: &str) {
@@ -514,6 +552,88 @@ fn replaces_source(f: &usvg::filter::Filter) -> bool {
     })
 }
 
+/// Pushes the group's clip path (#324's `Canvas::clip_path`) and reports
+/// whether a matching `restore` is owed.
+#[cfg(harness_clip)]
+fn push_clip(canvas: &mut Canvas<WGPURenderer>, group: &usvg::Group) -> bool {
+    let Some(clip) = group.clip_path().filter(|_| std::env::var("NO_CLIP").is_err()) else {
+        return false;
+    };
+    canvas.save();
+    let mut combined = Path::new();
+    let mut rule = FillRule::NonZero;
+    // Clip content may be nested in groups (usvg wraps a
+    // <use> inside <clipPath> in a Group); walk the whole
+    // subtree and bake every path's absolute transform.
+    fn collect_clip(nodes: &[usvg::Node], base: usvg::Transform, combined: &mut Path, rule: &mut FillRule) {
+        use usvg::tiny_skia_path::PathSegment;
+        for node in nodes {
+            match node {
+                usvg::Node::Group(g) => collect_clip(g.children(), base, combined, rule),
+                usvg::Node::Path(p) => {
+                    if let Some(f) = p.fill() {
+                        if matches!(f.rule(), usvg::FillRule::EvenOdd) {
+                            *rule = FillRule::EvenOdd;
+                        }
+                    }
+                    let ct = base.pre_concat(p.abs_transform());
+                    let map = |x: f32, y: f32| (ct.sx * x + ct.kx * y + ct.tx, ct.ky * x + ct.sy * y + ct.ty);
+                    for seg in p.data().segments() {
+                        match seg {
+                            PathSegment::MoveTo(q) => {
+                                let (x, y) = map(q.x, q.y);
+                                combined.move_to(x, y);
+                            }
+                            PathSegment::LineTo(q) => {
+                                let (x, y) = map(q.x, q.y);
+                                combined.line_to(x, y);
+                            }
+                            PathSegment::QuadTo(a, q) => {
+                                let (ax, ay) = map(a.x, a.y);
+                                let (x, y) = map(q.x, q.y);
+                                combined.quad_to(ax, ay, x, y);
+                            }
+                            PathSegment::CubicTo(a, b, q) => {
+                                let (ax, ay) = map(a.x, a.y);
+                                let (bx, by) = map(b.x, b.y);
+                                let (x, y) = map(q.x, q.y);
+                                combined.bezier_to(ax, ay, bx, by, x, y);
+                            }
+                            PathSegment::Close => combined.close(),
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+    collect_clip(
+        clip.root().children(),
+        group.abs_transform().pre_concat(clip.transform()),
+        &mut combined,
+        &mut rule,
+    );
+    if std::env::var("CLIP_SHOW").is_ok() {
+        // Debug: paint the clip region instead of clipping with it.
+        let mut show = Paint::color(Color::rgba(200, 0, 200, 90));
+        show.set_fill_rule(rule);
+        canvas.fill_path(&combined, &show);
+    } else {
+        canvas.clip_path(&combined, rule);
+    }
+    true
+}
+
+/// Without `--cfg harness_clip` (a tree without #324) the group is drawn
+/// unclipped and counted, so LAYER_STATS shows what the build left out.
+#[cfg(not(harness_clip))]
+fn push_clip(_canvas: &mut Canvas<WGPURenderer>, group: &usvg::Group) -> bool {
+    if group.clip_path().is_some() && std::env::var("NO_CLIP").is_err() {
+        CLIPS_UNSUPPORTED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    }
+    false
+}
+
 fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale: f32, masks: &MaskMap) {
     use usvg::tiny_skia_path::PathSegment;
     for node in children {
@@ -532,79 +652,10 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                     && plan.is_none()
                     && group.filters().iter().any(|f| replaces_source(f))
                 {
+                    FILTERS_SKIPPED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                     continue;
                 }
-                let clipped = group.clip_path().is_some() && std::env::var("NO_CLIP").is_err();
-                if let Some(clip) = group.clip_path().filter(|_| std::env::var("NO_CLIP").is_err()) {
-                    canvas.save();
-                    let mut combined = Path::new();
-                    let mut rule = FillRule::NonZero;
-                    // Clip content may be nested in groups (usvg wraps a
-                    // <use> inside <clipPath> in a Group); walk the whole
-                    // subtree and bake every path's absolute transform.
-                    fn collect_clip(
-                        nodes: &[usvg::Node],
-                        base: usvg::Transform,
-                        combined: &mut Path,
-                        rule: &mut FillRule,
-                    ) {
-                        use usvg::tiny_skia_path::PathSegment;
-                        for node in nodes {
-                            match node {
-                                usvg::Node::Group(g) => collect_clip(g.children(), base, combined, rule),
-                                usvg::Node::Path(p) => {
-                                    if let Some(f) = p.fill() {
-                                        if matches!(f.rule(), usvg::FillRule::EvenOdd) {
-                                            *rule = FillRule::EvenOdd;
-                                        }
-                                    }
-                                    let ct = base.pre_concat(p.abs_transform());
-                                    let map =
-                                        |x: f32, y: f32| (ct.sx * x + ct.kx * y + ct.tx, ct.ky * x + ct.sy * y + ct.ty);
-                                    for seg in p.data().segments() {
-                                        match seg {
-                                            PathSegment::MoveTo(q) => {
-                                                let (x, y) = map(q.x, q.y);
-                                                combined.move_to(x, y);
-                                            }
-                                            PathSegment::LineTo(q) => {
-                                                let (x, y) = map(q.x, q.y);
-                                                combined.line_to(x, y);
-                                            }
-                                            PathSegment::QuadTo(a, q) => {
-                                                let (ax, ay) = map(a.x, a.y);
-                                                let (x, y) = map(q.x, q.y);
-                                                combined.quad_to(ax, ay, x, y);
-                                            }
-                                            PathSegment::CubicTo(a, b, q) => {
-                                                let (ax, ay) = map(a.x, a.y);
-                                                let (bx, by) = map(b.x, b.y);
-                                                let (x, y) = map(q.x, q.y);
-                                                combined.bezier_to(ax, ay, bx, by, x, y);
-                                            }
-                                            PathSegment::Close => combined.close(),
-                                        }
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
-                    }
-                    collect_clip(
-                        clip.root().children(),
-                        group.abs_transform().pre_concat(clip.transform()),
-                        &mut combined,
-                        &mut rule,
-                    );
-                    if std::env::var("CLIP_SHOW").is_ok() {
-                        // Debug: paint the clip region instead of clipping with it.
-                        let mut show = Paint::color(Color::rgba(200, 0, 200, 90));
-                        show.set_fill_rule(rule);
-                        canvas.fill_path(&combined, &show);
-                    } else {
-                        canvas.clip_path(&combined, rule);
-                    }
-                }
+                let clipped = push_clip(canvas, group);
                 // A shadow set before begin_layer is cast once by the layer's
                 // result - the Canvas 2D layer rule, and what feDropShadow on
                 // a group means - so the group gets a layer and the shadow
@@ -621,7 +672,15 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                     canvas.set_shadow_blur(2.0 * ds.std_dev_x().get().max(ds.std_dev_y().get()) * scale);
                 }
                 let stencil = plan.as_ref().is_some_and(|p| p.stencil);
-                match group_effects(canvas, group, frame_w() as usize, frame_h() as usize, scale, masks, shadowed || stencil) {
+                match group_effects(
+                    canvas,
+                    group,
+                    frame_w() as usize,
+                    frame_h() as usize,
+                    scale,
+                    masks,
+                    shadowed || stencil,
+                ) {
                     Some(fx) => {
                         // Size the layer to the group's own layer bounding box (usvg
                         // includes the filter region and strokes), the way a browser
@@ -752,7 +811,10 @@ fn main() {
     let mut canvas = Canvas::new(renderer).unwrap();
     canvas.set_size(frame_w(), frame_h(), 1.0);
     // Experiments: lift the transient-image budget (MiB), and report layer counts.
-    if let Some(mb) = std::env::var("TRANSIENT_BUDGET_MB").ok().and_then(|v| v.parse::<usize>().ok()) {
+    if let Some(mb) = std::env::var("TRANSIENT_BUDGET_MB")
+        .ok()
+        .and_then(|v| v.parse::<usize>().ok())
+    {
         canvas.set_transient_image_budget(mb << 20);
     }
 
@@ -781,43 +843,49 @@ fn main() {
     });
 
     let bg = if dark { Color::rgb(32, 34, 37) } else { Color::white() };
-    canvas.clear_rect(0, 0, frame_w(), frame_h(), bg);
-    canvas.save();
-    let (px, py) = std::env::var("PIVOT")
-        .ok()
-        .and_then(|s| s.split_once(',').map(|(a, b)| (a.parse().unwrap(), b.parse().unwrap())))
-        .unwrap_or((frame_w() as f32 / 2.0, frame_h() as f32 / 2.0));
-    canvas.translate(px, py);
-    canvas.scale(scale, scale);
-    canvas.translate(-px, -py);
+    // FRAMES=n draws the scene n times (each frame clears and redraws), so
+    // state that leaks across frames shows up in the last one.
+    let frames: usize = std::env::var("FRAMES").ok().and_then(|v| v.parse().ok()).unwrap_or(1);
+    for _frame in 0..frames {
+        canvas.clear_rect(0, 0, frame_w(), frame_h(), bg);
+        canvas.save();
+        let (px, py) = std::env::var("PIVOT")
+            .ok()
+            .and_then(|s| s.split_once(',').map(|(a, b)| (a.parse().unwrap(), b.parse().unwrap())))
+            .unwrap_or((frame_w() as f32 / 2.0, frame_h() as f32 / 2.0));
+        canvas.translate(px, py);
+        canvas.scale(scale, scale);
+        canvas.translate(-px, -py);
 
-    let size = tree.size();
-    let fit = box_size() / size.width().max(size.height());
-    let (box_x, box_y) = box_at();
-    canvas.translate(box_x, box_y);
-    // An SVG viewport clips its content (overflow is hidden by default). Skip
-    // this and anything the artwork pushes past its own edge - most visibly a
-    // heavily blurred shape larger than the viewBox - spills into the page.
-    if std::env::var("VIEWPORT_CLIP").is_ok() {
-        canvas.scissor(0.0, 0.0, box_size(), box_size());
+        let size = tree.size();
+        let fit = box_size() / size.width().max(size.height());
+        let (box_x, box_y) = box_at();
+        canvas.translate(box_x, box_y);
+        // An SVG viewport clips its content (overflow is hidden by default). Skip
+        // this and anything the artwork pushes past its own edge - most visibly a
+        // heavily blurred shape larger than the viewBox - spills into the page.
+        if std::env::var("VIEWPORT_CLIP").is_ok() {
+            canvas.scissor(0.0, 0.0, box_size(), box_size());
+        }
+        canvas.scale(fit, fit);
+        let mut masks = MaskMap::new();
+        precapture_masks(
+            &mut canvas,
+            tree.root().children(),
+            frame_w() as usize,
+            frame_h() as usize,
+            scale * fit,
+            &mut masks,
+        );
+        draw_nodes(&mut canvas, tree.root().children(), scale * fit, &masks);
+
+        canvas.restore();
+
+        TRANSIENT_AT_FLUSH.store(canvas.transient_image_bytes(), std::sync::atomic::Ordering::Relaxed);
+        let commands = canvas.flush_to_output(&target);
+        queue.submit(commands);
+        device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
     }
-    canvas.scale(fit, fit);
-    let mut masks = MaskMap::new();
-    precapture_masks(
-        &mut canvas,
-        tree.root().children(),
-        frame_w() as usize,
-        frame_h() as usize,
-        scale * fit,
-        &mut masks,
-    );
-    draw_nodes(&mut canvas, tree.root().children(), scale * fit, &masks);
-
-    canvas.restore();
-
-    TRANSIENT_AT_FLUSH.store(canvas.transient_image_bytes(), std::sync::atomic::Ordering::Relaxed);
-    let commands = canvas.flush_to_output(&target);
-    queue.submit(commands);
 
     let unpadded = frame_w() * 4;
     let align = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
@@ -867,7 +935,30 @@ fn main() {
     std::fs::write(out, ppm).unwrap();
     if std::env::var("LAYER_STATS").is_ok() {
         eprintln!("layers begun: {}", LAYERS.load(std::sync::atomic::Ordering::Relaxed));
-        eprintln!("transient bytes held at flush: {}", TRANSIENT_AT_FLUSH.load(std::sync::atomic::Ordering::Relaxed));
-        eprintln!("layers passed through: {}", PASS_THROUGH.load(std::sync::atomic::Ordering::Relaxed));
+        eprintln!(
+            "transient bytes held at flush: {}",
+            TRANSIENT_AT_FLUSH.load(std::sync::atomic::Ordering::Relaxed)
+        );
+        eprintln!(
+            "layers passed through: {}",
+            PASS_THROUGH.load(std::sync::atomic::Ordering::Relaxed)
+        );
+        eprintln!(
+            "harness cfgs: clip={} turbulence={}",
+            cfg!(harness_clip),
+            cfg!(harness_turbulence)
+        );
+        eprintln!(
+            "filters skipped (SKIP_UNSUPPORTED_FILTERS): {}",
+            FILTERS_SKIPPED.load(std::sync::atomic::Ordering::Relaxed)
+        );
+        eprintln!(
+            "feTurbulence chains not run (no harness_turbulence): {}",
+            TURBULENCE_UNSUPPORTED.load(std::sync::atomic::Ordering::Relaxed)
+        );
+        eprintln!(
+            "clip paths drawn unclipped (no harness_clip): {}",
+            CLIPS_UNSUPPORTED.load(std::sync::atomic::Ordering::Relaxed)
+        );
     }
 }

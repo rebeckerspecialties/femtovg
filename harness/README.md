@@ -393,3 +393,37 @@ the pre-review #323 build (Chromium 131, 460x260, px>20 / structural):
     kimi-k3              0.63 % / 0.000    1.45 % / 0.000    1.12 % / 0.005
     qwen3-8-2-4t-a95b    0.62 % / 0.000    1.00 % / 0.000    0.92 % / 0.000
     mean (3 files)       0.47 % / 0.000    0.89 % / 0.000    0.80 % / 0.002
+
+## Build modes: exact #323 versus the full stack (`harness_clip`, `harness_turbulence`)
+
+`_logos_full.rs` uses two APIs that are not in #323: `Canvas::clip_path`
+(#324) and `ImageFilter::Turbulence` / `LinearRgbToSrgb` (#338). Both are
+behind rustc cfgs so the headline numbers can be reproduced against the
+exact #323 tree (master + layer-effects) as well as against the whole open
+stack:
+
+    export CARGO_TARGET_DIR=<the one build tree>
+    # exact #322/#323 API surface: clip paths drawn unclipped, feTurbulence
+    # chains left to SKIP_UNSUPPORTED_FILTERS (their groups are dropped)
+    cargo build --example _logos_full --features wgpu
+    # the full stack (#324 clip, #338 turbulence)
+    cargo rustc --example _logos_full --features wgpu -- --cfg harness_clip --cfg harness_turbulence
+
+`cargo rustc -- --cfg ...` applies the cfgs to the example crate only, so it
+does not recompile the dependencies. `RUSTFLAGS="--cfg harness_clip --cfg
+harness_turbulence" cargo build --example _logos_full --features wgpu` is
+equivalent for the binary but re-fingerprints every dependency (about 2 GB
+more in the target tree; do not use it on a full disk). Either cfg can be
+set on its own. `LAYER_STATS=1` prints which build produced a frame and what
+it left out:
+
+    harness cfgs: clip=false turbulence=false
+    filters skipped (SKIP_UNSUPPORTED_FILTERS): 3
+    feTurbulence chains not run (no harness_turbulence): 3
+    clip paths drawn unclipped (no harness_clip): 15
+
+The gate was proved on one tree that has every API (corpus-all3): the
+no-cfg build compiles and renders the two mask reductions bit-identically
+to the full build (they use neither feature), and the full-cfg build renders
+`qwen3-8-2-4t-a95b`, `gpt-6-astra`, `kimi-k3` and both reductions at 1x, 2x
+and 4x bit-identically to the binary built before the gates were added.
