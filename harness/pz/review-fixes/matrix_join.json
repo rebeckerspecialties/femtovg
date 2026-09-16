@@ -1,0 +1,2802 @@
+[
+ {
+  "file": "claude-fable-5-1",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 178,
+  "layers_fixed": 178,
+  "layers_orig": 178,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 8746816,
+  "tr_fixed": 8746816,
+  "tr_orig": 8746816,
+  "rec_pre": 0.6552,
+  "enc_pre": 13.2295,
+  "gpu_pre": 17.118,
+  "wall_fixed": 129.0,
+  "wall_orig": 138.99999999999997,
+  "cpu_fixed": 153.0,
+  "cpu_orig": 153.0,
+  "wall_fixed_all": [
+   129.0,
+   139.99999999999997
+  ],
+  "wall_orig_all": [
+   138.99999999999997,
+   144.0
+  ],
+  "cpu_fixed_all": [
+   153.0,
+   154.0
+  ],
+  "cpu_orig_all": [
+   153.0,
+   152.0
+  ],
+  "rss_fixed": 448413696,
+  "rss_orig": 452886528,
+  "rss_pre": 405422080
+ },
+ {
+  "file": "claude-opus-5",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 92,
+  "layers_fixed": 92,
+  "layers_orig": 92,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 13742432,
+  "tr_fixed": 13742432,
+  "tr_orig": 13742432,
+  "rec_pre": 0.4893,
+  "enc_pre": 9.2335,
+  "gpu_pre": 12.3641,
+  "wall_fixed": 102.00000000000001,
+  "wall_orig": 104.99999999999999,
+  "cpu_fixed": 109.00000000000001,
+  "cpu_orig": 110.00000000000001,
+  "wall_fixed_all": [
+   106.00000000000001,
+   102.00000000000001
+  ],
+  "wall_orig_all": [
+   104.99999999999999,
+   110.99999999999999
+  ],
+  "cpu_fixed_all": [
+   110.00000000000001,
+   109.00000000000001
+  ],
+  "cpu_orig_all": [
+   110.00000000000001,
+   109.00000000000001
+  ],
+  "rss_fixed": 322584576,
+  "rss_orig": 332251136,
+  "rss_pre": 280707072
+ },
+ {
+  "file": "fugu-ultra",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 124,
+  "layers_fixed": 124,
+  "layers_orig": 124,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 14172672,
+  "tr_fixed": 14172672,
+  "tr_orig": 14172672,
+  "rec_pre": 0.489,
+  "enc_pre": 6.7243,
+  "gpu_pre": 9.1794,
+  "wall_fixed": 80.0,
+  "wall_orig": 77.0,
+  "cpu_fixed": 84.0,
+  "cpu_orig": 81.0,
+  "wall_fixed_all": [
+   81.0,
+   80.0
+  ],
+  "wall_orig_all": [
+   77.0,
+   80.0
+  ],
+  "cpu_fixed_all": [
+   82.0,
+   84.0
+  ],
+  "cpu_orig_all": [
+   81.0,
+   83.0
+  ],
+  "rss_fixed": 241598464,
+  "rss_orig": 241106944,
+  "rss_pre": 246448128
+ },
+ {
+  "file": "gemini-3-1-pro-preview",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 98,
+  "layers_fixed": 98,
+  "layers_orig": 98,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 10684416,
+  "tr_fixed": 10684416,
+  "tr_orig": 10684416,
+  "rec_pre": 0.4072,
+  "enc_pre": 14.3532,
+  "gpu_pre": 18.6922,
+  "wall_fixed": 139.99999999999997,
+  "wall_orig": 146.0,
+  "cpu_fixed": 154.0,
+  "cpu_orig": 153.0,
+  "wall_fixed_all": [
+   139.99999999999997,
+   149.00000000000003
+  ],
+  "wall_orig_all": [
+   146.0,
+   150.99999999999997
+  ],
+  "cpu_fixed_all": [
+   154.0,
+   154.0
+  ],
+  "cpu_orig_all": [
+   153.0,
+   158.0
+  ],
+  "rss_fixed": 499433472,
+  "rss_orig": 485818368,
+  "rss_pre": 464617472
+ },
+ {
+  "file": "gemini-3-1-pro-preview-custom-tools",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 75,
+  "layers_fixed": 75,
+  "layers_orig": 75,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 10756608,
+  "tr_fixed": 10756608,
+  "tr_orig": 10756608,
+  "rec_pre": 0.3768,
+  "enc_pre": 9.4542,
+  "gpu_pre": 13.2543,
+  "wall_fixed": 106.00000000000001,
+  "wall_orig": 103.00000000000001,
+  "cpu_fixed": 114.00000000000001,
+  "cpu_orig": 107.0,
+  "wall_fixed_all": [
+   106.00000000000001,
+   106.99999999999999
+  ],
+  "wall_orig_all": [
+   107.00000000000001,
+   103.00000000000001
+  ],
+  "cpu_fixed_all": [
+   114.00000000000001,
+   113.00000000000001
+  ],
+  "cpu_orig_all": [
+   110.99999999999999,
+   106.99999999999999
+  ],
+  "rss_fixed": 352518144,
+  "rss_orig": 315621376,
+  "rss_pre": 297943040
+ },
+ {
+  "file": "gemini-3-7-flash",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 57,
+  "layers_fixed": 57,
+  "layers_orig": 57,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 7127040,
+  "tr_fixed": 7127040,
+  "tr_orig": 7127040,
+  "rec_pre": 0.4395,
+  "enc_pre": 3.9841,
+  "gpu_pre": 4.8743,
+  "wall_fixed": 62.000000000000014,
+  "wall_orig": 60.0,
+  "cpu_fixed": 62.00000000000001,
+  "cpu_orig": 60.00000000000001,
+  "wall_fixed_all": [
+   62.000000000000014,
+   67.00000000000001
+  ],
+  "wall_orig_all": [
+   60.0,
+   62.0
+  ],
+  "cpu_fixed_all": [
+   62.00000000000001,
+   62.00000000000001
+  ],
+  "cpu_orig_all": [
+   60.00000000000001,
+   60.99999999999999
+  ],
+  "rss_fixed": 139706368,
+  "rss_orig": 140279808,
+  "rss_pre": 137068544
+ },
+ {
+  "file": "gemini-3-8-flash",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 118,
+  "layers_fixed": 118,
+  "layers_orig": 118,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 8175616,
+  "tr_fixed": 8175616,
+  "tr_orig": 8175616,
+  "rec_pre": 0.4766,
+  "enc_pre": 9.593,
+  "gpu_pre": 13.8738,
+  "wall_fixed": 110.00000000000001,
+  "wall_orig": 117.0,
+  "cpu_fixed": 118.0,
+  "cpu_orig": 120.0,
+  "wall_fixed_all": [
+   114.99999999999999,
+   110.00000000000001
+  ],
+  "wall_orig_all": [
+   125.0,
+   117.0
+  ],
+  "cpu_fixed_all": [
+   120.0,
+   118.00000000000001
+  ],
+  "cpu_orig_all": [
+   125.0,
+   120.0
+  ],
+  "rss_fixed": 301318144,
+  "rss_orig": 308264960,
+  "rss_pre": 291487744
+ },
+ {
+  "file": "glm-5-3",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 129,
+  "layers_fixed": 129,
+  "layers_orig": 129,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 10405888,
+  "tr_fixed": 10405888,
+  "tr_orig": 10405888,
+  "rec_pre": 0.5226,
+  "enc_pre": 12.0194,
+  "gpu_pre": 15.0868,
+  "wall_fixed": 131.99999999999997,
+  "wall_orig": 133.0,
+  "cpu_fixed": 137.0,
+  "cpu_orig": 141.0,
+  "wall_fixed_all": [
+   131.99999999999997,
+   133.0
+  ],
+  "wall_orig_all": [
+   135.0,
+   133.0
+  ],
+  "cpu_fixed_all": [
+   137.0,
+   139.0
+  ],
+  "cpu_orig_all": [
+   145.0,
+   141.0
+  ],
+  "rss_fixed": 370442240,
+  "rss_orig": 420610048,
+  "rss_pre": 367607808
+ },
+ {
+  "file": "glm-5-3-flash",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 79,
+  "layers_fixed": 79,
+  "layers_orig": 79,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 10756608,
+  "tr_fixed": 10756608,
+  "tr_orig": 10756608,
+  "rec_pre": 0.3479,
+  "enc_pre": 5.7125,
+  "gpu_pre": 10.101,
+  "wall_fixed": 64.00000000000001,
+  "wall_orig": 69.99999999999999,
+  "cpu_fixed": 65.0,
+  "cpu_orig": 70.00000000000001,
+  "wall_fixed_all": [
+   64.00000000000001,
+   66.99999999999999
+  ],
+  "wall_orig_all": [
+   69.99999999999999,
+   69.99999999999999
+  ],
+  "cpu_fixed_all": [
+   65.0,
+   69.0
+  ],
+  "cpu_orig_all": [
+   70.0,
+   72.00000000000001
+  ],
+  "rss_fixed": 197967872,
+  "rss_orig": 209616896,
+  "rss_pre": 199409664
+ },
+ {
+  "file": "glm-5v-turbo",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 57,
+  "layers_fixed": 57,
+  "layers_orig": 57,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 10684416,
+  "tr_fixed": 10684416,
+  "tr_orig": 10684416,
+  "rec_pre": 0.3047,
+  "enc_pre": 5.2388,
+  "gpu_pre": 7.8184,
+  "wall_fixed": 58.00000000000001,
+  "wall_orig": 59.000000000000014,
+  "cpu_fixed": 60.0,
+  "cpu_orig": 61.0,
+  "wall_fixed_all": [
+   59.000000000000014,
+   58.00000000000001
+  ],
+  "wall_orig_all": [
+   59.000000000000014,
+   65.00000000000001
+  ],
+  "cpu_fixed_all": [
+   58.0,
+   60.0
+  ],
+  "cpu_orig_all": [
+   61.00000000000001,
+   65.0
+  ],
+  "rss_fixed": 183107584,
+  "rss_orig": 180322304,
+  "rss_pre": 173342720
+ },
+ {
+  "file": "gpt-5-2-pro",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 53,
+  "layers_fixed": 53,
+  "layers_orig": 53,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 9224192,
+  "tr_fixed": 9224192,
+  "tr_orig": 9224192,
+  "rec_pre": 0.3017,
+  "enc_pre": 3.902,
+  "gpu_pre": 8.2592,
+  "wall_fixed": 43.0,
+  "wall_orig": 47.0,
+  "cpu_fixed": 44.0,
+  "cpu_orig": 49.0,
+  "wall_fixed_all": [
+   45.0,
+   43.0
+  ],
+  "wall_orig_all": [
+   47.0,
+   47.0
+  ],
+  "cpu_fixed_all": [
+   46.0,
+   44.0
+  ],
+  "cpu_orig_all": [
+   49.0,
+   45.0
+  ],
+  "rss_fixed": 154730496,
+  "rss_orig": 155172864,
+  "rss_pre": 144343040
+ },
+ {
+  "file": "gpt-5-6-luna-pro",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 33,
+  "layers_fixed": 33,
+  "layers_orig": 33,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 8175616,
+  "tr_fixed": 8175616,
+  "tr_orig": 8175616,
+  "rec_pre": 0.2733,
+  "enc_pre": 2.3347,
+  "gpu_pre": 5.9145,
+  "wall_fixed": 32.00000000000001,
+  "wall_orig": 33.0,
+  "cpu_fixed": 33.0,
+  "cpu_orig": 34.0,
+  "wall_fixed_all": [
+   32.00000000000001,
+   33.0
+  ],
+  "wall_orig_all": [
+   33.0,
+   37.99999999999999
+  ],
+  "cpu_fixed_all": [
+   33.0,
+   34.0
+  ],
+  "cpu_orig_all": [
+   34.0,
+   36.00000000000001
+  ],
+  "rss_fixed": 100859904,
+  "rss_orig": 100515840,
+  "rss_pre": 90849280
+ },
+ {
+  "file": "gpt-5-6-sol",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 48,
+  "layers_fixed": 48,
+  "layers_orig": 48,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 8175616,
+  "tr_fixed": 8175616,
+  "tr_orig": 8175616,
+  "rec_pre": 0.289,
+  "enc_pre": 2.7208,
+  "gpu_pre": 4.5027,
+  "wall_fixed": 39.0,
+  "wall_orig": 39.0,
+  "cpu_fixed": 39.0,
+  "cpu_orig": 39.0,
+  "wall_fixed_all": [
+   39.0,
+   40.0
+  ],
+  "wall_orig_all": [
+   43.0,
+   39.0
+  ],
+  "cpu_fixed_all": [
+   39.0,
+   40.0
+  ],
+  "cpu_orig_all": [
+   42.0,
+   39.0
+  ],
+  "rss_fixed": 111509504,
+  "rss_orig": 111099904,
+  "rss_pre": 99958784
+ },
+ {
+  "file": "gpt-5-6-sol-pro",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 41,
+  "layers_fixed": 41,
+  "layers_orig": 41,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 13369344,
+  "tr_fixed": 13369344,
+  "tr_orig": 13369344,
+  "rec_pre": 0.3407,
+  "enc_pre": 3.139,
+  "gpu_pre": 4.6455,
+  "wall_fixed": 40.99999999999999,
+  "wall_orig": 42.0,
+  "cpu_fixed": 42.0,
+  "cpu_orig": 40.0,
+  "wall_fixed_all": [
+   40.99999999999999,
+   43.0
+  ],
+  "wall_orig_all": [
+   42.0,
+   43.0
+  ],
+  "cpu_fixed_all": [
+   42.0,
+   41.0
+  ],
+  "cpu_orig_all": [
+   40.0,
+   41.0
+  ],
+  "rss_fixed": 112689152,
+  "rss_orig": 111001600,
+  "rss_pre": 114081792
+ },
+ {
+  "file": "gpt-5-6-terra-pro",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 31,
+  "layers_fixed": 31,
+  "layers_orig": 31,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 7127040,
+  "tr_fixed": 7127040,
+  "tr_orig": 7127040,
+  "rec_pre": 0.2844,
+  "enc_pre": 2.53,
+  "gpu_pre": 7.0288,
+  "wall_fixed": 33.99999999999999,
+  "wall_orig": 36.0,
+  "cpu_fixed": 33.99999999999999,
+  "cpu_orig": 37.99999999999999,
+  "wall_fixed_all": [
+   33.99999999999999,
+   34.99999999999999
+  ],
+  "wall_orig_all": [
+   36.0,
+   36.0
+  ],
+  "cpu_fixed_all": [
+   33.99999999999999,
+   36.0
+  ],
+  "cpu_orig_all": [
+   37.99999999999999,
+   34.0
+  ],
+  "rss_fixed": 100417536,
+  "rss_orig": 105873408,
+  "rss_pre": 90505216
+ },
+ {
+  "file": "gpt-6-astra",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 162,
+  "layers_fixed": 162,
+  "layers_orig": 162,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 8175616,
+  "tr_fixed": 8175616,
+  "tr_orig": 8175616,
+  "rec_pre": 0.8032,
+  "enc_pre": 11.2604,
+  "gpu_pre": 13.5548,
+  "wall_fixed": 148.0,
+  "wall_orig": 155.00000000000003,
+  "cpu_fixed": 152.0,
+  "cpu_orig": 160.0,
+  "wall_fixed_all": [
+   152.0,
+   148.0
+  ],
+  "wall_orig_all": [
+   155.00000000000003,
+   158.0
+  ],
+  "cpu_fixed_all": [
+   155.0,
+   152.0
+  ],
+  "cpu_orig_all": [
+   160.0,
+   161.0
+  ],
+  "rss_fixed": 331907072,
+  "rss_orig": 361283584,
+  "rss_pre": 318472192
+ },
+ {
+  "file": "grok-4-5",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 76,
+  "layers_fixed": 76,
+  "layers_orig": 76,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 6631936,
+  "tr_fixed": 6631936,
+  "tr_orig": 6631936,
+  "rec_pre": 0.397,
+  "enc_pre": 5.6712,
+  "gpu_pre": 8.0105,
+  "wall_fixed": 71.0,
+  "wall_orig": 69.99999999999999,
+  "cpu_fixed": 72.0,
+  "cpu_orig": 71.99999999999999,
+  "wall_fixed_all": [
+   71.0,
+   77.0
+  ],
+  "wall_orig_all": [
+   69.99999999999999,
+   71.0
+  ],
+  "cpu_fixed_all": [
+   72.0,
+   77.99999999999999
+  ],
+  "cpu_orig_all": [
+   71.99999999999999,
+   73.99999999999999
+  ],
+  "rss_fixed": 196067328,
+  "rss_orig": 194199552,
+  "rss_pre": 179339264
+ },
+ {
+  "file": "kimi-k2-6",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 55,
+  "layers_fixed": 55,
+  "layers_orig": 55,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 10613248,
+  "tr_fixed": 10613248,
+  "tr_orig": 10613248,
+  "rec_pre": 0.3032,
+  "enc_pre": 5.4402,
+  "gpu_pre": 8.5273,
+  "wall_fixed": 60.000000000000014,
+  "wall_orig": 61.000000000000014,
+  "cpu_fixed": 61.00000000000001,
+  "cpu_orig": 64.0,
+  "wall_fixed_all": [
+   60.000000000000014,
+   62.000000000000014
+  ],
+  "wall_orig_all": [
+   63.000000000000014,
+   61.000000000000014
+  ],
+  "cpu_fixed_all": [
+   61.0,
+   64.0
+  ],
+  "cpu_orig_all": [
+   65.0,
+   64.0
+  ],
+  "rss_fixed": 198950912,
+  "rss_orig": 203423744,
+  "rss_pre": 186040320
+ },
+ {
+  "file": "kimi-k3",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 50,
+  "layers_fixed": 50,
+  "layers_orig": 50,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 11805184,
+  "tr_fixed": 11805184,
+  "tr_orig": 11805184,
+  "rec_pre": 0.289,
+  "enc_pre": 2.754,
+  "gpu_pre": 4.7641,
+  "wall_fixed": 36.0,
+  "wall_orig": 34.99999999999999,
+  "cpu_fixed": 36.0,
+  "cpu_orig": 35.99999999999999,
+  "wall_fixed_all": [
+   37.0,
+   36.0
+  ],
+  "wall_orig_all": [
+   40.99999999999999,
+   34.99999999999999
+  ],
+  "cpu_fixed_all": [
+   38.0,
+   36.0
+  ],
+  "cpu_orig_all": [
+   38.99999999999999,
+   35.99999999999999
+  ],
+  "rss_fixed": 123863040,
+  "rss_orig": 118931456,
+  "rss_pre": 116424704
+ },
+ {
+  "file": "muse-spark-1-3",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 49,
+  "layers_fixed": 49,
+  "layers_orig": 49,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 7127040,
+  "tr_fixed": 7127040,
+  "tr_orig": 7127040,
+  "rec_pre": 0.3187,
+  "enc_pre": 4.7339,
+  "gpu_pre": 8.3412,
+  "wall_fixed": 58.00000000000001,
+  "wall_orig": 56.00000000000001,
+  "cpu_fixed": 59.0,
+  "cpu_orig": 57.0,
+  "wall_fixed_all": [
+   58.00000000000001,
+   59.000000000000014
+  ],
+  "wall_orig_all": [
+   56.00000000000001,
+   56.00000000000001
+  ],
+  "cpu_fixed_all": [
+   59.0,
+   58.0
+  ],
+  "cpu_orig_all": [
+   57.0,
+   57.0
+  ],
+  "rss_fixed": 167313408,
+  "rss_orig": 162512896,
+  "rss_pre": 155058176
+ },
+ {
+  "file": "muse-spark-1-3-contributor",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 59,
+  "layers_fixed": 59,
+  "layers_orig": 59,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 7127040,
+  "tr_fixed": 7127040,
+  "tr_orig": 7127040,
+  "rec_pre": 0.2937,
+  "enc_pre": 4.7959,
+  "gpu_pre": 6.8449,
+  "wall_fixed": 54.00000000000001,
+  "wall_orig": 52.00000000000001,
+  "cpu_fixed": 53.0,
+  "cpu_orig": 53.0,
+  "wall_fixed_all": [
+   55.00000000000001,
+   54.00000000000001
+  ],
+  "wall_orig_all": [
+   53.00000000000001,
+   52.00000000000001
+  ],
+  "cpu_fixed_all": [
+   55.0,
+   53.0
+  ],
+  "cpu_orig_all": [
+   54.0,
+   53.0
+  ],
+  "rss_fixed": 165003264,
+  "rss_orig": 162136064,
+  "rss_pre": 155402240
+ },
+ {
+  "file": "nex-n2-pro",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 102,
+  "layers_fixed": 102,
+  "layers_orig": 102,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 13822464,
+  "tr_fixed": 13822464,
+  "tr_orig": 13822464,
+  "rec_pre": 0.4182,
+  "enc_pre": 5.2811,
+  "gpu_pre": 7.8465,
+  "wall_fixed": 66.00000000000001,
+  "wall_orig": 66.00000000000001,
+  "cpu_fixed": 67.0,
+  "cpu_orig": 69.00000000000001,
+  "wall_fixed_all": [
+   66.00000000000001,
+   67.00000000000001
+  ],
+  "wall_orig_all": [
+   68.0,
+   66.00000000000001
+  ],
+  "cpu_fixed_all": [
+   67.0,
+   67.0
+  ],
+  "cpu_orig_all": [
+   68.0,
+   69.0
+  ],
+  "rss_fixed": 187023360,
+  "rss_orig": 186859520,
+  "rss_pre": 174407680
+ },
+ {
+  "file": "ox-alpha",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 94,
+  "layers_fixed": 94,
+  "layers_orig": 94,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 8572192,
+  "tr_fixed": 8572192,
+  "tr_orig": 8572192,
+  "rec_pre": 0.3633,
+  "enc_pre": 6.8945,
+  "gpu_pre": 13.6403,
+  "wall_fixed": 78.0,
+  "wall_orig": 78.0,
+  "cpu_fixed": 81.0,
+  "cpu_orig": 84.0,
+  "wall_fixed_all": [
+   78.0,
+   84.99999999999999
+  ],
+  "wall_orig_all": [
+   78.0,
+   79.0
+  ],
+  "cpu_fixed_all": [
+   81.0,
+   88.00000000000001
+  ],
+  "cpu_orig_all": [
+   84.0,
+   84.0
+  ],
+  "rss_fixed": 238567424,
+  "rss_orig": 256311296,
+  "rss_pre": 227934208
+ },
+ {
+  "file": "qwen3-8-2-4t-a95b",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 200,
+  "layers_fixed": 200,
+  "layers_orig": 200,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 13927968,
+  "tr_fixed": 13927968,
+  "tr_orig": 13927968,
+  "rec_pre": 0.7708,
+  "enc_pre": 22.9585,
+  "gpu_pre": 32.7096,
+  "wall_fixed": 223.0,
+  "wall_orig": 221.99999999999997,
+  "cpu_fixed": 239.0,
+  "cpu_orig": 237.0,
+  "wall_fixed_all": [
+   225.0,
+   223.0
+  ],
+  "wall_orig_all": [
+   221.99999999999997,
+   221.99999999999997
+  ],
+  "cpu_fixed_all": [
+   238.0,
+   239.0
+  ],
+  "cpu_orig_all": [
+   237.0,
+   240.0
+  ],
+  "rss_fixed": 625639424,
+  "rss_orig": 713736192,
+  "rss_pre": 704299008
+ },
+ {
+  "file": "qwen3-8-27b",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 100,
+  "layers_fixed": 100,
+  "layers_orig": 100,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 10829824,
+  "tr_fixed": 10829824,
+  "tr_orig": 10829824,
+  "rec_pre": 0.4255,
+  "enc_pre": 8.6971,
+  "gpu_pre": 10.6328,
+  "wall_fixed": 96.0,
+  "wall_orig": 95.0,
+  "cpu_fixed": 98.99999999999999,
+  "cpu_orig": 98.99999999999999,
+  "wall_fixed_all": [
+   98.0,
+   96.0
+  ],
+  "wall_orig_all": [
+   96.0,
+   95.0
+  ],
+  "cpu_fixed_all": [
+   102.99999999999999,
+   98.99999999999999
+  ],
+  "cpu_orig_all": [
+   99.99999999999999,
+   98.99999999999999
+  ],
+  "rss_fixed": 276627456,
+  "rss_orig": 273285120,
+  "rss_pre": 266387456
+ },
+ {
+  "file": "qwen3-8-flash",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 119,
+  "layers_fixed": 119,
+  "layers_orig": 119,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 12448344,
+  "tr_fixed": 12448344,
+  "tr_orig": 12448344,
+  "rec_pre": 0.5383,
+  "enc_pre": 11.8264,
+  "gpu_pre": 14.2915,
+  "wall_fixed": 127.99999999999997,
+  "wall_orig": 131.99999999999997,
+  "cpu_fixed": 135.0,
+  "cpu_orig": 137.0,
+  "wall_fixed_all": [
+   127.99999999999997,
+   129.99999999999997
+  ],
+  "wall_orig_all": [
+   131.99999999999997,
+   135.99999999999997
+  ],
+  "cpu_fixed_all": [
+   135.0,
+   135.0
+  ],
+  "cpu_orig_all": [
+   137.0,
+   142.00000000000003
+  ],
+  "rss_fixed": 356646912,
+  "rss_orig": 367886336,
+  "rss_pre": 368476160
+ },
+ {
+  "file": "qwen3-8-max",
+  "framing": "640x480",
+  "set": "busey",
+  "layers_pre": 94,
+  "layers_fixed": 94,
+  "layers_orig": 94,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 11985936,
+  "tr_fixed": 11985936,
+  "tr_orig": 11985936,
+  "rec_pre": 0.4307,
+  "enc_pre": 8.4591,
+  "gpu_pre": 13.9733,
+  "wall_fixed": 93.0,
+  "wall_orig": 91.0,
+  "cpu_fixed": 97.99999999999999,
+  "cpu_orig": 96.99999999999999,
+  "wall_fixed_all": [
+   93.0,
+   93.0
+  ],
+  "wall_orig_all": [
+   91.0,
+   96.0
+  ],
+  "cpu_fixed_all": [
+   97.99999999999997,
+   98.99999999999997
+  ],
+  "cpu_orig_all": [
+   96.99999999999999,
+   101.99999999999999
+  ],
+  "rss_fixed": 286310400,
+  "rss_orig": 275578880,
+  "rss_pre": 305709056
+ },
+ {
+  "file": "claude-fable-5-1",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 178,
+  "layers_fixed": 178,
+  "layers_orig": 178,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 38316544,
+  "tr_fixed": 38316544,
+  "tr_orig": 38316544,
+  "rec_pre": 0.626,
+  "enc_pre": 13.8129,
+  "gpu_pre": 30.5346,
+  "wall_fixed": 151.99999999999997,
+  "wall_orig": 151.0,
+  "cpu_fixed": 155.0,
+  "cpu_orig": 159.0,
+  "wall_fixed_all": [
+   154.0,
+   151.99999999999997
+  ],
+  "wall_orig_all": [
+   151.0,
+   155.99999999999997
+  ],
+  "cpu_fixed_all": [
+   160.0,
+   155.0
+  ],
+  "cpu_orig_all": [
+   159.0,
+   165.0
+  ],
+  "rss_fixed": 494977024,
+  "rss_orig": 444923904,
+  "rss_pre": 456228864
+ },
+ {
+  "file": "claude-opus-5",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 92,
+  "layers_fixed": 92,
+  "layers_orig": 92,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 38978048,
+  "tr_fixed": 38978048,
+  "tr_orig": 38978048,
+  "rec_pre": 0.5487,
+  "enc_pre": 9.3699,
+  "gpu_pre": 23.7193,
+  "wall_fixed": 110.99999999999999,
+  "wall_orig": 108.00000000000001,
+  "cpu_fixed": 113.0,
+  "cpu_orig": 112.0,
+  "wall_fixed_all": [
+   111.00000000000001,
+   110.99999999999999
+  ],
+  "wall_orig_all": [
+   108.00000000000001,
+   114.99999999999999
+  ],
+  "cpu_fixed_all": [
+   110.99999999999999,
+   112.99999999999999
+  ],
+  "cpu_orig_all": [
+   111.99999999999999,
+   118.0
+  ],
+  "rss_fixed": 312541184,
+  "rss_orig": 341442560,
+  "rss_pre": 319127552
+ },
+ {
+  "file": "fugu-ultra",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 124,
+  "layers_fixed": 124,
+  "layers_orig": 124,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 45335040,
+  "tr_fixed": 45335040,
+  "tr_orig": 45335040,
+  "rec_pre": 0.4835,
+  "enc_pre": 6.8019,
+  "gpu_pre": 12.5473,
+  "wall_fixed": 79.99999999999999,
+  "wall_orig": 82.99999999999999,
+  "cpu_fixed": 84.00000000000001,
+  "cpu_orig": 85.99999999999999,
+  "wall_fixed_all": [
+   79.99999999999999,
+   80.99999999999999
+  ],
+  "wall_orig_all": [
+   86.0,
+   82.99999999999999
+  ],
+  "cpu_fixed_all": [
+   84.00000000000001,
+   85.00000000000001
+  ],
+  "cpu_orig_all": [
+   88.0,
+   86.0
+  ],
+  "rss_fixed": 253673472,
+  "rss_orig": 266731520,
+  "rss_pre": 265338880
+ },
+ {
+  "file": "gemini-3-1-pro-preview",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 98,
+  "layers_fixed": 98,
+  "layers_orig": 98,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 35865088,
+  "tr_fixed": 35865088,
+  "tr_orig": 35865088,
+  "rec_pre": 0.4217,
+  "enc_pre": 14.7024,
+  "gpu_pre": 32.8388,
+  "wall_fixed": 148.99999999999997,
+  "wall_orig": 170.99999999999997,
+  "cpu_fixed": 158.0,
+  "cpu_orig": 180.0,
+  "wall_fixed_all": [
+   150.99999999999997,
+   148.99999999999997
+  ],
+  "wall_orig_all": [
+   170.99999999999997,
+   176.0
+  ],
+  "cpu_fixed_all": [
+   161.0,
+   158.0
+  ],
+  "cpu_orig_all": [
+   180.0,
+   182.0
+  ],
+  "rss_fixed": 450363392,
+  "rss_orig": 476659712,
+  "rss_pre": 464093184
+ },
+ {
+  "file": "gemini-3-1-pro-preview-custom-tools",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 75,
+  "layers_fixed": 75,
+  "layers_orig": 75,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 58917376,
+  "tr_fixed": 58917376,
+  "tr_orig": 58917376,
+  "rec_pre": 0.4596,
+  "enc_pre": 10.0443,
+  "gpu_pre": 25.1655,
+  "wall_fixed": 108.00000000000001,
+  "wall_orig": 117.0,
+  "cpu_fixed": 113.00000000000001,
+  "cpu_orig": 117.0,
+  "wall_fixed_all": [
+   110.99999999999999,
+   108.00000000000001
+  ],
+  "wall_orig_all": [
+   117.0,
+   148.0
+  ],
+  "cpu_fixed_all": [
+   114.99999999999999,
+   113.00000000000001
+  ],
+  "cpu_orig_all": [
+   117.0,
+   150.0
+  ],
+  "rss_fixed": 330186752,
+  "rss_orig": 352239616,
+  "rss_pre": 357531648
+ },
+ {
+  "file": "gemini-3-7-flash",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 57,
+  "layers_fixed": 57,
+  "layers_orig": 57,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 20660224,
+  "tr_fixed": 20660224,
+  "tr_orig": 20660224,
+  "rec_pre": 0.471,
+  "enc_pre": 3.9218,
+  "gpu_pre": 6.9186,
+  "wall_fixed": 66.99999999999999,
+  "wall_orig": 64.00000000000001,
+  "cpu_fixed": 65.00000000000001,
+  "cpu_orig": 63.00000000000001,
+  "wall_fixed_all": [
+   68.99999999999999,
+   66.99999999999999
+  ],
+  "wall_orig_all": [
+   72.00000000000001,
+   64.00000000000001
+  ],
+  "cpu_fixed_all": [
+   66.0,
+   65.0
+  ],
+  "cpu_orig_all": [
+   70.0,
+   63.0
+  ],
+  "rss_fixed": 154746880,
+  "rss_orig": 147947520,
+  "rss_pre": 153272320
+ },
+ {
+  "file": "gemini-3-8-flash",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 118,
+  "layers_fixed": 118,
+  "layers_orig": 118,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 30703616,
+  "tr_fixed": 30703616,
+  "tr_orig": 30703616,
+  "rec_pre": 0.5029,
+  "enc_pre": 9.5813,
+  "gpu_pre": 16.6314,
+  "wall_fixed": 120.00000000000003,
+  "wall_orig": 121.0,
+  "cpu_fixed": 125.00000000000001,
+  "cpu_orig": 126.00000000000001,
+  "wall_fixed_all": [
+   120.00000000000003,
+   124.00000000000003
+  ],
+  "wall_orig_all": [
+   122.00000000000003,
+   121.0
+  ],
+  "cpu_fixed_all": [
+   125.0,
+   129.0
+  ],
+  "cpu_orig_all": [
+   126.0,
+   126.0
+  ],
+  "rss_fixed": 351322112,
+  "rss_orig": 319864832,
+  "rss_pre": 325402624
+ },
+ {
+  "file": "glm-5-3",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 129,
+  "layers_fixed": 129,
+  "layers_orig": 129,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 40165376,
+  "tr_fixed": 40165376,
+  "tr_orig": 40165376,
+  "rec_pre": 0.5833,
+  "enc_pre": 12.0274,
+  "gpu_pre": 26.9565,
+  "wall_fixed": 144.0,
+  "wall_orig": 138.99999999999997,
+  "cpu_fixed": 148.0,
+  "cpu_orig": 143.0,
+  "wall_fixed_all": [
+   144.00000000000003,
+   144.0
+  ],
+  "wall_orig_all": [
+   138.99999999999997,
+   141.0
+  ],
+  "cpu_fixed_all": [
+   149.0,
+   148.0
+  ],
+  "cpu_orig_all": [
+   143.0,
+   143.0
+  ],
+  "rss_fixed": 428965888,
+  "rss_orig": 424542208,
+  "rss_pre": 423755776
+ },
+ {
+  "file": "glm-5-3-flash",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 79,
+  "layers_fixed": 79,
+  "layers_orig": 79,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 36438528,
+  "tr_fixed": 36438528,
+  "tr_orig": 36438528,
+  "rec_pre": 0.3724,
+  "enc_pre": 5.8666,
+  "gpu_pre": 14.562,
+  "wall_fixed": 68.0,
+  "wall_orig": 76.0,
+  "cpu_fixed": 69.00000000000001,
+  "cpu_orig": 77.00000000000001,
+  "wall_fixed_all": [
+   72.0,
+   68.0
+  ],
+  "wall_orig_all": [
+   76.0,
+   95.0
+  ],
+  "cpu_fixed_all": [
+   73.00000000000001,
+   69.0
+  ],
+  "cpu_orig_all": [
+   77.00000000000001,
+   93.0
+  ],
+  "rss_fixed": 226754560,
+  "rss_orig": 211271680,
+  "rss_pre": 229687296
+ },
+ {
+  "file": "glm-5v-turbo",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 57,
+  "layers_fixed": 57,
+  "layers_orig": 57,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 41173504,
+  "tr_fixed": 41173504,
+  "tr_orig": 41173504,
+  "rec_pre": 0.3224,
+  "enc_pre": 5.3137,
+  "gpu_pre": 14.8007,
+  "wall_fixed": 65.99999999999999,
+  "wall_orig": 64.99999999999999,
+  "cpu_fixed": 66.00000000000001,
+  "cpu_orig": 63.00000000000001,
+  "wall_fixed_all": [
+   65.99999999999999,
+   65.99999999999999
+  ],
+  "wall_orig_all": [
+   64.99999999999999,
+   64.99999999999999
+  ],
+  "cpu_fixed_all": [
+   66.0,
+   65.0
+  ],
+  "cpu_orig_all": [
+   63.0,
+   65.0
+  ],
+  "rss_fixed": 212123648,
+  "rss_orig": 199737344,
+  "rss_pre": 196018176
+ },
+ {
+  "file": "gpt-5-2-pro",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 53,
+  "layers_fixed": 53,
+  "layers_orig": 53,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 57917440,
+  "tr_fixed": 57917440,
+  "tr_orig": 57917440,
+  "rec_pre": 0.3428,
+  "enc_pre": 4.0936,
+  "gpu_pre": 10.9407,
+  "wall_fixed": 50.0,
+  "wall_orig": 51.00000000000001,
+  "cpu_fixed": 52.0,
+  "cpu_orig": 51.99999999999999,
+  "wall_fixed_all": [
+   52.00000000000001,
+   50.0
+  ],
+  "wall_orig_all": [
+   51.00000000000001,
+   66.00000000000001
+  ],
+  "cpu_fixed_all": [
+   51.00000000000001,
+   52.00000000000001
+  ],
+  "cpu_orig_all": [
+   51.99999999999999,
+   56.99999999999999
+  ],
+  "rss_fixed": 182796288,
+  "rss_orig": 172130304,
+  "rss_pre": 163201024
+ },
+ {
+  "file": "gpt-5-6-luna-pro",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 33,
+  "layers_fixed": 33,
+  "layers_orig": 33,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 30130176,
+  "tr_fixed": 30130176,
+  "tr_orig": 30130176,
+  "rec_pre": 0.2742,
+  "enc_pre": 2.5403,
+  "gpu_pre": 5.6335,
+  "wall_fixed": 38.00000000000001,
+  "wall_orig": 39.0,
+  "cpu_fixed": 35.99999999999999,
+  "cpu_orig": 35.0,
+  "wall_fixed_all": [
+   38.99999999999999,
+   38.00000000000001
+  ],
+  "wall_orig_all": [
+   61.0,
+   39.0
+  ],
+  "cpu_fixed_all": [
+   34.99999999999999,
+   36.0
+  ],
+  "cpu_orig_all": [
+   57.0,
+   35.0
+  ],
+  "rss_fixed": 115294208,
+  "rss_orig": 113131520,
+  "rss_pre": 104251392
+ },
+ {
+  "file": "gpt-5-6-sol",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 48,
+  "layers_fixed": 48,
+  "layers_orig": 48,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 30130176,
+  "tr_fixed": 30130176,
+  "tr_orig": 30130176,
+  "rec_pre": 0.3133,
+  "enc_pre": 2.9103,
+  "gpu_pre": 10.2924,
+  "wall_fixed": 39.99999999999999,
+  "wall_orig": 45.0,
+  "cpu_fixed": 40.99999999999999,
+  "cpu_orig": 40.99999999999999,
+  "wall_fixed_all": [
+   39.99999999999999,
+   42.0
+  ],
+  "wall_orig_all": [
+   47.0,
+   45.0
+  ],
+  "cpu_fixed_all": [
+   40.99999999999999,
+   40.99999999999999
+  ],
+  "cpu_orig_all": [
+   43.0,
+   40.99999999999999
+  ],
+  "rss_fixed": 132857856,
+  "rss_orig": 130777088,
+  "rss_pre": 114032640
+ },
+ {
+  "file": "gpt-5-6-sol-pro",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 41,
+  "layers_fixed": 41,
+  "layers_orig": 41,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 43712512,
+  "tr_fixed": 43712512,
+  "tr_orig": 43712512,
+  "rec_pre": 0.3289,
+  "enc_pre": 3.1637,
+  "gpu_pre": 9.1623,
+  "wall_fixed": 44.0,
+  "wall_orig": 44.0,
+  "cpu_fixed": 42.0,
+  "cpu_orig": 42.0,
+  "wall_fixed_all": [
+   44.0,
+   46.0
+  ],
+  "wall_orig_all": [
+   50.0,
+   44.0
+  ],
+  "cpu_fixed_all": [
+   41.99999999999999,
+   41.99999999999999
+  ],
+  "cpu_orig_all": [
+   47.99999999999999,
+   42.0
+  ],
+  "rss_fixed": 135659520,
+  "rss_orig": 125878272,
+  "rss_pre": 128073728
+ },
+ {
+  "file": "gpt-5-6-terra-pro",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 31,
+  "layers_fixed": 31,
+  "layers_orig": 31,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 20660224,
+  "tr_fixed": 20660224,
+  "tr_orig": 20660224,
+  "rec_pre": 0.2789,
+  "enc_pre": 2.4945,
+  "gpu_pre": 8.3298,
+  "wall_fixed": 38.0,
+  "wall_orig": 37.99999999999999,
+  "cpu_fixed": 37.00000000000001,
+  "cpu_orig": 36.00000000000001,
+  "wall_fixed_all": [
+   42.0,
+   38.0
+  ],
+  "wall_orig_all": [
+   39.99999999999999,
+   37.99999999999999
+  ],
+  "cpu_fixed_all": [
+   36.00000000000001,
+   37.00000000000001
+  ],
+  "cpu_orig_all": [
+   36.00000000000001,
+   36.00000000000001
+  ],
+  "rss_fixed": 121913344,
+  "rss_orig": 113442816,
+  "rss_pre": 104185856
+ },
+ {
+  "file": "gpt-6-astra",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 162,
+  "layers_fixed": 162,
+  "layers_orig": 162,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 30130176,
+  "tr_fixed": 30130176,
+  "tr_orig": 30130176,
+  "rec_pre": 0.8825,
+  "enc_pre": 11.3131,
+  "gpu_pre": 21.7985,
+  "wall_fixed": 161.0,
+  "wall_orig": 160.0,
+  "cpu_fixed": 165.99999999999997,
+  "cpu_orig": 162.99999999999997,
+  "wall_fixed_all": [
+   164.99999999999997,
+   161.0
+  ],
+  "wall_orig_all": [
+   164.99999999999997,
+   160.0
+  ],
+  "cpu_fixed_all": [
+   162.99999999999997,
+   165.99999999999997
+  ],
+  "cpu_orig_all": [
+   165.99999999999997,
+   162.99999999999997
+  ],
+  "rss_fixed": 384974848,
+  "rss_orig": 371130368,
+  "rss_pre": 331776000
+ },
+ {
+  "file": "grok-4-5",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 76,
+  "layers_fixed": 76,
+  "layers_orig": 76,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 41173504,
+  "tr_fixed": 41173504,
+  "tr_orig": 41173504,
+  "rec_pre": 0.4167,
+  "enc_pre": 5.8007,
+  "gpu_pre": 10.3148,
+  "wall_fixed": 78.00000000000001,
+  "wall_orig": 75.0,
+  "cpu_fixed": 79.00000000000001,
+  "cpu_orig": 76.00000000000001,
+  "wall_fixed_all": [
+   80.00000000000001,
+   78.00000000000001
+  ],
+  "wall_orig_all": [
+   76.0,
+   75.0
+  ],
+  "cpu_fixed_all": [
+   81.00000000000001,
+   79.00000000000001
+  ],
+  "cpu_orig_all": [
+   77.00000000000001,
+   76.00000000000001
+  ],
+  "rss_fixed": 214433792,
+  "rss_orig": 202752000,
+  "rss_pre": 193527808
+ },
+ {
+  "file": "kimi-k2-6",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 55,
+  "layers_fixed": 55,
+  "layers_orig": 55,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 35865088,
+  "tr_fixed": 35865088,
+  "tr_orig": 35865088,
+  "rec_pre": 0.3152,
+  "enc_pre": 6.0133,
+  "gpu_pre": 14.3758,
+  "wall_fixed": 67.0,
+  "wall_orig": 64.99999999999999,
+  "cpu_fixed": 67.0,
+  "cpu_orig": 67.00000000000001,
+  "wall_fixed_all": [
+   71.00000000000001,
+   67.0
+  ],
+  "wall_orig_all": [
+   64.99999999999999,
+   69.99999999999999
+  ],
+  "cpu_fixed_all": [
+   68.0,
+   67.0
+  ],
+  "cpu_orig_all": [
+   67.0,
+   67.0
+  ],
+  "rss_fixed": 229408768,
+  "rss_orig": 221282304,
+  "rss_pre": 229801984
+ },
+ {
+  "file": "kimi-k3",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 50,
+  "layers_fixed": 50,
+  "layers_orig": 50,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 40600064,
+  "tr_fixed": 40600064,
+  "tr_orig": 40600064,
+  "rec_pre": 0.3159,
+  "enc_pre": 2.8779,
+  "gpu_pre": 7.4725,
+  "wall_fixed": 41.0,
+  "wall_orig": 40.99999999999999,
+  "cpu_fixed": 40.00000000000001,
+  "cpu_orig": 41.0,
+  "wall_fixed_all": [
+   42.0,
+   41.0
+  ],
+  "wall_orig_all": [
+   40.99999999999999,
+   41.99999999999999
+  ],
+  "cpu_fixed_all": [
+   41.99999999999999,
+   40.00000000000001
+  ],
+  "cpu_orig_all": [
+   41.0,
+   39.0
+  ],
+  "rss_fixed": 148307968,
+  "rss_orig": 142311424,
+  "rss_pre": 126713856
+ },
+ {
+  "file": "muse-spark-1-3",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 49,
+  "layers_fixed": 49,
+  "layers_orig": 49,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 20660224,
+  "tr_fixed": 20660224,
+  "tr_orig": 20660224,
+  "rec_pre": 0.3206,
+  "enc_pre": 5.415,
+  "gpu_pre": 10.7172,
+  "wall_fixed": 63.999999999999986,
+  "wall_orig": 62.000000000000014,
+  "cpu_fixed": 64.00000000000001,
+  "cpu_orig": 63.00000000000001,
+  "wall_fixed_all": [
+   63.999999999999986,
+   63.999999999999986
+  ],
+  "wall_orig_all": [
+   62.000000000000014,
+   62.000000000000014
+  ],
+  "cpu_fixed_all": [
+   64.0,
+   63.0
+  ],
+  "cpu_orig_all": [
+   63.0,
+   61.0
+  ],
+  "rss_fixed": 186466304,
+  "rss_orig": 186793984,
+  "rss_pre": 189038592
+ },
+ {
+  "file": "muse-spark-1-3-contributor",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 59,
+  "layers_fixed": 59,
+  "layers_orig": 59,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 20660224,
+  "tr_fixed": 20660224,
+  "tr_orig": 20660224,
+  "rec_pre": 0.3303,
+  "enc_pre": 5.3854,
+  "gpu_pre": 12.6048,
+  "wall_fixed": 57.00000000000001,
+  "wall_orig": 57.00000000000001,
+  "cpu_fixed": 57.0,
+  "cpu_orig": 58.0,
+  "wall_fixed_all": [
+   57.00000000000001,
+   58.00000000000001
+  ],
+  "wall_orig_all": [
+   57.00000000000001,
+   58.00000000000001
+  ],
+  "cpu_fixed_all": [
+   57.0,
+   59.0
+  ],
+  "cpu_orig_all": [
+   58.0,
+   58.0
+  ],
+  "rss_fixed": 198049792,
+  "rss_orig": 181534720,
+  "rss_pre": 172965888
+ },
+ {
+  "file": "nex-n2-pro",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 102,
+  "layers_fixed": 102,
+  "layers_orig": 102,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 46481920,
+  "tr_fixed": 46481920,
+  "tr_orig": 46481920,
+  "rec_pre": 0.4447,
+  "enc_pre": 5.31,
+  "gpu_pre": 10.7677,
+  "wall_fixed": 68.99999999999999,
+  "wall_orig": 73.0,
+  "cpu_fixed": 73.0,
+  "cpu_orig": 71.0,
+  "wall_fixed_all": [
+   68.99999999999999,
+   73.0
+  ],
+  "wall_orig_all": [
+   73.0,
+   73.0
+  ],
+  "cpu_fixed_all": [
+   73.0,
+   73.0
+  ],
+  "cpu_orig_all": [
+   71.0,
+   73.0
+  ],
+  "rss_fixed": 208125952,
+  "rss_orig": 212008960,
+  "rss_pre": 188284928
+ },
+ {
+  "file": "ox-alpha",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 94,
+  "layers_fixed": 94,
+  "layers_orig": 94,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 32130720,
+  "tr_fixed": 32130720,
+  "tr_orig": 32130720,
+  "rec_pre": 0.4165,
+  "enc_pre": 7.1718,
+  "gpu_pre": 16.3601,
+  "wall_fixed": 83.99999999999999,
+  "wall_orig": 82.99999999999999,
+  "cpu_fixed": 84.99999999999999,
+  "cpu_orig": 85.99999999999999,
+  "wall_fixed_all": [
+   83.99999999999999,
+   84.99999999999999
+  ],
+  "wall_orig_all": [
+   82.99999999999999,
+   84.99999999999999
+  ],
+  "cpu_fixed_all": [
+   84.99999999999999,
+   87.0
+  ],
+  "cpu_orig_all": [
+   86.0,
+   88.0
+  ],
+  "rss_fixed": 269877248,
+  "rss_orig": 278675456,
+  "rss_pre": 254197760
+ },
+ {
+  "file": "qwen3-8-2-4t-a95b",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 200,
+  "layers_fixed": 200,
+  "layers_orig": 200,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 60065264,
+  "tr_fixed": 60065264,
+  "tr_orig": 60065264,
+  "rec_pre": 0.7248,
+  "enc_pre": 20.3877,
+  "gpu_pre": 50.4946,
+  "wall_fixed": 244.99999999999997,
+  "wall_orig": 237.00000000000003,
+  "cpu_fixed": 256.0,
+  "cpu_orig": 250.0,
+  "wall_fixed_all": [
+   252.0,
+   244.99999999999997
+  ],
+  "wall_orig_all": [
+   238.00000000000006,
+   237.00000000000003
+  ],
+  "cpu_fixed_all": [
+   256.0,
+   256.0
+  ],
+  "cpu_orig_all": [
+   251.0,
+   250.0
+  ],
+  "rss_fixed": 729415680,
+  "rss_orig": 727400448,
+  "rss_pre": 627195904
+ },
+ {
+  "file": "qwen3-8-27b",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 100,
+  "layers_fixed": 100,
+  "layers_orig": 100,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 36012032,
+  "tr_fixed": 36012032,
+  "tr_orig": 36012032,
+  "rec_pre": 0.454,
+  "enc_pre": 8.6343,
+  "gpu_pre": 22.4689,
+  "wall_fixed": 102.99999999999999,
+  "wall_orig": 102.00000000000001,
+  "cpu_fixed": 103.0,
+  "cpu_orig": 104.0,
+  "wall_fixed_all": [
+   102.99999999999999,
+   108.00000000000001
+  ],
+  "wall_orig_all": [
+   102.00000000000001,
+   102.00000000000001
+  ],
+  "cpu_fixed_all": [
+   103.00000000000001,
+   106.00000000000001
+  ],
+  "cpu_orig_all": [
+   104.00000000000001,
+   105.00000000000001
+  ],
+  "rss_fixed": 304152576,
+  "rss_orig": 300580864,
+  "rss_pre": 301498368
+ },
+ {
+  "file": "qwen3-8-flash",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 119,
+  "layers_fixed": 119,
+  "layers_orig": 119,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 48574064,
+  "tr_fixed": 48574064,
+  "tr_orig": 48574064,
+  "rec_pre": 0.6113,
+  "enc_pre": 12.2772,
+  "gpu_pre": 28.2496,
+  "wall_fixed": 146.0,
+  "wall_orig": 137.0,
+  "cpu_fixed": 147.0,
+  "cpu_orig": 140.99999999999997,
+  "wall_fixed_all": [
+   146.0,
+   148.0
+  ],
+  "wall_orig_all": [
+   139.0,
+   137.0
+  ],
+  "cpu_fixed_all": [
+   147.0,
+   150.0
+  ],
+  "cpu_orig_all": [
+   145.0,
+   141.0
+  ],
+  "rss_fixed": 390889472,
+  "rss_orig": 400375808,
+  "rss_pre": 369360896
+ },
+ {
+  "file": "qwen3-8-max",
+  "framing": "1080p",
+  "set": "busey",
+  "layers_pre": 94,
+  "layers_fixed": 94,
+  "layers_orig": 94,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 51554816,
+  "tr_fixed": 51554816,
+  "tr_orig": 51554816,
+  "rec_pre": 0.4668,
+  "enc_pre": 8.4823,
+  "gpu_pre": 19.9396,
+  "wall_fixed": 100.99999999999997,
+  "wall_orig": 97.0,
+  "cpu_fixed": 104.0,
+  "cpu_orig": 101.0,
+  "wall_fixed_all": [
+   102.00000000000001,
+   100.99999999999997
+  ],
+  "wall_orig_all": [
+   98.0,
+   97.0
+  ],
+  "cpu_fixed_all": [
+   106.00000000000001,
+   104.00000000000001
+  ],
+  "cpu_orig_all": [
+   102.00000000000001,
+   101.0
+  ],
+  "rss_fixed": 326369280,
+  "rss_orig": 288178176,
+  "rss_pre": 280772608
+ },
+ {
+  "file": "Ghostscript_Tiger",
+  "framing": "640x480",
+  "set": "icons",
+  "layers_pre": 0,
+  "layers_fixed": 0,
+  "layers_orig": 0,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 0,
+  "tr_fixed": 0,
+  "tr_orig": 0,
+  "rec_pre": 0.5322,
+  "enc_pre": 0.6588,
+  "gpu_pre": 1.6948,
+  "wall_fixed": 32.00000000000001,
+  "wall_orig": 32.0,
+  "cpu_fixed": 30.999999999999993,
+  "cpu_orig": 31.000000000000007,
+  "wall_fixed_all": [
+   32.00000000000001,
+   34.99999999999999
+  ],
+  "wall_orig_all": [
+   32.0,
+   32.0
+  ],
+  "cpu_fixed_all": [
+   30.999999999999993,
+   31.999999999999993
+  ],
+  "cpu_orig_all": [
+   31.000000000000007,
+   30.000000000000007
+  ],
+  "rss_fixed": 39043072,
+  "rss_orig": 35553280,
+  "rss_pre": 28590080
+ },
+ {
+  "file": "clipdemo",
+  "framing": "640x480",
+  "set": "icons",
+  "layers_pre": 0,
+  "layers_fixed": 0,
+  "layers_orig": 0,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 0,
+  "tr_fixed": 0,
+  "tr_orig": 0,
+  "rec_pre": 0.0295,
+  "enc_pre": 0.1097,
+  "gpu_pre": 0.5036,
+  "wall_fixed": 0.0,
+  "wall_orig": 2.0000000000000018,
+  "cpu_fixed": 0.9999999999999989,
+  "cpu_orig": 2.000000000000001,
+  "wall_fixed_all": [
+   0.9999999999999981,
+   0.0
+  ],
+  "wall_orig_all": [
+   2.0000000000000018,
+   2.0000000000000018
+  ],
+  "cpu_fixed_all": [
+   0.0,
+   0.9999999999999989
+  ],
+  "cpu_orig_all": [
+   2.000000000000001,
+   2.000000000000001
+  ],
+  "rss_fixed": 35454976,
+  "rss_orig": 32374784,
+  "rss_pre": 25608192
+ },
+ {
+  "file": "duckduckgo-com_2x",
+  "framing": "640x480",
+  "set": "icons",
+  "layers_pre": 1,
+  "layers_fixed": 1,
+  "layers_orig": 1,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 1048576,
+  "tr_fixed": 1048576,
+  "tr_orig": 1048576,
+  "rec_pre": 0.078,
+  "enc_pre": 0.1699,
+  "gpu_pre": 0.7692,
+  "wall_fixed": 1.9999999999999991,
+  "wall_orig": 3.0,
+  "cpu_fixed": 0.9999999999999996,
+  "cpu_orig": 1.9999999999999991,
+  "wall_fixed_all": [
+   3.0,
+   1.9999999999999991
+  ],
+  "wall_orig_all": [
+   3.0,
+   3.0
+  ],
+  "cpu_fixed_all": [
+   2.9999999999999987,
+   0.9999999999999996
+  ],
+  "cpu_orig_all": [
+   1.9999999999999991,
+   2.999999999999999
+  ],
+  "rss_fixed": 36716544,
+  "rss_orig": 33095680,
+  "rss_pre": 27017216
+ },
+ {
+  "file": "fox-with-box-on-cloud",
+  "framing": "640x480",
+  "set": "icons",
+  "layers_pre": 0,
+  "layers_fixed": 0,
+  "layers_orig": 0,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 0,
+  "tr_fixed": 0,
+  "tr_orig": 0,
+  "rec_pre": 0.1841,
+  "enc_pre": 0.2123,
+  "gpu_pre": 0.7673,
+  "wall_fixed": 8.000000000000002,
+  "wall_orig": 7.000000000000001,
+  "cpu_fixed": 7.9999999999999964,
+  "cpu_orig": 8.0,
+  "wall_fixed_all": [
+   8.999999999999998,
+   8.000000000000002
+  ],
+  "wall_orig_all": [
+   7.000000000000001,
+   7.000000000000001
+  ],
+  "cpu_fixed_all": [
+   7.9999999999999964,
+   7.9999999999999964
+  ],
+  "cpu_orig_all": [
+   8.0,
+   8.0
+  ],
+  "rss_fixed": 35995648,
+  "rss_orig": 33193984,
+  "rss_pre": 26492928
+ },
+ {
+  "file": "google-workspace-48px",
+  "framing": "640x480",
+  "set": "icons",
+  "layers_pre": 1,
+  "layers_fixed": 1,
+  "layers_orig": 1,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 5308416,
+  "tr_fixed": 5308416,
+  "tr_orig": 5308416,
+  "rec_pre": 0.0874,
+  "enc_pre": 0.351,
+  "gpu_pre": 1.072,
+  "wall_fixed": 4.999999999999999,
+  "wall_orig": 3.9999999999999982,
+  "cpu_fixed": 6.000000000000002,
+  "cpu_orig": 4.0,
+  "wall_fixed_all": [
+   4.999999999999999,
+   8.000000000000002
+  ],
+  "wall_orig_all": [
+   3.9999999999999982,
+   4.999999999999999
+  ],
+  "cpu_fixed_all": [
+   6.000000000000002,
+   4.0
+  ],
+  "cpu_orig_all": [
+   4.0,
+   4.0
+  ],
+  "rss_fixed": 42745856,
+  "rss_orig": 39649280,
+  "rss_pre": 32899072
+ },
+ {
+  "file": "kit",
+  "framing": "640x480",
+  "set": "icons",
+  "layers_pre": 2,
+  "layers_fixed": 2,
+  "layers_orig": 2,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 2097152,
+  "tr_fixed": 2097152,
+  "tr_orig": 2097152,
+  "rec_pre": 0.0953,
+  "enc_pre": 0.26,
+  "gpu_pre": 0.9068,
+  "wall_fixed": 3.9999999999999982,
+  "wall_orig": 3.9999999999999982,
+  "cpu_fixed": 1.9999999999999991,
+  "cpu_orig": 3.0,
+  "wall_fixed_all": [
+   3.9999999999999982,
+   8.000000000000002
+  ],
+  "wall_orig_all": [
+   3.9999999999999982,
+   3.9999999999999982
+  ],
+  "cpu_fixed_all": [
+   1.9999999999999991,
+   5.000000000000001
+  ],
+  "cpu_orig_all": [
+   3.0,
+   4.000000000000001
+  ],
+  "rss_fixed": 41074688,
+  "rss_orig": 38420480,
+  "rss_pre": 31588352
+ },
+ {
+  "file": "mr-settodefault",
+  "framing": "640x480",
+  "set": "icons",
+  "layers_pre": 2,
+  "layers_fixed": 2,
+  "layers_orig": 2,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 1048576,
+  "tr_fixed": 1048576,
+  "tr_orig": 1048576,
+  "rec_pre": 0.2127,
+  "enc_pre": 0.3069,
+  "gpu_pre": 0.7482,
+  "wall_fixed": 7.000000000000001,
+  "wall_orig": 6.0,
+  "cpu_fixed": 4.999999999999999,
+  "cpu_orig": 5.000000000000002,
+  "wall_fixed_all": [
+   7.000000000000001,
+   7.999999999999998
+  ],
+  "wall_orig_all": [
+   7.000000000000001,
+   6.0
+  ],
+  "cpu_fixed_all": [
+   4.999999999999999,
+   5.999999999999998
+  ],
+  "cpu_orig_all": [
+   5.000000000000002,
+   5.000000000000002
+  ],
+  "rss_fixed": 39092224,
+  "rss_orig": 35962880,
+  "rss_pre": 29081600
+ },
+ {
+  "file": "splash-logo",
+  "framing": "640x480",
+  "set": "icons",
+  "layers_pre": 0,
+  "layers_fixed": 0,
+  "layers_orig": 0,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 0,
+  "tr_fixed": 0,
+  "tr_orig": 0,
+  "rec_pre": 0.051,
+  "enc_pre": 0.1437,
+  "gpu_pre": 0.2797,
+  "wall_fixed": 1.9999999999999991,
+  "wall_orig": 3.0,
+  "cpu_fixed": 2.0000000000000004,
+  "cpu_orig": 4.0,
+  "wall_fixed_all": [
+   1.9999999999999991,
+   3.0
+  ],
+  "wall_orig_all": [
+   3.0,
+   3.0
+  ],
+  "cpu_fixed_all": [
+   2.0000000000000004,
+   3.0
+  ],
+  "cpu_orig_all": [
+   4.0,
+   4.0
+  ],
+  "rss_fixed": 36143104,
+  "rss_orig": 32800768,
+  "rss_pre": 25968640
+ },
+ {
+  "file": "Ghostscript_Tiger",
+  "framing": "1080p",
+  "set": "icons",
+  "layers_pre": 0,
+  "layers_fixed": 0,
+  "layers_orig": 0,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 0,
+  "tr_fixed": 0,
+  "tr_orig": 0,
+  "rec_pre": 0.6565,
+  "enc_pre": 0.6755,
+  "gpu_pre": 2.4284,
+  "wall_fixed": 33.0,
+  "wall_orig": 34.99999999999999,
+  "cpu_fixed": 32.00000000000001,
+  "cpu_orig": 33.00000000000001,
+  "wall_fixed_all": [
+   33.0,
+   36.00000000000001
+  ],
+  "wall_orig_all": [
+   34.99999999999999,
+   34.99999999999999
+  ],
+  "cpu_fixed_all": [
+   32.00000000000001,
+   33.99999999999999
+  ],
+  "cpu_orig_all": [
+   33.00000000000001,
+   32.00000000000001
+  ],
+  "rss_fixed": 52674560,
+  "rss_orig": 48807936,
+  "rss_pre": 42565632
+ },
+ {
+  "file": "clipdemo",
+  "framing": "1080p",
+  "set": "icons",
+  "layers_pre": 0,
+  "layers_fixed": 0,
+  "layers_orig": 0,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 0,
+  "tr_fixed": 0,
+  "tr_orig": 0,
+  "rec_pre": 0.0389,
+  "enc_pre": 0.1385,
+  "gpu_pre": 0.8212,
+  "wall_fixed": 1.9999999999999962,
+  "wall_orig": 1.9999999999999991,
+  "cpu_fixed": 0.9999999999999981,
+  "cpu_orig": 2.0000000000000018,
+  "wall_fixed_all": [
+   2.0000000000000018,
+   1.9999999999999962
+  ],
+  "wall_orig_all": [
+   3.0,
+   1.9999999999999991
+  ],
+  "cpu_fixed_all": [
+   1.9999999999999991,
+   0.9999999999999981
+  ],
+  "cpu_orig_all": [
+   2.0000000000000018,
+   2.0000000000000018
+  ],
+  "rss_fixed": 49446912,
+  "rss_orig": 45809664,
+  "rss_pre": 39305216
+ },
+ {
+  "file": "duckduckgo-com_2x",
+  "framing": "1080p",
+  "set": "icons",
+  "layers_pre": 1,
+  "layers_fixed": 1,
+  "layers_orig": 1,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 4734976,
+  "tr_fixed": 4734976,
+  "tr_orig": 4734976,
+  "rec_pre": 0.091,
+  "enc_pre": 0.1854,
+  "gpu_pre": 1.2696,
+  "wall_fixed": 3.0000000000000027,
+  "wall_orig": 3.0000000000000027,
+  "cpu_fixed": 3.9999999999999996,
+  "cpu_orig": 3.0,
+  "wall_fixed_all": [
+   3.0000000000000027,
+   3.9999999999999982
+  ],
+  "wall_orig_all": [
+   3.0000000000000027,
+   4.0000000000000036
+  ],
+  "cpu_fixed_all": [
+   4.0,
+   2.9999999999999987
+  ],
+  "cpu_orig_all": [
+   3.0,
+   3.0
+  ],
+  "rss_fixed": 50692096,
+  "rss_orig": 47267840,
+  "rss_pre": 40648704
+ },
+ {
+  "file": "fox-with-box-on-cloud",
+  "framing": "1080p",
+  "set": "icons",
+  "layers_pre": 0,
+  "layers_fixed": 0,
+  "layers_orig": 0,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 0,
+  "tr_fixed": 0,
+  "tr_orig": 0,
+  "rec_pre": 0.2384,
+  "enc_pre": 0.2368,
+  "gpu_pre": 1.4233,
+  "wall_fixed": 7.9999999999999964,
+  "wall_orig": 9.0,
+  "cpu_fixed": 7.0000000000000036,
+  "cpu_orig": 8.0,
+  "wall_fixed_all": [
+   7.9999999999999964,
+   7.9999999999999964
+  ],
+  "wall_orig_all": [
+   9.0,
+   9.0
+  ],
+  "cpu_fixed_all": [
+   7.0000000000000036,
+   8.000000000000002
+  ],
+  "cpu_orig_all": [
+   8.0,
+   7.000000000000001
+  ],
+  "rss_fixed": 50020352,
+  "rss_orig": 47087616,
+  "rss_pre": 40370176
+ },
+ {
+  "file": "google-workspace-48px",
+  "framing": "1080p",
+  "set": "icons",
+  "layers_pre": 1,
+  "layers_fixed": 1,
+  "layers_orig": 1,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 21233664,
+  "tr_fixed": 21233664,
+  "tr_orig": 21233664,
+  "rec_pre": 0.099,
+  "enc_pre": 0.3627,
+  "gpu_pre": 2.0928,
+  "wall_fixed": 8.000000000000002,
+  "wall_orig": 8.000000000000002,
+  "cpu_fixed": 5.000000000000004,
+  "cpu_orig": 6.000000000000002,
+  "wall_fixed_all": [
+   8.000000000000002,
+   8.000000000000002
+  ],
+  "wall_orig_all": [
+   8.000000000000002,
+   8.000000000000002
+  ],
+  "cpu_fixed_all": [
+   5.000000000000004,
+   5.000000000000004
+  ],
+  "cpu_orig_all": [
+   6.000000000000002,
+   6.000000000000002
+  ],
+  "rss_fixed": 56885248,
+  "rss_orig": 53329920,
+  "rss_pre": 46497792
+ },
+ {
+  "file": "kit",
+  "framing": "1080p",
+  "set": "icons",
+  "layers_pre": 2,
+  "layers_fixed": 2,
+  "layers_orig": 2,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 9469952,
+  "tr_fixed": 9469952,
+  "tr_orig": 9469952,
+  "rec_pre": 0.1028,
+  "enc_pre": 0.2718,
+  "gpu_pre": 2.6698,
+  "wall_fixed": 8.000000000000002,
+  "wall_orig": 4.999999999999999,
+  "cpu_fixed": 4.999999999999998,
+  "cpu_orig": 4.0,
+  "wall_fixed_all": [
+   8.000000000000002,
+   8.000000000000002
+  ],
+  "wall_orig_all": [
+   6.0,
+   4.999999999999999
+  ],
+  "cpu_fixed_all": [
+   4.999999999999997,
+   4.000000000000002
+  ],
+  "cpu_orig_all": [
+   5.000000000000001,
+   4.0
+  ],
+  "rss_fixed": 55099392,
+  "rss_orig": 51806208,
+  "rss_pre": 45334528
+ },
+ {
+  "file": "mr-settodefault",
+  "framing": "1080p",
+  "set": "icons",
+  "layers_pre": 2,
+  "layers_fixed": 2,
+  "layers_orig": 2,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 4734976,
+  "tr_fixed": 4734976,
+  "tr_orig": 4734976,
+  "rec_pre": 0.2526,
+  "enc_pre": 0.2953,
+  "gpu_pre": 3.113,
+  "wall_fixed": 7.000000000000001,
+  "wall_orig": 9.000000000000004,
+  "cpu_fixed": 7.9999999999999964,
+  "cpu_orig": 6.000000000000003,
+  "wall_fixed_all": [
+   7.000000000000001,
+   7.000000000000001
+  ],
+  "wall_orig_all": [
+   9.000000000000004,
+   9.000000000000004
+  ],
+  "cpu_fixed_all": [
+   7.9999999999999964,
+   7.9999999999999964
+  ],
+  "cpu_orig_all": [
+   6.000000000000003,
+   6.000000000000003
+  ],
+  "rss_fixed": 53559296,
+  "rss_orig": 50151424,
+  "rss_pre": 42762240
+ },
+ {
+  "file": "splash-logo",
+  "framing": "1080p",
+  "set": "icons",
+  "layers_pre": 0,
+  "layers_fixed": 0,
+  "layers_orig": 0,
+  "pt_pre": 0,
+  "pt_fixed": 0,
+  "pt_orig": 0,
+  "tr_pre": 0,
+  "tr_fixed": 0,
+  "tr_orig": 0,
+  "rec_pre": 0.0708,
+  "enc_pre": 0.1765,
+  "gpu_pre": 2.3856,
+  "wall_fixed": 3.0000000000000027,
+  "wall_orig": 3.0,
+  "cpu_fixed": 1.9999999999999991,
+  "cpu_orig": 1.9999999999999991,
+  "wall_fixed_all": [
+   3.9999999999999982,
+   3.0000000000000027
+  ],
+  "wall_orig_all": [
+   3.0,
+   3.9999999999999982
+  ],
+  "cpu_fixed_all": [
+   1.9999999999999991,
+   1.9999999999999991
+  ],
+  "cpu_orig_all": [
+   1.9999999999999991,
+   1.9999999999999991
+  ],
+  "rss_fixed": 50118656,
+  "rss_orig": 46186496,
+  "rss_pre": 39649280
+ }
+]

@@ -1,0 +1,6162 @@
+[
+ {
+  "file": "claude-fable-5-1",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 178,
+  "pass_through": 0,
+  "transient_at_flush": 8746816,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 178.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 8746816,
+  "frame_real_ms": 138.99999999999997,
+  "frame_user_ms": 130.0,
+  "frame_sys_ms": 23.0,
+  "frame_real_ms_all": [
+   138.99999999999997,
+   144.0
+  ],
+  "frame_cpu_ms_all": [
+   153.0,
+   152.0
+  ],
+  "real_1_min": 0.66,
+  "real_N_min": 2.1,
+  "user_1_min": 0.45,
+  "user_N_min": 1.73,
+  "sys_1_min": 0.23,
+  "sys_N_min": 0.47,
+  "maxrss_1": 379256832,
+  "maxrss_N": 452886528,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.7525842500035651,
+    "exit": 0,
+    "layers": 178,
+    "transient_at_flush": 8746816,
+    "pass_through": 0,
+    "real": 0.74,
+    "user": 0.45,
+    "sys": 0.24,
+    "maxrss": 379256832
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.6714559160172939,
+    "exit": 0,
+    "layers": 178,
+    "transient_at_flush": 8746816,
+    "pass_through": 0,
+    "real": 0.66,
+    "user": 0.46,
+    "sys": 0.23,
+    "maxrss": 380796928
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 2.1389699170249514,
+    "exit": 0,
+    "layers": 1958,
+    "transient_at_flush": 8746816,
+    "pass_through": 0,
+    "real": 2.13,
+    "user": 1.75,
+    "sys": 0.47,
+    "maxrss": 452886528
+   },
+   {
+    "frames": 11,
+    "wall_py": 2.1104260419961065,
+    "exit": 0,
+    "layers": 1958,
+    "transient_at_flush": 8746816,
+    "pass_through": 0,
+    "real": 2.1,
+    "user": 1.73,
+    "sys": 0.48,
+    "maxrss": 465682432
+   }
+  ],
+  "frame_cpu_ms": 153.0,
+  "frame_gpu_wait_ms": -14.000000000000028,
+  "set": "busey"
+ },
+ {
+  "file": "claude-opus-5",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 92,
+  "pass_through": 0,
+  "transient_at_flush": 13742432,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 92.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 13742432,
+  "frame_real_ms": 104.99999999999999,
+  "frame_user_ms": 92.00000000000001,
+  "frame_sys_ms": 18.000000000000004,
+  "frame_real_ms_all": [
+   104.99999999999999,
+   110.99999999999999
+  ],
+  "frame_cpu_ms_all": [
+   110.00000000000001,
+   109.00000000000001
+  ],
+  "real_1_min": 0.58,
+  "real_N_min": 1.63,
+  "user_1_min": 0.42,
+  "user_N_min": 1.34,
+  "sys_1_min": 0.16,
+  "sys_N_min": 0.33,
+  "maxrss_1": 264388608,
+  "maxrss_N": 332251136,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.5836626249947585,
+    "exit": 0,
+    "layers": 92,
+    "transient_at_flush": 13742432,
+    "pass_through": 0,
+    "real": 0.58,
+    "user": 0.42,
+    "sys": 0.16,
+    "maxrss": 264503296
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.589655291987583,
+    "exit": 0,
+    "layers": 92,
+    "transient_at_flush": 13742432,
+    "pass_through": 0,
+    "real": 0.58,
+    "user": 0.43,
+    "sys": 0.16,
+    "maxrss": 264388608
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.641169250011444,
+    "exit": 0,
+    "layers": 1012,
+    "transient_at_flush": 13742432,
+    "pass_through": 0,
+    "real": 1.63,
+    "user": 1.34,
+    "sys": 0.34,
+    "maxrss": 332300288
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.6962457920308225,
+    "exit": 0,
+    "layers": 1012,
+    "transient_at_flush": 13742432,
+    "pass_through": 0,
+    "real": 1.69,
+    "user": 1.35,
+    "sys": 0.33,
+    "maxrss": 332251136
+   }
+  ],
+  "frame_cpu_ms": 110.00000000000001,
+  "frame_gpu_wait_ms": -5.000000000000028,
+  "set": "busey"
+ },
+ {
+  "file": "fugu-ultra",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 124,
+  "pass_through": 0,
+  "transient_at_flush": 14172672,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 124.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 14172672,
+  "frame_real_ms": 77.0,
+  "frame_user_ms": 67.0,
+  "frame_sys_ms": 14.000000000000002,
+  "frame_real_ms_all": [
+   77.0,
+   80.0
+  ],
+  "frame_cpu_ms_all": [
+   81.0,
+   83.0
+  ],
+  "real_1_min": 0.47,
+  "real_N_min": 1.26,
+  "user_1_min": 0.35,
+  "user_N_min": 1.03,
+  "sys_1_min": 0.12,
+  "sys_N_min": 0.25,
+  "maxrss_1": 212697088,
+  "maxrss_N": 241106944,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.49675929202931,
+    "exit": 0,
+    "layers": 124,
+    "transient_at_flush": 14172672,
+    "pass_through": 0,
+    "real": 0.49,
+    "user": 0.36,
+    "sys": 0.12,
+    "maxrss": 212697088
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.4801444999757223,
+    "exit": 0,
+    "layers": 124,
+    "transient_at_flush": 14172672,
+    "pass_through": 0,
+    "real": 0.47,
+    "user": 0.35,
+    "sys": 0.12,
+    "maxrss": 213336064
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.268031457962934,
+    "exit": 0,
+    "layers": 1364,
+    "transient_at_flush": 14172672,
+    "pass_through": 0,
+    "real": 1.26,
+    "user": 1.03,
+    "sys": 0.26,
+    "maxrss": 245727232
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.2729660830227658,
+    "exit": 0,
+    "layers": 1364,
+    "transient_at_flush": 14172672,
+    "pass_through": 0,
+    "real": 1.27,
+    "user": 1.05,
+    "sys": 0.25,
+    "maxrss": 241106944
+   }
+  ],
+  "frame_cpu_ms": 81.0,
+  "frame_gpu_wait_ms": -4.0,
+  "set": "busey"
+ },
+ {
+  "file": "gemini-3-1-pro-preview-custom-tools",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 75,
+  "pass_through": 0,
+  "transient_at_flush": 10756608,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 75.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 10756608,
+  "frame_real_ms": 103.00000000000001,
+  "frame_user_ms": 87.0,
+  "frame_sys_ms": 19.999999999999996,
+  "frame_real_ms_all": [
+   107.00000000000001,
+   103.00000000000001
+  ],
+  "frame_cpu_ms_all": [
+   110.99999999999999,
+   106.99999999999999
+  ],
+  "real_1_min": 0.55,
+  "real_N_min": 1.58,
+  "user_1_min": 0.39,
+  "user_N_min": 1.27,
+  "sys_1_min": 0.16,
+  "sys_N_min": 0.35,
+  "maxrss_1": 278315008,
+  "maxrss_N": 315621376,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.5531142920372076,
+    "exit": 0,
+    "layers": 75,
+    "transient_at_flush": 10756608,
+    "pass_through": 0,
+    "real": 0.55,
+    "user": 0.39,
+    "sys": 0.16,
+    "maxrss": 278413312
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.5588512500398792,
+    "exit": 0,
+    "layers": 75,
+    "transient_at_flush": 10756608,
+    "pass_through": 0,
+    "real": 0.55,
+    "user": 0.4,
+    "sys": 0.16,
+    "maxrss": 278315008
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.625730959000066,
+    "exit": 0,
+    "layers": 825,
+    "transient_at_flush": 10756608,
+    "pass_through": 0,
+    "real": 1.62,
+    "user": 1.31,
+    "sys": 0.35,
+    "maxrss": 315621376
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.582695999997668,
+    "exit": 0,
+    "layers": 825,
+    "transient_at_flush": 10756608,
+    "pass_through": 0,
+    "real": 1.58,
+    "user": 1.27,
+    "sys": 0.36,
+    "maxrss": 341622784
+   }
+  ],
+  "frame_cpu_ms": 107.0,
+  "frame_gpu_wait_ms": -3.999999999999986,
+  "set": "busey"
+ },
+ {
+  "file": "gemini-3-1-pro-preview",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 98,
+  "pass_through": 0,
+  "transient_at_flush": 10684416,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 98.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 10684416,
+  "frame_real_ms": 146.0,
+  "frame_user_ms": 123.0,
+  "frame_sys_ms": 30.000000000000007,
+  "frame_real_ms_all": [
+   146.0,
+   150.99999999999997
+  ],
+  "frame_cpu_ms_all": [
+   153.0,
+   158.0
+  ],
+  "real_1_min": 0.61,
+  "real_N_min": 2.07,
+  "user_1_min": 0.42,
+  "user_N_min": 1.65,
+  "sys_1_min": 0.22,
+  "sys_N_min": 0.52,
+  "maxrss_1": 391905280,
+  "maxrss_N": 485818368,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.6223243330023251,
+    "exit": 0,
+    "layers": 98,
+    "transient_at_flush": 10684416,
+    "pass_through": 0,
+    "real": 0.61,
+    "user": 0.42,
+    "sys": 0.22,
+    "maxrss": 391905280
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.6722787079634145,
+    "exit": 0,
+    "layers": 98,
+    "transient_at_flush": 10684416,
+    "pass_through": 0,
+    "real": 0.66,
+    "user": 0.44,
+    "sys": 0.24,
+    "maxrss": 392871936
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 2.0791487919632345,
+    "exit": 0,
+    "layers": 1078,
+    "transient_at_flush": 10684416,
+    "pass_through": 0,
+    "real": 2.07,
+    "user": 1.65,
+    "sys": 0.52,
+    "maxrss": 501710848
+   },
+   {
+    "frames": 11,
+    "wall_py": 2.1805322089930996,
+    "exit": 0,
+    "layers": 1078,
+    "transient_at_flush": 10684416,
+    "pass_through": 0,
+    "real": 2.17,
+    "user": 1.72,
+    "sys": 0.54,
+    "maxrss": 485818368
+   }
+  ],
+  "frame_cpu_ms": 153.0,
+  "frame_gpu_wait_ms": -7.0,
+  "set": "busey"
+ },
+ {
+  "file": "gemini-3-7-flash",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 57,
+  "pass_through": 0,
+  "transient_at_flush": 7127040,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 57.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 7127040,
+  "frame_real_ms": 60.0,
+  "frame_user_ms": 52.00000000000001,
+  "frame_sys_ms": 7.999999999999998,
+  "frame_real_ms_all": [
+   60.0,
+   62.0
+  ],
+  "frame_cpu_ms_all": [
+   60.00000000000001,
+   60.99999999999999
+  ],
+  "real_1_min": 0.36,
+  "real_N_min": 0.97,
+  "user_1_min": 0.28,
+  "user_N_min": 0.81,
+  "sys_1_min": 0.07,
+  "sys_N_min": 0.14,
+  "maxrss_1": 121323520,
+  "maxrss_N": 140279808,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.3755370419821702,
+    "exit": 0,
+    "layers": 57,
+    "transient_at_flush": 7127040,
+    "pass_through": 0,
+    "real": 0.37,
+    "user": 0.29,
+    "sys": 0.07,
+    "maxrss": 121323520
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.3696795420255512,
+    "exit": 0,
+    "layers": 57,
+    "transient_at_flush": 7127040,
+    "pass_through": 0,
+    "real": 0.36,
+    "user": 0.28,
+    "sys": 0.07,
+    "maxrss": 121536512
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.9765764580224641,
+    "exit": 0,
+    "layers": 627,
+    "transient_at_flush": 7127040,
+    "pass_through": 0,
+    "real": 0.97,
+    "user": 0.81,
+    "sys": 0.15,
+    "maxrss": 145375232
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.9832662089611404,
+    "exit": 0,
+    "layers": 627,
+    "transient_at_flush": 7127040,
+    "pass_through": 0,
+    "real": 0.98,
+    "user": 0.82,
+    "sys": 0.14,
+    "maxrss": 140279808
+   }
+  ],
+  "frame_cpu_ms": 60.00000000000001,
+  "frame_gpu_wait_ms": -7.105427357601002e-15,
+  "set": "busey"
+ },
+ {
+  "file": "gemini-3-8-flash",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 118,
+  "pass_through": 0,
+  "transient_at_flush": 8175616,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 118.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 8175616,
+  "frame_real_ms": 117.0,
+  "frame_user_ms": 100.0,
+  "frame_sys_ms": 19.999999999999996,
+  "frame_real_ms_all": [
+   125.0,
+   117.0
+  ],
+  "frame_cpu_ms_all": [
+   125.0,
+   120.0
+  ],
+  "real_1_min": 0.51,
+  "real_N_min": 1.68,
+  "user_1_min": 0.35,
+  "user_N_min": 1.35,
+  "sys_1_min": 0.16,
+  "sys_N_min": 0.36,
+  "maxrss_1": 275038208,
+  "maxrss_N": 308264960,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.5208765000570565,
+    "exit": 0,
+    "layers": 118,
+    "transient_at_flush": 8175616,
+    "pass_through": 0,
+    "real": 0.51,
+    "user": 0.35,
+    "sys": 0.17,
+    "maxrss": 275038208
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.5141054160194471,
+    "exit": 0,
+    "layers": 118,
+    "transient_at_flush": 8175616,
+    "pass_through": 0,
+    "real": 0.51,
+    "user": 0.35,
+    "sys": 0.16,
+    "maxrss": 276021248
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.7683218749589287,
+    "exit": 0,
+    "layers": 1298,
+    "transient_at_flush": 8175616,
+    "pass_through": 0,
+    "real": 1.76,
+    "user": 1.39,
+    "sys": 0.38,
+    "maxrss": 330940416
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.689905125007499,
+    "exit": 0,
+    "layers": 1298,
+    "transient_at_flush": 8175616,
+    "pass_through": 0,
+    "real": 1.68,
+    "user": 1.35,
+    "sys": 0.36,
+    "maxrss": 308264960
+   }
+  ],
+  "frame_cpu_ms": 120.0,
+  "frame_gpu_wait_ms": -3.0,
+  "set": "busey"
+ },
+ {
+  "file": "glm-5-3-flash",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 79,
+  "pass_through": 0,
+  "transient_at_flush": 10756608,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 79.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 10756608,
+  "frame_real_ms": 69.99999999999999,
+  "frame_user_ms": 57.00000000000001,
+  "frame_sys_ms": 13.000000000000002,
+  "frame_real_ms_all": [
+   69.99999999999999,
+   69.99999999999999
+  ],
+  "frame_cpu_ms_all": [
+   70.0,
+   72.00000000000001
+  ],
+  "real_1_min": 0.43,
+  "real_N_min": 1.13,
+  "user_1_min": 0.33,
+  "user_N_min": 0.9,
+  "sys_1_min": 0.1,
+  "sys_N_min": 0.24,
+  "maxrss_1": 181141504,
+  "maxrss_N": 209616896,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.4377912079798989,
+    "exit": 0,
+    "layers": 79,
+    "transient_at_flush": 10756608,
+    "pass_through": 0,
+    "real": 0.43,
+    "user": 0.33,
+    "sys": 0.11,
+    "maxrss": 181141504
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.449034416989889,
+    "exit": 0,
+    "layers": 79,
+    "transient_at_flush": 10756608,
+    "pass_through": 0,
+    "real": 0.44,
+    "user": 0.33,
+    "sys": 0.1,
+    "maxrss": 181370880
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.1409537920262665,
+    "exit": 0,
+    "layers": 869,
+    "transient_at_flush": 10756608,
+    "pass_through": 0,
+    "real": 1.13,
+    "user": 0.9,
+    "sys": 0.24,
+    "maxrss": 209616896
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.143660457979422,
+    "exit": 0,
+    "layers": 869,
+    "transient_at_flush": 10756608,
+    "pass_through": 0,
+    "real": 1.14,
+    "user": 0.91,
+    "sys": 0.24,
+    "maxrss": 218038272
+   }
+  ],
+  "frame_cpu_ms": 70.00000000000001,
+  "frame_gpu_wait_ms": -2.842170943040401e-14,
+  "set": "busey"
+ },
+ {
+  "file": "glm-5-3",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 129,
+  "pass_through": 0,
+  "transient_at_flush": 10405888,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 129.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 10405888,
+  "frame_real_ms": 133.0,
+  "frame_user_ms": 114.99999999999999,
+  "frame_sys_ms": 26.000000000000004,
+  "frame_real_ms_all": [
+   135.0,
+   133.0
+  ],
+  "frame_cpu_ms_all": [
+   145.0,
+   141.0
+  ],
+  "real_1_min": 0.58,
+  "real_N_min": 1.91,
+  "user_1_min": 0.4,
+  "user_N_min": 1.55,
+  "sys_1_min": 0.19,
+  "sys_N_min": 0.45,
+  "maxrss_1": 334774272,
+  "maxrss_N": 420610048,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.5980769169982523,
+    "exit": 0,
+    "layers": 129,
+    "transient_at_flush": 10405888,
+    "pass_through": 0,
+    "real": 0.59,
+    "user": 0.4,
+    "sys": 0.19,
+    "maxrss": 334774272
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.5876910829683766,
+    "exit": 0,
+    "layers": 129,
+    "transient_at_flush": 10405888,
+    "pass_through": 0,
+    "real": 0.58,
+    "user": 0.4,
+    "sys": 0.19,
+    "maxrss": 335495168
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.952359416987747,
+    "exit": 0,
+    "layers": 1419,
+    "transient_at_flush": 10405888,
+    "pass_through": 0,
+    "real": 1.94,
+    "user": 1.57,
+    "sys": 0.47,
+    "maxrss": 423673856
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.9202440829831176,
+    "exit": 0,
+    "layers": 1419,
+    "transient_at_flush": 10405888,
+    "pass_through": 0,
+    "real": 1.91,
+    "user": 1.55,
+    "sys": 0.45,
+    "maxrss": 420610048
+   }
+  ],
+  "frame_cpu_ms": 141.0,
+  "frame_gpu_wait_ms": -8.0,
+  "set": "busey"
+ },
+ {
+  "file": "glm-5v-turbo",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 57,
+  "pass_through": 0,
+  "transient_at_flush": 10684416,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 57.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 10684416,
+  "frame_real_ms": 59.000000000000014,
+  "frame_user_ms": 50.0,
+  "frame_sys_ms": 11.000000000000002,
+  "frame_real_ms_all": [
+   59.000000000000014,
+   65.00000000000001
+  ],
+  "frame_cpu_ms_all": [
+   61.00000000000001,
+   65.0
+  ],
+  "real_1_min": 0.41,
+  "real_N_min": 1.0,
+  "user_1_min": 0.31,
+  "user_N_min": 0.81,
+  "sys_1_min": 0.09,
+  "sys_N_min": 0.2,
+  "maxrss_1": 167608320,
+  "maxrss_N": 180322304,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.41496779199223965,
+    "exit": 0,
+    "layers": 57,
+    "transient_at_flush": 10684416,
+    "pass_through": 0,
+    "real": 0.41,
+    "user": 0.31,
+    "sys": 0.09,
+    "maxrss": 167608320
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.42849741701502353,
+    "exit": 0,
+    "layers": 57,
+    "transient_at_flush": 10684416,
+    "pass_through": 0,
+    "real": 0.42,
+    "user": 0.31,
+    "sys": 0.1,
+    "maxrss": 167739392
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.0072395000024699,
+    "exit": 0,
+    "layers": 627,
+    "transient_at_flush": 10684416,
+    "pass_through": 0,
+    "real": 1.0,
+    "user": 0.81,
+    "sys": 0.2,
+    "maxrss": 180322304
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.0784568749950267,
+    "exit": 0,
+    "layers": 627,
+    "transient_at_flush": 10684416,
+    "pass_through": 0,
+    "real": 1.07,
+    "user": 0.84,
+    "sys": 0.22,
+    "maxrss": 201310208
+   }
+  ],
+  "frame_cpu_ms": 61.0,
+  "frame_gpu_wait_ms": -1.9999999999999858,
+  "set": "busey"
+ },
+ {
+  "file": "gpt-5-2-pro",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 53,
+  "pass_through": 0,
+  "transient_at_flush": 9224192,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 53.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 9224192,
+  "frame_real_ms": 47.0,
+  "frame_user_ms": 40.0,
+  "frame_sys_ms": 9.0,
+  "frame_real_ms_all": [
+   47.0,
+   47.0
+  ],
+  "frame_cpu_ms_all": [
+   49.0,
+   45.0
+  ],
+  "real_1_min": 0.35,
+  "real_N_min": 0.82,
+  "user_1_min": 0.27,
+  "user_N_min": 0.64,
+  "sys_1_min": 0.09,
+  "sys_N_min": 0.17,
+  "maxrss_1": 141033472,
+  "maxrss_N": 155172864,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.37441845901776105,
+    "exit": 0,
+    "layers": 53,
+    "transient_at_flush": 9224192,
+    "pass_through": 0,
+    "real": 0.37,
+    "user": 0.27,
+    "sys": 0.09,
+    "maxrss": 141770752
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.35974095901474357,
+    "exit": 0,
+    "layers": 53,
+    "transient_at_flush": 9224192,
+    "pass_through": 0,
+    "real": 0.35,
+    "user": 0.27,
+    "sys": 0.09,
+    "maxrss": 141033472
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.8507592090172693,
+    "exit": 0,
+    "layers": 583,
+    "transient_at_flush": 9224192,
+    "pass_through": 0,
+    "real": 0.84,
+    "user": 0.67,
+    "sys": 0.18,
+    "maxrss": 171311104
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.8240175420069136,
+    "exit": 0,
+    "layers": 583,
+    "transient_at_flush": 9224192,
+    "pass_through": 0,
+    "real": 0.82,
+    "user": 0.64,
+    "sys": 0.17,
+    "maxrss": 155172864
+   }
+  ],
+  "frame_cpu_ms": 49.0,
+  "frame_gpu_wait_ms": -2.0,
+  "set": "busey"
+ },
+ {
+  "file": "gpt-5-6-luna-pro",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 33,
+  "pass_through": 0,
+  "transient_at_flush": 8175616,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 33.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 8175616,
+  "frame_real_ms": 33.0,
+  "frame_user_ms": 28.000000000000004,
+  "frame_sys_ms": 6.0,
+  "frame_real_ms_all": [
+   33.0,
+   37.99999999999999
+  ],
+  "frame_cpu_ms_all": [
+   34.0,
+   36.00000000000001
+  ],
+  "real_1_min": 0.31,
+  "real_N_min": 0.64,
+  "user_1_min": 0.25,
+  "user_N_min": 0.53,
+  "sys_1_min": 0.05,
+  "sys_N_min": 0.11,
+  "maxrss_1": 92028928,
+  "maxrss_N": 100515840,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.3205694580101408,
+    "exit": 0,
+    "layers": 33,
+    "transient_at_flush": 8175616,
+    "pass_through": 0,
+    "real": 0.31,
+    "user": 0.25,
+    "sys": 0.05,
+    "maxrss": 92028928
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.32001645799027756,
+    "exit": 0,
+    "layers": 33,
+    "transient_at_flush": 8175616,
+    "pass_through": 0,
+    "real": 0.31,
+    "user": 0.25,
+    "sys": 0.06,
+    "maxrss": 92028928
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.644369249988813,
+    "exit": 0,
+    "layers": 363,
+    "transient_at_flush": 8175616,
+    "pass_through": 0,
+    "real": 0.64,
+    "user": 0.53,
+    "sys": 0.11,
+    "maxrss": 100745216
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.6965110420132987,
+    "exit": 0,
+    "layers": 363,
+    "transient_at_flush": 8175616,
+    "pass_through": 0,
+    "real": 0.69,
+    "user": 0.55,
+    "sys": 0.12,
+    "maxrss": 100515840
+   }
+  ],
+  "frame_cpu_ms": 34.0,
+  "frame_gpu_wait_ms": -1.0,
+  "set": "busey"
+ },
+ {
+  "file": "gpt-5-6-sol-pro",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 41,
+  "pass_through": 0,
+  "transient_at_flush": 13369344,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 41.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 13369344,
+  "frame_real_ms": 42.0,
+  "frame_user_ms": 34.0,
+  "frame_sys_ms": 6.0,
+  "frame_real_ms_all": [
+   42.0,
+   43.0
+  ],
+  "frame_cpu_ms_all": [
+   40.0,
+   41.0
+  ],
+  "real_1_min": 0.38,
+  "real_N_min": 0.81,
+  "user_1_min": 0.31,
+  "user_N_min": 0.66,
+  "sys_1_min": 0.06,
+  "sys_N_min": 0.12,
+  "maxrss_1": 102727680,
+  "maxrss_N": 111001600,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.4007564589846879,
+    "exit": 0,
+    "layers": 41,
+    "transient_at_flush": 13369344,
+    "pass_through": 0,
+    "real": 0.39,
+    "user": 0.32,
+    "sys": 0.06,
+    "maxrss": 102776832
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.3923831669962965,
+    "exit": 0,
+    "layers": 41,
+    "transient_at_flush": 13369344,
+    "pass_through": 0,
+    "real": 0.38,
+    "user": 0.31,
+    "sys": 0.06,
+    "maxrss": 102727680
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.8207394999917597,
+    "exit": 0,
+    "layers": 451,
+    "transient_at_flush": 13369344,
+    "pass_through": 0,
+    "real": 0.81,
+    "user": 0.66,
+    "sys": 0.12,
+    "maxrss": 111001600
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.817174082971178,
+    "exit": 0,
+    "layers": 451,
+    "transient_at_flush": 13369344,
+    "pass_through": 0,
+    "real": 0.81,
+    "user": 0.66,
+    "sys": 0.12,
+    "maxrss": 111247360
+   }
+  ],
+  "frame_cpu_ms": 40.0,
+  "frame_gpu_wait_ms": 2.0,
+  "set": "busey"
+ },
+ {
+  "file": "gpt-5-6-sol",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 48,
+  "pass_through": 0,
+  "transient_at_flush": 8175616,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 48.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 8175616,
+  "frame_real_ms": 39.0,
+  "frame_user_ms": 33.0,
+  "frame_sys_ms": 6.0,
+  "frame_real_ms_all": [
+   43.0,
+   39.0
+  ],
+  "frame_cpu_ms_all": [
+   42.0,
+   39.0
+  ],
+  "real_1_min": 0.36,
+  "real_N_min": 0.76,
+  "user_1_min": 0.29,
+  "user_N_min": 0.63,
+  "sys_1_min": 0.06,
+  "sys_N_min": 0.12,
+  "maxrss_1": 100990976,
+  "maxrss_N": 111099904,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.3691344169783406,
+    "exit": 0,
+    "layers": 48,
+    "transient_at_flush": 8175616,
+    "pass_through": 0,
+    "real": 0.36,
+    "user": 0.29,
+    "sys": 0.06,
+    "maxrss": 100990976
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.38187012501293793,
+    "exit": 0,
+    "layers": 48,
+    "transient_at_flush": 8175616,
+    "pass_through": 0,
+    "real": 0.37,
+    "user": 0.3,
+    "sys": 0.06,
+    "maxrss": 101203968
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.7992341250064783,
+    "exit": 0,
+    "layers": 528,
+    "transient_at_flush": 8175616,
+    "pass_through": 0,
+    "real": 0.79,
+    "user": 0.65,
+    "sys": 0.12,
+    "maxrss": 116719616
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.7652328329859301,
+    "exit": 0,
+    "layers": 528,
+    "transient_at_flush": 8175616,
+    "pass_through": 0,
+    "real": 0.76,
+    "user": 0.63,
+    "sys": 0.12,
+    "maxrss": 111099904
+   }
+  ],
+  "frame_cpu_ms": 39.0,
+  "frame_gpu_wait_ms": 0.0,
+  "set": "busey"
+ },
+ {
+  "file": "gpt-5-6-terra-pro",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 31,
+  "pass_through": 0,
+  "transient_at_flush": 7127040,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 31.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 7127040,
+  "frame_real_ms": 36.0,
+  "frame_user_ms": 31.999999999999993,
+  "frame_sys_ms": 6.0,
+  "frame_real_ms_all": [
+   36.0,
+   36.0
+  ],
+  "frame_cpu_ms_all": [
+   37.99999999999999,
+   34.0
+  ],
+  "real_1_min": 0.35,
+  "real_N_min": 0.71,
+  "user_1_min": 0.28,
+  "user_N_min": 0.59,
+  "sys_1_min": 0.05,
+  "sys_N_min": 0.1,
+  "maxrss_1": 91308032,
+  "maxrss_N": 105873408,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.3525359999621287,
+    "exit": 0,
+    "layers": 31,
+    "transient_at_flush": 7127040,
+    "pass_through": 0,
+    "real": 0.35,
+    "user": 0.28,
+    "sys": 0.05,
+    "maxrss": 91357184
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.3723693329957314,
+    "exit": 0,
+    "layers": 31,
+    "transient_at_flush": 7127040,
+    "pass_through": 0,
+    "real": 0.36,
+    "user": 0.29,
+    "sys": 0.06,
+    "maxrss": 91308032
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.7225253329961561,
+    "exit": 0,
+    "layers": 341,
+    "transient_at_flush": 7127040,
+    "pass_through": 0,
+    "real": 0.71,
+    "user": 0.6,
+    "sys": 0.11,
+    "maxrss": 109117440
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.7257178750005551,
+    "exit": 0,
+    "layers": 341,
+    "transient_at_flush": 7127040,
+    "pass_through": 0,
+    "real": 0.72,
+    "user": 0.59,
+    "sys": 0.1,
+    "maxrss": 105873408
+   }
+  ],
+  "frame_cpu_ms": 37.99999999999999,
+  "frame_gpu_wait_ms": -1.999999999999993,
+  "set": "busey"
+ },
+ {
+  "file": "gpt-6-astra",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 162,
+  "pass_through": 0,
+  "transient_at_flush": 8175616,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 162.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 8175616,
+  "frame_real_ms": 155.00000000000003,
+  "frame_user_ms": 138.0,
+  "frame_sys_ms": 22.000000000000004,
+  "frame_real_ms_all": [
+   155.00000000000003,
+   158.0
+  ],
+  "frame_cpu_ms_all": [
+   160.0,
+   161.0
+  ],
+  "real_1_min": 0.61,
+  "real_N_min": 2.16,
+  "user_1_min": 0.44,
+  "user_N_min": 1.82,
+  "sys_1_min": 0.17,
+  "sys_N_min": 0.4,
+  "maxrss_1": 301236224,
+  "maxrss_N": 361283584,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.6214113329770043,
+    "exit": 0,
+    "layers": 162,
+    "transient_at_flush": 8175616,
+    "pass_through": 0,
+    "real": 0.61,
+    "user": 0.44,
+    "sys": 0.18,
+    "maxrss": 301236224
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.6181924159754999,
+    "exit": 0,
+    "layers": 162,
+    "transient_at_flush": 8175616,
+    "pass_through": 0,
+    "real": 0.61,
+    "user": 0.44,
+    "sys": 0.17,
+    "maxrss": 301875200
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 2.171085874957498,
+    "exit": 0,
+    "layers": 1782,
+    "transient_at_flush": 8175616,
+    "pass_through": 0,
+    "real": 2.16,
+    "user": 1.82,
+    "sys": 0.4,
+    "maxrss": 373571584
+   },
+   {
+    "frames": 11,
+    "wall_py": 2.1966413750196807,
+    "exit": 0,
+    "layers": 1782,
+    "transient_at_flush": 8175616,
+    "pass_through": 0,
+    "real": 2.19,
+    "user": 1.82,
+    "sys": 0.4,
+    "maxrss": 361283584
+   }
+  ],
+  "frame_cpu_ms": 160.0,
+  "frame_gpu_wait_ms": -4.999999999999972,
+  "set": "busey"
+ },
+ {
+  "file": "grok-4-5",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 76,
+  "pass_through": 0,
+  "transient_at_flush": 6631936,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 76.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 6631936,
+  "frame_real_ms": 69.99999999999999,
+  "frame_user_ms": 60.999999999999986,
+  "frame_sys_ms": 11.0,
+  "frame_real_ms_all": [
+   69.99999999999999,
+   71.0
+  ],
+  "frame_cpu_ms_all": [
+   71.99999999999999,
+   73.99999999999999
+  ],
+  "real_1_min": 0.44,
+  "real_N_min": 1.15,
+  "user_1_min": 0.33,
+  "user_N_min": 0.95,
+  "sys_1_min": 0.1,
+  "sys_N_min": 0.21,
+  "maxrss_1": 173277184,
+  "maxrss_N": 194199552,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.4682834169943817,
+    "exit": 0,
+    "layers": 76,
+    "transient_at_flush": 6631936,
+    "pass_through": 0,
+    "real": 0.46,
+    "user": 0.34,
+    "sys": 0.11,
+    "maxrss": 173277184
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.452201708976645,
+    "exit": 0,
+    "layers": 76,
+    "transient_at_flush": 6631936,
+    "pass_through": 0,
+    "real": 0.44,
+    "user": 0.33,
+    "sys": 0.1,
+    "maxrss": 173359104
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.1673277919762768,
+    "exit": 0,
+    "layers": 836,
+    "transient_at_flush": 6631936,
+    "pass_through": 0,
+    "real": 1.16,
+    "user": 0.95,
+    "sys": 0.22,
+    "maxrss": 194199552
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.1566724170115776,
+    "exit": 0,
+    "layers": 836,
+    "transient_at_flush": 6631936,
+    "pass_through": 0,
+    "real": 1.15,
+    "user": 0.96,
+    "sys": 0.21,
+    "maxrss": 216006656
+   }
+  ],
+  "frame_cpu_ms": 71.99999999999999,
+  "frame_gpu_wait_ms": -2.0,
+  "set": "busey"
+ },
+ {
+  "file": "kimi-k2-6",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 55,
+  "pass_through": 0,
+  "transient_at_flush": 10613248,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 55.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 10613248,
+  "frame_real_ms": 61.000000000000014,
+  "frame_user_ms": 53.00000000000001,
+  "frame_sys_ms": 11.0,
+  "frame_real_ms_all": [
+   63.000000000000014,
+   61.000000000000014
+  ],
+  "frame_cpu_ms_all": [
+   65.0,
+   64.0
+  ],
+  "real_1_min": 0.43,
+  "real_N_min": 1.04,
+  "user_1_min": 0.32,
+  "user_N_min": 0.85,
+  "sys_1_min": 0.1,
+  "sys_N_min": 0.21,
+  "maxrss_1": 177356800,
+  "maxrss_N": 203423744,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.4540920830331743,
+    "exit": 0,
+    "layers": 55,
+    "transient_at_flush": 10613248,
+    "pass_through": 0,
+    "real": 0.45,
+    "user": 0.34,
+    "sys": 0.11,
+    "maxrss": 178044928
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.43319495796458796,
+    "exit": 0,
+    "layers": 55,
+    "transient_at_flush": 10613248,
+    "pass_through": 0,
+    "real": 0.43,
+    "user": 0.32,
+    "sys": 0.1,
+    "maxrss": 177356800
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.083530083997175,
+    "exit": 0,
+    "layers": 605,
+    "transient_at_flush": 10613248,
+    "pass_through": 0,
+    "real": 1.08,
+    "user": 0.87,
+    "sys": 0.23,
+    "maxrss": 203423744
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.0452915420173667,
+    "exit": 0,
+    "layers": 605,
+    "transient_at_flush": 10613248,
+    "pass_through": 0,
+    "real": 1.04,
+    "user": 0.85,
+    "sys": 0.21,
+    "maxrss": 209190912
+   }
+  ],
+  "frame_cpu_ms": 64.0,
+  "frame_gpu_wait_ms": -2.999999999999986,
+  "set": "busey"
+ },
+ {
+  "file": "kimi-k3",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 50,
+  "pass_through": 0,
+  "transient_at_flush": 11805184,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 50.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 11805184,
+  "frame_real_ms": 34.99999999999999,
+  "frame_user_ms": 29.999999999999993,
+  "frame_sys_ms": 6.0,
+  "frame_real_ms_all": [
+   40.99999999999999,
+   34.99999999999999
+  ],
+  "frame_cpu_ms_all": [
+   38.99999999999999,
+   35.99999999999999
+  ],
+  "real_1_min": 0.34,
+  "real_N_min": 0.71,
+  "user_1_min": 0.27,
+  "user_N_min": 0.58,
+  "sys_1_min": 0.07,
+  "sys_N_min": 0.13,
+  "maxrss_1": 111837184,
+  "maxrss_N": 118931456,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.34502404200611636,
+    "exit": 0,
+    "layers": 50,
+    "transient_at_flush": 11805184,
+    "pass_through": 0,
+    "real": 0.34,
+    "user": 0.27,
+    "sys": 0.07,
+    "maxrss": 111837184
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.3627878339611925,
+    "exit": 0,
+    "layers": 50,
+    "transient_at_flush": 11805184,
+    "pass_through": 0,
+    "real": 0.36,
+    "user": 0.28,
+    "sys": 0.07,
+    "maxrss": 112279552
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.7554534579976462,
+    "exit": 0,
+    "layers": 550,
+    "transient_at_flush": 11805184,
+    "pass_through": 0,
+    "real": 0.75,
+    "user": 0.6,
+    "sys": 0.13,
+    "maxrss": 124911616
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.7153950409847312,
+    "exit": 0,
+    "layers": 550,
+    "transient_at_flush": 11805184,
+    "pass_through": 0,
+    "real": 0.71,
+    "user": 0.58,
+    "sys": 0.13,
+    "maxrss": 118931456
+   }
+  ],
+  "frame_cpu_ms": 35.99999999999999,
+  "frame_gpu_wait_ms": -1.0,
+  "set": "busey"
+ },
+ {
+  "file": "muse-spark-1-3-contributor",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 59,
+  "pass_through": 0,
+  "transient_at_flush": 7127040,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 59.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 7127040,
+  "frame_real_ms": 52.00000000000001,
+  "frame_user_ms": 44.0,
+  "frame_sys_ms": 9.0,
+  "frame_real_ms_all": [
+   53.00000000000001,
+   52.00000000000001
+  ],
+  "frame_cpu_ms_all": [
+   54.0,
+   53.0
+  ],
+  "real_1_min": 0.38,
+  "real_N_min": 0.9,
+  "user_1_min": 0.29,
+  "user_N_min": 0.73,
+  "sys_1_min": 0.08,
+  "sys_N_min": 0.17,
+  "maxrss_1": 150945792,
+  "maxrss_N": 162136064,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.38969516701763496,
+    "exit": 0,
+    "layers": 59,
+    "transient_at_flush": 7127040,
+    "pass_through": 0,
+    "real": 0.38,
+    "user": 0.29,
+    "sys": 0.08,
+    "maxrss": 151224320
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.38916116702603176,
+    "exit": 0,
+    "layers": 59,
+    "transient_at_flush": 7127040,
+    "pass_through": 0,
+    "real": 0.38,
+    "user": 0.29,
+    "sys": 0.09,
+    "maxrss": 150945792
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.9146313330275007,
+    "exit": 0,
+    "layers": 649,
+    "transient_at_flush": 7127040,
+    "pass_through": 0,
+    "real": 0.91,
+    "user": 0.74,
+    "sys": 0.17,
+    "maxrss": 164216832
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.9050680000218563,
+    "exit": 0,
+    "layers": 649,
+    "transient_at_flush": 7127040,
+    "pass_through": 0,
+    "real": 0.9,
+    "user": 0.73,
+    "sys": 0.18,
+    "maxrss": 162136064
+   }
+  ],
+  "frame_cpu_ms": 53.0,
+  "frame_gpu_wait_ms": -0.9999999999999929,
+  "set": "busey"
+ },
+ {
+  "file": "muse-spark-1-3",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 49,
+  "pass_through": 0,
+  "transient_at_flush": 7127040,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 49.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 7127040,
+  "frame_real_ms": 56.00000000000001,
+  "frame_user_ms": 49.0,
+  "frame_sys_ms": 8.000000000000002,
+  "frame_real_ms_all": [
+   56.00000000000001,
+   56.00000000000001
+  ],
+  "frame_cpu_ms_all": [
+   57.0,
+   57.0
+  ],
+  "real_1_min": 0.37,
+  "real_N_min": 0.93,
+  "user_1_min": 0.28,
+  "user_N_min": 0.77,
+  "sys_1_min": 0.09,
+  "sys_N_min": 0.17,
+  "maxrss_1": 150945792,
+  "maxrss_N": 162512896,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.3793459170265123,
+    "exit": 0,
+    "layers": 49,
+    "transient_at_flush": 7127040,
+    "pass_through": 0,
+    "real": 0.37,
+    "user": 0.28,
+    "sys": 0.09,
+    "maxrss": 150945792
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.3789001250406727,
+    "exit": 0,
+    "layers": 49,
+    "transient_at_flush": 7127040,
+    "pass_through": 0,
+    "real": 0.37,
+    "user": 0.28,
+    "sys": 0.09,
+    "maxrss": 151011328
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.9410080420202576,
+    "exit": 0,
+    "layers": 539,
+    "transient_at_flush": 7127040,
+    "pass_through": 0,
+    "real": 0.93,
+    "user": 0.77,
+    "sys": 0.17,
+    "maxrss": 165658624
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.9381483339820988,
+    "exit": 0,
+    "layers": 539,
+    "transient_at_flush": 7127040,
+    "pass_through": 0,
+    "real": 0.93,
+    "user": 0.77,
+    "sys": 0.17,
+    "maxrss": 162512896
+   }
+  ],
+  "frame_cpu_ms": 57.0,
+  "frame_gpu_wait_ms": -0.9999999999999929,
+  "set": "busey"
+ },
+ {
+  "file": "nex-n2-pro",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 102,
+  "pass_through": 0,
+  "transient_at_flush": 13822464,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 102.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 13822464,
+  "frame_real_ms": 66.00000000000001,
+  "frame_user_ms": 58.00000000000001,
+  "frame_sys_ms": 11.000000000000002,
+  "frame_real_ms_all": [
+   68.0,
+   66.00000000000001
+  ],
+  "frame_cpu_ms_all": [
+   68.0,
+   69.0
+  ],
+  "real_1_min": 0.4,
+  "real_N_min": 1.07,
+  "user_1_min": 0.31,
+  "user_N_min": 0.89,
+  "sys_1_min": 0.09,
+  "sys_N_min": 0.2,
+  "maxrss_1": 170229760,
+  "maxrss_N": 186859520,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.4104829169809818,
+    "exit": 0,
+    "layers": 102,
+    "transient_at_flush": 13822464,
+    "pass_through": 0,
+    "real": 0.4,
+    "user": 0.31,
+    "sys": 0.1,
+    "maxrss": 170541056
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.41401362500619143,
+    "exit": 0,
+    "layers": 102,
+    "transient_at_flush": 13822464,
+    "pass_through": 0,
+    "real": 0.41,
+    "user": 0.31,
+    "sys": 0.09,
+    "maxrss": 170229760
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.0930345419910736,
+    "exit": 0,
+    "layers": 1122,
+    "transient_at_flush": 13822464,
+    "pass_through": 0,
+    "real": 1.08,
+    "user": 0.89,
+    "sys": 0.2,
+    "maxrss": 195051520
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.0811994580435567,
+    "exit": 0,
+    "layers": 1122,
+    "transient_at_flush": 13822464,
+    "pass_through": 0,
+    "real": 1.07,
+    "user": 0.89,
+    "sys": 0.2,
+    "maxrss": 186859520
+   }
+  ],
+  "frame_cpu_ms": 69.00000000000001,
+  "frame_gpu_wait_ms": -3.0,
+  "set": "busey"
+ },
+ {
+  "file": "ox-alpha",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 94,
+  "pass_through": 0,
+  "transient_at_flush": 8572192,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 94.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 8572192,
+  "frame_real_ms": 78.0,
+  "frame_user_ms": 69.0,
+  "frame_sys_ms": 15.000000000000004,
+  "frame_real_ms_all": [
+   78.0,
+   79.0
+  ],
+  "frame_cpu_ms_all": [
+   84.0,
+   84.0
+  ],
+  "real_1_min": 0.51,
+  "real_N_min": 1.3,
+  "user_1_min": 0.38,
+  "user_N_min": 1.07,
+  "sys_1_min": 0.12,
+  "sys_N_min": 0.27,
+  "maxrss_1": 215285760,
+  "maxrss_N": 256311296,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.5326656250399537,
+    "exit": 0,
+    "layers": 94,
+    "transient_at_flush": 8572192,
+    "pass_through": 0,
+    "real": 0.53,
+    "user": 0.39,
+    "sys": 0.12,
+    "maxrss": 215793664
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.5126059590256773,
+    "exit": 0,
+    "layers": 94,
+    "transient_at_flush": 8572192,
+    "pass_through": 0,
+    "real": 0.51,
+    "user": 0.38,
+    "sys": 0.12,
+    "maxrss": 215285760
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.3190711249480955,
+    "exit": 0,
+    "layers": 1034,
+    "transient_at_flush": 8572192,
+    "pass_through": 0,
+    "real": 1.31,
+    "user": 1.08,
+    "sys": 0.27,
+    "maxrss": 268075008
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.3057815830106847,
+    "exit": 0,
+    "layers": 1034,
+    "transient_at_flush": 8572192,
+    "pass_through": 0,
+    "real": 1.3,
+    "user": 1.07,
+    "sys": 0.27,
+    "maxrss": 256311296
+   }
+  ],
+  "frame_cpu_ms": 84.0,
+  "frame_gpu_wait_ms": -6.0,
+  "set": "busey"
+ },
+ {
+  "file": "qwen3-8-2-4t-a95b",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 200,
+  "pass_through": 0,
+  "transient_at_flush": 13927968,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 200.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 13927968,
+  "frame_real_ms": 221.99999999999997,
+  "frame_user_ms": 187.0,
+  "frame_sys_ms": 49.99999999999999,
+  "frame_real_ms_all": [
+   221.99999999999997,
+   221.99999999999997
+  ],
+  "frame_cpu_ms_all": [
+   237.0,
+   240.0
+  ],
+  "real_1_min": 0.78,
+  "real_N_min": 3.0,
+  "user_1_min": 0.48,
+  "user_N_min": 2.35,
+  "sys_1_min": 0.32,
+  "sys_N_min": 0.82,
+  "maxrss_1": 560611328,
+  "maxrss_N": 713736192,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.7835678330156952,
+    "exit": 0,
+    "layers": 200,
+    "transient_at_flush": 13927968,
+    "pass_through": 0,
+    "real": 0.78,
+    "user": 0.48,
+    "sys": 0.32,
+    "maxrss": 560742400
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.7957338340347633,
+    "exit": 0,
+    "layers": 200,
+    "transient_at_flush": 13927968,
+    "pass_through": 0,
+    "real": 0.79,
+    "user": 0.49,
+    "sys": 0.32,
+    "maxrss": 560611328
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 3.002841084031388,
+    "exit": 0,
+    "layers": 2200,
+    "transient_at_flush": 13927968,
+    "pass_through": 0,
+    "real": 3.0,
+    "user": 2.35,
+    "sys": 0.82,
+    "maxrss": 714457088
+   },
+   {
+    "frames": 11,
+    "wall_py": 3.0185676249675453,
+    "exit": 0,
+    "layers": 2200,
+    "transient_at_flush": 13927968,
+    "pass_through": 0,
+    "real": 3.01,
+    "user": 2.38,
+    "sys": 0.83,
+    "maxrss": 713736192
+   }
+  ],
+  "frame_cpu_ms": 237.0,
+  "frame_gpu_wait_ms": -15.000000000000028,
+  "set": "busey"
+ },
+ {
+  "file": "qwen3-8-27b",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 100,
+  "pass_through": 0,
+  "transient_at_flush": 10829824,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 100.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 10829824,
+  "frame_real_ms": 95.0,
+  "frame_user_ms": 82.99999999999999,
+  "frame_sys_ms": 16.0,
+  "frame_real_ms_all": [
+   96.0,
+   95.0
+  ],
+  "frame_cpu_ms_all": [
+   99.99999999999999,
+   98.99999999999999
+  ],
+  "real_1_min": 0.47,
+  "real_N_min": 1.43,
+  "user_1_min": 0.33,
+  "user_N_min": 1.16,
+  "sys_1_min": 0.15,
+  "sys_N_min": 0.31,
+  "maxrss_1": 249839616,
+  "maxrss_N": 273285120,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.4813085409696214,
+    "exit": 0,
+    "layers": 100,
+    "transient_at_flush": 10829824,
+    "pass_through": 0,
+    "real": 0.47,
+    "user": 0.33,
+    "sys": 0.15,
+    "maxrss": 250527744
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.5175212500034831,
+    "exit": 0,
+    "layers": 100,
+    "transient_at_flush": 10829824,
+    "pass_through": 0,
+    "real": 0.51,
+    "user": 0.34,
+    "sys": 0.15,
+    "maxrss": 249839616
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.4405099999858066,
+    "exit": 0,
+    "layers": 1100,
+    "transient_at_flush": 10829824,
+    "pass_through": 0,
+    "real": 1.43,
+    "user": 1.16,
+    "sys": 0.32,
+    "maxrss": 276840448
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.467090999998618,
+    "exit": 0,
+    "layers": 1100,
+    "transient_at_flush": 10829824,
+    "pass_through": 0,
+    "real": 1.46,
+    "user": 1.17,
+    "sys": 0.31,
+    "maxrss": 273285120
+   }
+  ],
+  "frame_cpu_ms": 98.99999999999999,
+  "frame_gpu_wait_ms": -3.999999999999986,
+  "set": "busey"
+ },
+ {
+  "file": "qwen3-8-flash",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 119,
+  "pass_through": 0,
+  "transient_at_flush": 12448344,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 119.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 12448344,
+  "frame_real_ms": 131.99999999999997,
+  "frame_user_ms": 114.00000000000001,
+  "frame_sys_ms": 23.0,
+  "frame_real_ms_all": [
+   131.99999999999997,
+   135.99999999999997
+  ],
+  "frame_cpu_ms_all": [
+   137.0,
+   142.00000000000003
+  ],
+  "real_1_min": 0.61,
+  "real_N_min": 1.93,
+  "user_1_min": 0.43,
+  "user_N_min": 1.57,
+  "sys_1_min": 0.18,
+  "sys_N_min": 0.41,
+  "maxrss_1": 323420160,
+  "maxrss_N": 367886336,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.6168711250065826,
+    "exit": 0,
+    "layers": 119,
+    "transient_at_flush": 12448344,
+    "pass_through": 0,
+    "real": 0.61,
+    "user": 0.43,
+    "sys": 0.18,
+    "maxrss": 323600384
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.6219943749601953,
+    "exit": 0,
+    "layers": 119,
+    "transient_at_flush": 12448344,
+    "pass_through": 0,
+    "real": 0.61,
+    "user": 0.43,
+    "sys": 0.2,
+    "maxrss": 323420160
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.9350223329965957,
+    "exit": 0,
+    "layers": 1309,
+    "transient_at_flush": 12448344,
+    "pass_through": 0,
+    "real": 1.93,
+    "user": 1.57,
+    "sys": 0.41,
+    "maxrss": 367886336
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.9744193750084378,
+    "exit": 0,
+    "layers": 1309,
+    "transient_at_flush": 12448344,
+    "pass_through": 0,
+    "real": 1.97,
+    "user": 1.59,
+    "sys": 0.46,
+    "maxrss": 390479872
+   }
+  ],
+  "frame_cpu_ms": 137.0,
+  "frame_gpu_wait_ms": -5.000000000000028,
+  "set": "busey"
+ },
+ {
+  "file": "qwen3-8-max",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 94,
+  "pass_through": 0,
+  "transient_at_flush": 11985936,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 94.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 11985936,
+  "frame_real_ms": 91.0,
+  "frame_user_ms": 79.99999999999999,
+  "frame_sys_ms": 17.0,
+  "frame_real_ms_all": [
+   91.0,
+   96.0
+  ],
+  "frame_cpu_ms_all": [
+   96.99999999999999,
+   101.99999999999999
+  ],
+  "real_1_min": 0.55,
+  "real_N_min": 1.46,
+  "user_1_min": 0.39,
+  "user_N_min": 1.19,
+  "sys_1_min": 0.16,
+  "sys_N_min": 0.33,
+  "maxrss_1": 252887040,
+  "maxrss_N": 275578880,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.5551816250081174,
+    "exit": 0,
+    "layers": 94,
+    "transient_at_flush": 11985936,
+    "pass_through": 0,
+    "real": 0.55,
+    "user": 0.39,
+    "sys": 0.16,
+    "maxrss": 253132800
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.5597818749956787,
+    "exit": 0,
+    "layers": 94,
+    "transient_at_flush": 11985936,
+    "pass_through": 0,
+    "real": 0.55,
+    "user": 0.4,
+    "sys": 0.16,
+    "maxrss": 252887040
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.4675068749929778,
+    "exit": 0,
+    "layers": 1034,
+    "transient_at_flush": 11985936,
+    "pass_through": 0,
+    "real": 1.46,
+    "user": 1.19,
+    "sys": 0.33,
+    "maxrss": 275578880
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.5206770419608802,
+    "exit": 0,
+    "layers": 1034,
+    "transient_at_flush": 11985936,
+    "pass_through": 0,
+    "real": 1.51,
+    "user": 1.22,
+    "sys": 0.36,
+    "maxrss": 297926656
+   }
+  ],
+  "frame_cpu_ms": 96.99999999999999,
+  "frame_gpu_wait_ms": -5.999999999999986,
+  "set": "busey"
+ },
+ {
+  "file": "claude-fable-5-1",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 178,
+  "pass_through": 0,
+  "transient_at_flush": 38316544,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 178.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 38316544,
+  "frame_real_ms": 151.0,
+  "frame_user_ms": 127.0,
+  "frame_sys_ms": 32.00000000000001,
+  "frame_real_ms_all": [
+   151.0,
+   155.99999999999997
+  ],
+  "frame_cpu_ms_all": [
+   159.0,
+   165.0
+  ],
+  "real_1_min": 0.72,
+  "real_N_min": 2.23,
+  "user_1_min": 0.51,
+  "user_N_min": 1.78,
+  "sys_1_min": 0.22,
+  "sys_N_min": 0.54,
+  "maxrss_1": 393347072,
+  "maxrss_N": 444923904,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.7291204580105841,
+    "exit": 0,
+    "layers": 178,
+    "transient_at_flush": 38316544,
+    "pass_through": 0,
+    "real": 0.72,
+    "user": 0.51,
+    "sys": 0.22,
+    "maxrss": 393347072
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.748412582965102,
+    "exit": 0,
+    "layers": 178,
+    "transient_at_flush": 38316544,
+    "pass_through": 0,
+    "real": 0.74,
+    "user": 0.52,
+    "sys": 0.22,
+    "maxrss": 393641984
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 2.240162042027805,
+    "exit": 0,
+    "layers": 1958,
+    "transient_at_flush": 38316544,
+    "pass_through": 0,
+    "real": 2.23,
+    "user": 1.78,
+    "sys": 0.54,
+    "maxrss": 444923904
+   },
+   {
+    "frames": 11,
+    "wall_py": 2.3043200840475038,
+    "exit": 0,
+    "layers": 1958,
+    "transient_at_flush": 38316544,
+    "pass_through": 0,
+    "real": 2.3,
+    "user": 1.82,
+    "sys": 0.57,
+    "maxrss": 465158144
+   }
+  ],
+  "frame_cpu_ms": 159.0,
+  "frame_gpu_wait_ms": -8.0,
+  "set": "busey"
+ },
+ {
+  "file": "claude-opus-5",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 92,
+  "pass_through": 0,
+  "transient_at_flush": 38978048,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 92.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 38978048,
+  "frame_real_ms": 108.00000000000001,
+  "frame_user_ms": 90.0,
+  "frame_sys_ms": 22.0,
+  "frame_real_ms_all": [
+   108.00000000000001,
+   114.99999999999999
+  ],
+  "frame_cpu_ms_all": [
+   111.99999999999999,
+   118.0
+  ],
+  "real_1_min": 0.65,
+  "real_N_min": 1.76,
+  "user_1_min": 0.48,
+  "user_N_min": 1.4,
+  "sys_1_min": 0.16,
+  "sys_N_min": 0.39,
+  "maxrss_1": 278528000,
+  "maxrss_N": 341442560,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.6828306250390597,
+    "exit": 0,
+    "layers": 92,
+    "transient_at_flush": 38978048,
+    "pass_through": 0,
+    "real": 0.68,
+    "user": 0.5,
+    "sys": 0.17,
+    "maxrss": 278724608
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.6566345000173897,
+    "exit": 0,
+    "layers": 92,
+    "transient_at_flush": 38978048,
+    "pass_through": 0,
+    "real": 0.65,
+    "user": 0.48,
+    "sys": 0.16,
+    "maxrss": 278528000
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.7720490830251947,
+    "exit": 0,
+    "layers": 1012,
+    "transient_at_flush": 38978048,
+    "pass_through": 0,
+    "real": 1.76,
+    "user": 1.4,
+    "sys": 0.39,
+    "maxrss": 344915968
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.8062936249771155,
+    "exit": 0,
+    "layers": 1012,
+    "transient_at_flush": 38978048,
+    "pass_through": 0,
+    "real": 1.8,
+    "user": 1.41,
+    "sys": 0.41,
+    "maxrss": 341442560
+   }
+  ],
+  "frame_cpu_ms": 112.0,
+  "frame_gpu_wait_ms": -3.999999999999986,
+  "set": "busey"
+ },
+ {
+  "file": "fugu-ultra",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 124,
+  "pass_through": 0,
+  "transient_at_flush": 45335040,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 124.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 45335040,
+  "frame_real_ms": 82.99999999999999,
+  "frame_user_ms": 69.99999999999999,
+  "frame_sys_ms": 16.0,
+  "frame_real_ms_all": [
+   86.0,
+   82.99999999999999
+  ],
+  "frame_cpu_ms_all": [
+   88.0,
+   86.0
+  ],
+  "real_1_min": 0.58,
+  "real_N_min": 1.41,
+  "user_1_min": 0.43,
+  "user_N_min": 1.13,
+  "sys_1_min": 0.14,
+  "sys_N_min": 0.31,
+  "maxrss_1": 226803712,
+  "maxrss_N": 266731520,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.5842837910167873,
+    "exit": 0,
+    "layers": 124,
+    "transient_at_flush": 45335040,
+    "pass_through": 0,
+    "real": 0.58,
+    "user": 0.43,
+    "sys": 0.14,
+    "maxrss": 226803712
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.5916029589716345,
+    "exit": 0,
+    "layers": 124,
+    "transient_at_flush": 45335040,
+    "pass_through": 0,
+    "real": 0.58,
+    "user": 0.43,
+    "sys": 0.15,
+    "maxrss": 227082240
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.4512980829458684,
+    "exit": 0,
+    "layers": 1364,
+    "transient_at_flush": 45335040,
+    "pass_through": 0,
+    "real": 1.44,
+    "user": 1.14,
+    "sys": 0.31,
+    "maxrss": 267141120
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.418021791963838,
+    "exit": 0,
+    "layers": 1364,
+    "transient_at_flush": 45335040,
+    "pass_through": 0,
+    "real": 1.41,
+    "user": 1.13,
+    "sys": 0.31,
+    "maxrss": 266731520
+   }
+  ],
+  "frame_cpu_ms": 85.99999999999999,
+  "frame_gpu_wait_ms": -3.0,
+  "set": "busey"
+ },
+ {
+  "file": "gemini-3-1-pro-preview-custom-tools",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 75,
+  "pass_through": 0,
+  "transient_at_flush": 58917376,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 75.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 58917376,
+  "frame_real_ms": 117.0,
+  "frame_user_ms": 91.0,
+  "frame_sys_ms": 26.000000000000004,
+  "frame_real_ms_all": [
+   117.0,
+   148.0
+  ],
+  "frame_cpu_ms_all": [
+   117.0,
+   150.0
+  ],
+  "real_1_min": 0.63,
+  "real_N_min": 1.82,
+  "user_1_min": 0.47,
+  "user_N_min": 1.38,
+  "sys_1_min": 0.18,
+  "sys_N_min": 0.44,
+  "maxrss_1": 292159488,
+  "maxrss_N": 352239616,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.6585063340025954,
+    "exit": 0,
+    "layers": 75,
+    "transient_at_flush": 58917376,
+    "pass_through": 0,
+    "real": 0.65,
+    "user": 0.47,
+    "sys": 0.18,
+    "maxrss": 292159488
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.6425795409595594,
+    "exit": 0,
+    "layers": 75,
+    "transient_at_flush": 58917376,
+    "pass_through": 0,
+    "real": 0.63,
+    "user": 0.47,
+    "sys": 0.18,
+    "maxrss": 293552128
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.8236367920180783,
+    "exit": 0,
+    "layers": 825,
+    "transient_at_flush": 58917376,
+    "pass_through": 0,
+    "real": 1.82,
+    "user": 1.38,
+    "sys": 0.44,
+    "maxrss": 352239616
+   },
+   {
+    "frames": 11,
+    "wall_py": 2.116761542041786,
+    "exit": 0,
+    "layers": 825,
+    "transient_at_flush": 58917376,
+    "pass_through": 0,
+    "real": 2.11,
+    "user": 1.66,
+    "sys": 0.49,
+    "maxrss": 353566720
+   }
+  ],
+  "frame_cpu_ms": 117.0,
+  "frame_gpu_wait_ms": 0.0,
+  "set": "busey"
+ },
+ {
+  "file": "gemini-3-1-pro-preview",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 98,
+  "pass_through": 0,
+  "transient_at_flush": 35865088,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 98.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 35865088,
+  "frame_real_ms": 170.99999999999997,
+  "frame_user_ms": 141.0,
+  "frame_sys_ms": 38.99999999999999,
+  "frame_real_ms_all": [
+   170.99999999999997,
+   176.0
+  ],
+  "frame_cpu_ms_all": [
+   180.0,
+   182.0
+  ],
+  "real_1_min": 0.89,
+  "real_N_min": 2.65,
+  "user_1_min": 0.62,
+  "user_N_min": 2.04,
+  "sys_1_min": 0.29,
+  "sys_N_min": 0.69,
+  "maxrss_1": 405733376,
+  "maxrss_N": 476659712,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 1.1171690000337549,
+    "exit": 0,
+    "layers": 98,
+    "transient_at_flush": 35865088,
+    "pass_through": 0,
+    "real": 1.11,
+    "user": 0.79,
+    "sys": 0.33,
+    "maxrss": 405733376
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.9035538749885745,
+    "exit": 0,
+    "layers": 98,
+    "transient_at_flush": 35865088,
+    "pass_through": 0,
+    "real": 0.89,
+    "user": 0.62,
+    "sys": 0.29,
+    "maxrss": 405766144
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 2.828401374979876,
+    "exit": 0,
+    "layers": 1078,
+    "transient_at_flush": 35865088,
+    "pass_through": 0,
+    "real": 2.82,
+    "user": 2.2,
+    "sys": 0.72,
+    "maxrss": 495337472
+   },
+   {
+    "frames": 11,
+    "wall_py": 2.6532230000011623,
+    "exit": 0,
+    "layers": 1078,
+    "transient_at_flush": 35865088,
+    "pass_through": 0,
+    "real": 2.65,
+    "user": 2.04,
+    "sys": 0.69,
+    "maxrss": 476659712
+   }
+  ],
+  "frame_cpu_ms": 180.0,
+  "frame_gpu_wait_ms": -9.000000000000028,
+  "set": "busey"
+ },
+ {
+  "file": "gemini-3-7-flash",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 57,
+  "pass_through": 0,
+  "transient_at_flush": 20660224,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 57.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 20660224,
+  "frame_real_ms": 64.00000000000001,
+  "frame_user_ms": 54.00000000000001,
+  "frame_sys_ms": 9.000000000000002,
+  "frame_real_ms_all": [
+   72.00000000000001,
+   64.00000000000001
+  ],
+  "frame_cpu_ms_all": [
+   70.0,
+   63.0
+  ],
+  "real_1_min": 0.47,
+  "real_N_min": 1.11,
+  "user_1_min": 0.37,
+  "user_N_min": 0.91,
+  "sys_1_min": 0.08,
+  "sys_N_min": 0.17,
+  "maxrss_1": 135135232,
+  "maxrss_N": 147947520,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.5793159999884665,
+    "exit": 0,
+    "layers": 57,
+    "transient_at_flush": 20660224,
+    "pass_through": 0,
+    "real": 0.57,
+    "user": 0.47,
+    "sys": 0.09,
+    "maxrss": 135446528
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.4729173749801703,
+    "exit": 0,
+    "layers": 57,
+    "transient_at_flush": 20660224,
+    "pass_through": 0,
+    "real": 0.47,
+    "user": 0.37,
+    "sys": 0.08,
+    "maxrss": 135135232
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.2933532500173897,
+    "exit": 0,
+    "layers": 627,
+    "transient_at_flush": 20660224,
+    "pass_through": 0,
+    "real": 1.29,
+    "user": 1.07,
+    "sys": 0.19,
+    "maxrss": 147947520
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.1138353749993257,
+    "exit": 0,
+    "layers": 627,
+    "transient_at_flush": 20660224,
+    "pass_through": 0,
+    "real": 1.11,
+    "user": 0.91,
+    "sys": 0.17,
+    "maxrss": 153583616
+   }
+  ],
+  "frame_cpu_ms": 63.00000000000001,
+  "frame_gpu_wait_ms": 1.000000000000007,
+  "set": "busey"
+ },
+ {
+  "file": "gemini-3-8-flash",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 118,
+  "pass_through": 0,
+  "transient_at_flush": 30703616,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 118.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 30703616,
+  "frame_real_ms": 121.0,
+  "frame_user_ms": 103.00000000000001,
+  "frame_sys_ms": 23.0,
+  "frame_real_ms_all": [
+   122.00000000000003,
+   121.0
+  ],
+  "frame_cpu_ms_all": [
+   126.0,
+   126.0
+  ],
+  "real_1_min": 0.6,
+  "real_N_min": 1.81,
+  "user_1_min": 0.42,
+  "user_N_min": 1.46,
+  "sys_1_min": 0.17,
+  "sys_N_min": 0.4,
+  "maxrss_1": 288489472,
+  "maxrss_N": 319864832,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.6122195839998312,
+    "exit": 0,
+    "layers": 118,
+    "transient_at_flush": 30703616,
+    "pass_through": 0,
+    "real": 0.6,
+    "user": 0.42,
+    "sys": 0.18,
+    "maxrss": 288489472
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.611658834037371,
+    "exit": 0,
+    "layers": 118,
+    "transient_at_flush": 30703616,
+    "pass_through": 0,
+    "real": 0.6,
+    "user": 0.43,
+    "sys": 0.17,
+    "maxrss": 288604160
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.8239592500030994,
+    "exit": 0,
+    "layers": 1298,
+    "transient_at_flush": 30703616,
+    "pass_through": 0,
+    "real": 1.82,
+    "user": 1.46,
+    "sys": 0.4,
+    "maxrss": 343834624
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.8228006249992177,
+    "exit": 0,
+    "layers": 1298,
+    "transient_at_flush": 30703616,
+    "pass_through": 0,
+    "real": 1.81,
+    "user": 1.46,
+    "sys": 0.4,
+    "maxrss": 319864832
+   }
+  ],
+  "frame_cpu_ms": 126.00000000000001,
+  "frame_gpu_wait_ms": -5.000000000000014,
+  "set": "busey"
+ },
+ {
+  "file": "glm-5-3-flash",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 79,
+  "pass_through": 0,
+  "transient_at_flush": 36438528,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 79.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 36438528,
+  "frame_real_ms": 76.0,
+  "frame_user_ms": 62.000000000000014,
+  "frame_sys_ms": 15.000000000000004,
+  "frame_real_ms_all": [
+   76.0,
+   95.0
+  ],
+  "frame_cpu_ms_all": [
+   77.00000000000001,
+   93.0
+  ],
+  "real_1_min": 0.54,
+  "real_N_min": 1.3,
+  "user_1_min": 0.42,
+  "user_N_min": 1.04,
+  "sys_1_min": 0.11,
+  "sys_N_min": 0.26,
+  "maxrss_1": 194199552,
+  "maxrss_N": 211271680,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.549996750021819,
+    "exit": 0,
+    "layers": 79,
+    "transient_at_flush": 36438528,
+    "pass_through": 0,
+    "real": 0.54,
+    "user": 0.42,
+    "sys": 0.11,
+    "maxrss": 194363392
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.6061172499903478,
+    "exit": 0,
+    "layers": 79,
+    "transient_at_flush": 36438528,
+    "pass_through": 0,
+    "real": 0.6,
+    "user": 0.47,
+    "sys": 0.13,
+    "maxrss": 194199552
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.304796541982796,
+    "exit": 0,
+    "layers": 869,
+    "transient_at_flush": 36438528,
+    "pass_through": 0,
+    "real": 1.3,
+    "user": 1.04,
+    "sys": 0.26,
+    "maxrss": 211271680
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.558527958986815,
+    "exit": 0,
+    "layers": 869,
+    "transient_at_flush": 36438528,
+    "pass_through": 0,
+    "real": 1.55,
+    "user": 1.23,
+    "sys": 0.3,
+    "maxrss": 232030208
+   }
+  ],
+  "frame_cpu_ms": 77.00000000000001,
+  "frame_gpu_wait_ms": -1.0000000000000142,
+  "set": "busey"
+ },
+ {
+  "file": "glm-5-3",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 129,
+  "pass_through": 0,
+  "transient_at_flush": 40165376,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 129.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 40165376,
+  "frame_real_ms": 138.99999999999997,
+  "frame_user_ms": 112.99999999999999,
+  "frame_sys_ms": 30.000000000000007,
+  "frame_real_ms_all": [
+   138.99999999999997,
+   141.0
+  ],
+  "frame_cpu_ms_all": [
+   143.0,
+   143.0
+  ],
+  "real_1_min": 0.7,
+  "real_N_min": 2.11,
+  "user_1_min": 0.49,
+  "user_N_min": 1.65,
+  "sys_1_min": 0.22,
+  "sys_N_min": 0.49,
+  "maxrss_1": 348372992,
+  "maxrss_N": 424542208,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.7875952910399064,
+    "exit": 0,
+    "layers": 129,
+    "transient_at_flush": 40165376,
+    "pass_through": 0,
+    "real": 0.78,
+    "user": 0.57,
+    "sys": 0.22,
+    "maxrss": 348880896
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.7118157499935478,
+    "exit": 0,
+    "layers": 129,
+    "transient_at_flush": 40165376,
+    "pass_through": 0,
+    "real": 0.7,
+    "user": 0.49,
+    "sys": 0.22,
+    "maxrss": 348372992
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 2.1763819999760017,
+    "exit": 0,
+    "layers": 1419,
+    "transient_at_flush": 40165376,
+    "pass_through": 0,
+    "real": 2.17,
+    "user": 1.7,
+    "sys": 0.52,
+    "maxrss": 424542208
+   },
+   {
+    "frames": 11,
+    "wall_py": 2.116536708024796,
+    "exit": 0,
+    "layers": 1419,
+    "transient_at_flush": 40165376,
+    "pass_through": 0,
+    "real": 2.11,
+    "user": 1.65,
+    "sys": 0.49,
+    "maxrss": 430964736
+   }
+  ],
+  "frame_cpu_ms": 143.0,
+  "frame_gpu_wait_ms": -4.000000000000028,
+  "set": "busey"
+ },
+ {
+  "file": "glm-5v-turbo",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 57,
+  "pass_through": 0,
+  "transient_at_flush": 41173504,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 57.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 41173504,
+  "frame_real_ms": 64.99999999999999,
+  "frame_user_ms": 51.00000000000001,
+  "frame_sys_ms": 12.0,
+  "frame_real_ms_all": [
+   64.99999999999999,
+   64.99999999999999
+  ],
+  "frame_cpu_ms_all": [
+   63.0,
+   65.0
+  ],
+  "real_1_min": 0.48,
+  "real_N_min": 1.13,
+  "user_1_min": 0.37,
+  "user_N_min": 0.89,
+  "sys_1_min": 0.1,
+  "sys_N_min": 0.23,
+  "maxrss_1": 179863552,
+  "maxrss_N": 199737344,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.498097209027037,
+    "exit": 0,
+    "layers": 57,
+    "transient_at_flush": 41173504,
+    "pass_through": 0,
+    "real": 0.49,
+    "user": 0.38,
+    "sys": 0.11,
+    "maxrss": 179863552
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.484998291998636,
+    "exit": 0,
+    "layers": 57,
+    "transient_at_flush": 41173504,
+    "pass_through": 0,
+    "real": 0.48,
+    "user": 0.37,
+    "sys": 0.1,
+    "maxrss": 181125120
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.1450819579767995,
+    "exit": 0,
+    "layers": 627,
+    "transient_at_flush": 41173504,
+    "pass_through": 0,
+    "real": 1.14,
+    "user": 0.89,
+    "sys": 0.23,
+    "maxrss": 199737344
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.1358089160057716,
+    "exit": 0,
+    "layers": 627,
+    "transient_at_flush": 41173504,
+    "pass_through": 0,
+    "real": 1.13,
+    "user": 0.89,
+    "sys": 0.23,
+    "maxrss": 204111872
+   }
+  ],
+  "frame_cpu_ms": 63.00000000000001,
+  "frame_gpu_wait_ms": 1.9999999999999787,
+  "set": "busey"
+ },
+ {
+  "file": "gpt-5-2-pro",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 53,
+  "pass_through": 0,
+  "transient_at_flush": 57917440,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 53.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 57917440,
+  "frame_real_ms": 51.00000000000001,
+  "frame_user_ms": 39.99999999999999,
+  "frame_sys_ms": 12.0,
+  "frame_real_ms_all": [
+   51.00000000000001,
+   66.00000000000001
+  ],
+  "frame_cpu_ms_all": [
+   51.99999999999999,
+   56.99999999999999
+  ],
+  "real_1_min": 0.42,
+  "real_N_min": 0.93,
+  "user_1_min": 0.33,
+  "user_N_min": 0.73,
+  "sys_1_min": 0.09,
+  "sys_N_min": 0.21,
+  "maxrss_1": 154697728,
+  "maxrss_N": 172130304,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.4318329999805428,
+    "exit": 0,
+    "layers": 53,
+    "transient_at_flush": 57917440,
+    "pass_through": 0,
+    "real": 0.42,
+    "user": 0.33,
+    "sys": 0.09,
+    "maxrss": 154697728
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.4495523330406286,
+    "exit": 0,
+    "layers": 53,
+    "transient_at_flush": 57917440,
+    "pass_through": 0,
+    "real": 0.44,
+    "user": 0.34,
+    "sys": 0.1,
+    "maxrss": 154927104
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.9424907090142369,
+    "exit": 0,
+    "layers": 583,
+    "transient_at_flush": 57917440,
+    "pass_through": 0,
+    "real": 0.93,
+    "user": 0.73,
+    "sys": 0.21,
+    "maxrss": 186220544
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.1077527499874122,
+    "exit": 0,
+    "layers": 583,
+    "transient_at_flush": 57917440,
+    "pass_through": 0,
+    "real": 1.1,
+    "user": 0.78,
+    "sys": 0.23,
+    "maxrss": 172130304
+   }
+  ],
+  "frame_cpu_ms": 51.99999999999999,
+  "frame_gpu_wait_ms": -0.9999999999999858,
+  "set": "busey"
+ },
+ {
+  "file": "gpt-5-6-luna-pro",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 33,
+  "pass_through": 0,
+  "transient_at_flush": 30130176,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 33.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 30130176,
+  "frame_real_ms": 39.0,
+  "frame_user_ms": 29.000000000000004,
+  "frame_sys_ms": 6.0,
+  "frame_real_ms_all": [
+   61.0,
+   39.0
+  ],
+  "frame_cpu_ms_all": [
+   57.0,
+   35.0
+  ],
+  "real_1_min": 0.59,
+  "real_N_min": 0.98,
+  "user_1_min": 0.48,
+  "user_N_min": 0.77,
+  "sys_1_min": 0.1,
+  "sys_N_min": 0.16,
+  "maxrss_1": 105693184,
+  "maxrss_N": 113131520,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.6504025419708341,
+    "exit": 0,
+    "layers": 33,
+    "transient_at_flush": 30130176,
+    "pass_through": 0,
+    "real": 0.64,
+    "user": 0.53,
+    "sys": 0.1,
+    "maxrss": 106168320
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.5979441660456359,
+    "exit": 0,
+    "layers": 33,
+    "transient_at_flush": 30130176,
+    "pass_through": 0,
+    "real": 0.59,
+    "user": 0.48,
+    "sys": 0.1,
+    "maxrss": 105693184
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.2595039579900913,
+    "exit": 0,
+    "layers": 363,
+    "transient_at_flush": 30130176,
+    "pass_through": 0,
+    "real": 1.25,
+    "user": 1.0,
+    "sys": 0.2,
+    "maxrss": 113131520
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.9871036250260659,
+    "exit": 0,
+    "layers": 363,
+    "transient_at_flush": 30130176,
+    "pass_through": 0,
+    "real": 0.98,
+    "user": 0.77,
+    "sys": 0.16,
+    "maxrss": 119881728
+   }
+  ],
+  "frame_cpu_ms": 35.0,
+  "frame_gpu_wait_ms": 4.0,
+  "set": "busey"
+ },
+ {
+  "file": "gpt-5-6-sol-pro",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 41,
+  "pass_through": 0,
+  "transient_at_flush": 43712512,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 41.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 43712512,
+  "frame_real_ms": 44.0,
+  "frame_user_ms": 35.0,
+  "frame_sys_ms": 7.000000000000001,
+  "frame_real_ms_all": [
+   50.0,
+   44.0
+  ],
+  "frame_cpu_ms_all": [
+   47.99999999999999,
+   42.0
+  ],
+  "real_1_min": 0.51,
+  "real_N_min": 0.95,
+  "user_1_min": 0.42,
+  "user_N_min": 0.77,
+  "sys_1_min": 0.07,
+  "sys_N_min": 0.14,
+  "maxrss_1": 115621888,
+  "maxrss_N": 125878272,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.5371936250012368,
+    "exit": 0,
+    "layers": 41,
+    "transient_at_flush": 43712512,
+    "pass_through": 0,
+    "real": 0.53,
+    "user": 0.44,
+    "sys": 0.09,
+    "maxrss": 115621888
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.517154541972559,
+    "exit": 0,
+    "layers": 41,
+    "transient_at_flush": 43712512,
+    "pass_through": 0,
+    "real": 0.51,
+    "user": 0.42,
+    "sys": 0.07,
+    "maxrss": 116359168
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.042970874987077,
+    "exit": 0,
+    "layers": 451,
+    "transient_at_flush": 43712512,
+    "pass_through": 0,
+    "real": 1.03,
+    "user": 0.85,
+    "sys": 0.16,
+    "maxrss": 127320064
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.9566892909933813,
+    "exit": 0,
+    "layers": 451,
+    "transient_at_flush": 43712512,
+    "pass_through": 0,
+    "real": 0.95,
+    "user": 0.77,
+    "sys": 0.14,
+    "maxrss": 125878272
+   }
+  ],
+  "frame_cpu_ms": 42.0,
+  "frame_gpu_wait_ms": 2.0,
+  "set": "busey"
+ },
+ {
+  "file": "gpt-5-6-sol",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 48,
+  "pass_through": 0,
+  "transient_at_flush": 30130176,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 48.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 30130176,
+  "frame_real_ms": 45.0,
+  "frame_user_ms": 34.99999999999999,
+  "frame_sys_ms": 6.0,
+  "frame_real_ms_all": [
+   47.0,
+   45.0
+  ],
+  "frame_cpu_ms_all": [
+   43.0,
+   40.99999999999999
+  ],
+  "real_1_min": 0.43,
+  "real_N_min": 0.88,
+  "user_1_min": 0.35,
+  "user_N_min": 0.71,
+  "sys_1_min": 0.07,
+  "sys_N_min": 0.13,
+  "maxrss_1": 115064832,
+  "maxrss_N": 130777088,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.43426466698292643,
+    "exit": 0,
+    "layers": 48,
+    "transient_at_flush": 30130176,
+    "pass_through": 0,
+    "real": 0.43,
+    "user": 0.35,
+    "sys": 0.07,
+    "maxrss": 115376128
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.44224033295176923,
+    "exit": 0,
+    "layers": 48,
+    "transient_at_flush": 30130176,
+    "pass_through": 0,
+    "real": 0.43,
+    "user": 0.36,
+    "sys": 0.07,
+    "maxrss": 115064832
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.9081682079704478,
+    "exit": 0,
+    "layers": 528,
+    "transient_at_flush": 30130176,
+    "pass_through": 0,
+    "real": 0.9,
+    "user": 0.72,
+    "sys": 0.13,
+    "maxrss": 130777088
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.8880339169991203,
+    "exit": 0,
+    "layers": 528,
+    "transient_at_flush": 30130176,
+    "pass_through": 0,
+    "real": 0.88,
+    "user": 0.71,
+    "sys": 0.13,
+    "maxrss": 133545984
+   }
+  ],
+  "frame_cpu_ms": 40.99999999999999,
+  "frame_gpu_wait_ms": 4.000000000000007,
+  "set": "busey"
+ },
+ {
+  "file": "gpt-5-6-terra-pro",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 31,
+  "pass_through": 0,
+  "transient_at_flush": 20660224,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 31.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 20660224,
+  "frame_real_ms": 37.99999999999999,
+  "frame_user_ms": 30.000000000000007,
+  "frame_sys_ms": 6.0,
+  "frame_real_ms_all": [
+   39.99999999999999,
+   37.99999999999999
+  ],
+  "frame_cpu_ms_all": [
+   36.00000000000001,
+   36.00000000000001
+  ],
+  "real_1_min": 0.43,
+  "real_N_min": 0.83,
+  "user_1_min": 0.35,
+  "user_N_min": 0.65,
+  "sys_1_min": 0.06,
+  "sys_N_min": 0.12,
+  "maxrss_1": 105152512,
+  "maxrss_N": 113442816,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.43409941700519994,
+    "exit": 0,
+    "layers": 31,
+    "transient_at_flush": 20660224,
+    "pass_through": 0,
+    "real": 0.43,
+    "user": 0.36,
+    "sys": 0.06,
+    "maxrss": 105152512
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.4595676659955643,
+    "exit": 0,
+    "layers": 31,
+    "transient_at_flush": 20660224,
+    "pass_through": 0,
+    "real": 0.45,
+    "user": 0.35,
+    "sys": 0.06,
+    "maxrss": 106168320
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.8401958330068737,
+    "exit": 0,
+    "layers": 341,
+    "transient_at_flush": 20660224,
+    "pass_through": 0,
+    "real": 0.83,
+    "user": 0.66,
+    "sys": 0.12,
+    "maxrss": 113442816
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.8357846669969149,
+    "exit": 0,
+    "layers": 341,
+    "transient_at_flush": 20660224,
+    "pass_through": 0,
+    "real": 0.83,
+    "user": 0.65,
+    "sys": 0.12,
+    "maxrss": 114196480
+   }
+  ],
+  "frame_cpu_ms": 36.00000000000001,
+  "frame_gpu_wait_ms": 1.9999999999999858,
+  "set": "busey"
+ },
+ {
+  "file": "gpt-6-astra",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 162,
+  "pass_through": 0,
+  "transient_at_flush": 30130176,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 162.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 30130176,
+  "frame_real_ms": 160.0,
+  "frame_user_ms": 138.99999999999997,
+  "frame_sys_ms": 24.0,
+  "frame_real_ms_all": [
+   164.99999999999997,
+   160.0
+  ],
+  "frame_cpu_ms_all": [
+   165.99999999999997,
+   162.99999999999997
+  ],
+  "real_1_min": 0.67,
+  "real_N_min": 2.29,
+  "user_1_min": 0.49,
+  "user_N_min": 1.9,
+  "sys_1_min": 0.18,
+  "sys_N_min": 0.42,
+  "maxrss_1": 315015168,
+  "maxrss_N": 371130368,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.6743302919785492,
+    "exit": 0,
+    "layers": 162,
+    "transient_at_flush": 30130176,
+    "pass_through": 0,
+    "real": 0.67,
+    "user": 0.49,
+    "sys": 0.18,
+    "maxrss": 315015168
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.6952069160179235,
+    "exit": 0,
+    "layers": 162,
+    "transient_at_flush": 30130176,
+    "pass_through": 0,
+    "real": 0.69,
+    "user": 0.51,
+    "sys": 0.18,
+    "maxrss": 315326464
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 2.3238878329866566,
+    "exit": 0,
+    "layers": 1782,
+    "transient_at_flush": 30130176,
+    "pass_through": 0,
+    "real": 2.32,
+    "user": 1.9,
+    "sys": 0.43,
+    "maxrss": 388988928
+   },
+   {
+    "frames": 11,
+    "wall_py": 2.299986917001661,
+    "exit": 0,
+    "layers": 1782,
+    "transient_at_flush": 30130176,
+    "pass_through": 0,
+    "real": 2.29,
+    "user": 1.9,
+    "sys": 0.42,
+    "maxrss": 371130368
+   }
+  ],
+  "frame_cpu_ms": 162.99999999999997,
+  "frame_gpu_wait_ms": -2.9999999999999716,
+  "set": "busey"
+ },
+ {
+  "file": "grok-4-5",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 76,
+  "pass_through": 0,
+  "transient_at_flush": 41173504,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 76.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 41173504,
+  "frame_real_ms": 75.0,
+  "frame_user_ms": 63.000000000000014,
+  "frame_sys_ms": 13.000000000000002,
+  "frame_real_ms_all": [
+   76.0,
+   75.0
+  ],
+  "frame_cpu_ms_all": [
+   77.00000000000001,
+   76.00000000000001
+  ],
+  "real_1_min": 0.52,
+  "real_N_min": 1.28,
+  "user_1_min": 0.41,
+  "user_N_min": 1.04,
+  "sys_1_min": 0.11,
+  "sys_N_min": 0.24,
+  "maxrss_1": 186941440,
+  "maxrss_N": 202752000,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.528805082954932,
+    "exit": 0,
+    "layers": 76,
+    "transient_at_flush": 41173504,
+    "pass_through": 0,
+    "real": 0.52,
+    "user": 0.41,
+    "sys": 0.11,
+    "maxrss": 186941440
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.5329294169787318,
+    "exit": 0,
+    "layers": 76,
+    "transient_at_flush": 41173504,
+    "pass_through": 0,
+    "real": 0.53,
+    "user": 0.41,
+    "sys": 0.11,
+    "maxrss": 187072512
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.2918145000003278,
+    "exit": 0,
+    "layers": 836,
+    "transient_at_flush": 41173504,
+    "pass_through": 0,
+    "real": 1.28,
+    "user": 1.05,
+    "sys": 0.24,
+    "maxrss": 216809472
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.2895067500066943,
+    "exit": 0,
+    "layers": 836,
+    "transient_at_flush": 41173504,
+    "pass_through": 0,
+    "real": 1.28,
+    "user": 1.04,
+    "sys": 0.24,
+    "maxrss": 202752000
+   }
+  ],
+  "frame_cpu_ms": 76.00000000000001,
+  "frame_gpu_wait_ms": -1.0000000000000142,
+  "set": "busey"
+ },
+ {
+  "file": "kimi-k2-6",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 55,
+  "pass_through": 0,
+  "transient_at_flush": 35865088,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 55.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 35865088,
+  "frame_real_ms": 64.99999999999999,
+  "frame_user_ms": 53.00000000000001,
+  "frame_sys_ms": 14.000000000000002,
+  "frame_real_ms_all": [
+   64.99999999999999,
+   69.99999999999999
+  ],
+  "frame_cpu_ms_all": [
+   67.0,
+   67.0
+  ],
+  "real_1_min": 0.51,
+  "real_N_min": 1.16,
+  "user_1_min": 0.4,
+  "user_N_min": 0.92,
+  "sys_1_min": 0.11,
+  "sys_N_min": 0.25,
+  "maxrss_1": 191397888,
+  "maxrss_N": 221282304,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.5200319589930587,
+    "exit": 0,
+    "layers": 55,
+    "transient_at_flush": 35865088,
+    "pass_through": 0,
+    "real": 0.51,
+    "user": 0.4,
+    "sys": 0.11,
+    "maxrss": 191397888
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.5191922919475473,
+    "exit": 0,
+    "layers": 55,
+    "transient_at_flush": 35865088,
+    "pass_through": 0,
+    "real": 0.51,
+    "user": 0.4,
+    "sys": 0.11,
+    "maxrss": 191463424
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.1711530000320636,
+    "exit": 0,
+    "layers": 605,
+    "transient_at_flush": 35865088,
+    "pass_through": 0,
+    "real": 1.16,
+    "user": 0.93,
+    "sys": 0.25,
+    "maxrss": 221282304
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.2180636669509113,
+    "exit": 0,
+    "layers": 605,
+    "transient_at_flush": 35865088,
+    "pass_through": 0,
+    "real": 1.21,
+    "user": 0.92,
+    "sys": 0.26,
+    "maxrss": 234881024
+   }
+  ],
+  "frame_cpu_ms": 67.00000000000001,
+  "frame_gpu_wait_ms": -2.0000000000000284,
+  "set": "busey"
+ },
+ {
+  "file": "kimi-k3",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 50,
+  "pass_through": 0,
+  "transient_at_flush": 40600064,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 50.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 40600064,
+  "frame_real_ms": 40.99999999999999,
+  "frame_user_ms": 33.0,
+  "frame_sys_ms": 7.999999999999998,
+  "frame_real_ms_all": [
+   40.99999999999999,
+   41.99999999999999
+  ],
+  "frame_cpu_ms_all": [
+   41.0,
+   39.0
+  ],
+  "real_1_min": 0.42,
+  "real_N_min": 0.83,
+  "user_1_min": 0.34,
+  "user_N_min": 0.65,
+  "sys_1_min": 0.07,
+  "sys_N_min": 0.15,
+  "maxrss_1": 125894656,
+  "maxrss_N": 142311424,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.43031691695796326,
+    "exit": 0,
+    "layers": 50,
+    "transient_at_flush": 40600064,
+    "pass_through": 0,
+    "real": 0.42,
+    "user": 0.34,
+    "sys": 0.07,
+    "maxrss": 125894656
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.42955241701565683,
+    "exit": 0,
+    "layers": 50,
+    "transient_at_flush": 40600064,
+    "pass_through": 0,
+    "real": 0.42,
+    "user": 0.34,
+    "sys": 0.07,
+    "maxrss": 125943808
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.8335632919915952,
+    "exit": 0,
+    "layers": 550,
+    "transient_at_flush": 40600064,
+    "pass_through": 0,
+    "real": 0.83,
+    "user": 0.67,
+    "sys": 0.15,
+    "maxrss": 142311424
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.8429798340075649,
+    "exit": 0,
+    "layers": 550,
+    "transient_at_flush": 40600064,
+    "pass_through": 0,
+    "real": 0.84,
+    "user": 0.65,
+    "sys": 0.15,
+    "maxrss": 147390464
+   }
+  ],
+  "frame_cpu_ms": 41.0,
+  "frame_gpu_wait_ms": -7.105427357601002e-15,
+  "set": "busey"
+ },
+ {
+  "file": "muse-spark-1-3-contributor",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 59,
+  "pass_through": 0,
+  "transient_at_flush": 20660224,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 59.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 20660224,
+  "frame_real_ms": 57.00000000000001,
+  "frame_user_ms": 47.0,
+  "frame_sys_ms": 11.000000000000002,
+  "frame_real_ms_all": [
+   57.00000000000001,
+   58.00000000000001
+  ],
+  "frame_cpu_ms_all": [
+   58.0,
+   58.0
+  ],
+  "real_1_min": 0.46,
+  "real_N_min": 1.04,
+  "user_1_min": 0.36,
+  "user_N_min": 0.83,
+  "sys_1_min": 0.09,
+  "sys_N_min": 0.2,
+  "maxrss_1": 164888576,
+  "maxrss_N": 181534720,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.47301045898348093,
+    "exit": 0,
+    "layers": 59,
+    "transient_at_flush": 20660224,
+    "pass_through": 0,
+    "real": 0.47,
+    "user": 0.36,
+    "sys": 0.09,
+    "maxrss": 165396480
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.4685095829772763,
+    "exit": 0,
+    "layers": 59,
+    "transient_at_flush": 20660224,
+    "pass_through": 0,
+    "real": 0.46,
+    "user": 0.36,
+    "sys": 0.09,
+    "maxrss": 164888576
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.0472821249859408,
+    "exit": 0,
+    "layers": 649,
+    "transient_at_flush": 20660224,
+    "pass_through": 0,
+    "real": 1.04,
+    "user": 0.83,
+    "sys": 0.2,
+    "maxrss": 181534720
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.044632457953412,
+    "exit": 0,
+    "layers": 649,
+    "transient_at_flush": 20660224,
+    "pass_through": 0,
+    "real": 1.04,
+    "user": 0.83,
+    "sys": 0.2,
+    "maxrss": 182075392
+   }
+  ],
+  "frame_cpu_ms": 58.0,
+  "frame_gpu_wait_ms": -0.9999999999999929,
+  "set": "busey"
+ },
+ {
+  "file": "muse-spark-1-3",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 49,
+  "pass_through": 0,
+  "transient_at_flush": 20660224,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 49.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 20660224,
+  "frame_real_ms": 62.000000000000014,
+  "frame_user_ms": 52.00000000000001,
+  "frame_sys_ms": 11.0,
+  "frame_real_ms_all": [
+   62.000000000000014,
+   62.000000000000014
+  ],
+  "frame_cpu_ms_all": [
+   63.0,
+   61.0
+  ],
+  "real_1_min": 0.45,
+  "real_N_min": 1.07,
+  "user_1_min": 0.35,
+  "user_N_min": 0.85,
+  "sys_1_min": 0.1,
+  "sys_N_min": 0.21,
+  "maxrss_1": 164265984,
+  "maxrss_N": 186793984,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.46399354201275855,
+    "exit": 0,
+    "layers": 49,
+    "transient_at_flush": 20660224,
+    "pass_through": 0,
+    "real": 0.46,
+    "user": 0.35,
+    "sys": 0.1,
+    "maxrss": 164528128
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.4589176250156015,
+    "exit": 0,
+    "layers": 49,
+    "transient_at_flush": 20660224,
+    "pass_through": 0,
+    "real": 0.45,
+    "user": 0.35,
+    "sys": 0.1,
+    "maxrss": 164265984
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.0844648329657502,
+    "exit": 0,
+    "layers": 539,
+    "transient_at_flush": 20660224,
+    "pass_through": 0,
+    "real": 1.08,
+    "user": 0.87,
+    "sys": 0.21,
+    "maxrss": 199589888
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.081118540954776,
+    "exit": 0,
+    "layers": 539,
+    "transient_at_flush": 20660224,
+    "pass_through": 0,
+    "real": 1.07,
+    "user": 0.85,
+    "sys": 0.21,
+    "maxrss": 186793984
+   }
+  ],
+  "frame_cpu_ms": 63.00000000000001,
+  "frame_gpu_wait_ms": -0.9999999999999929,
+  "set": "busey"
+ },
+ {
+  "file": "nex-n2-pro",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 102,
+  "pass_through": 0,
+  "transient_at_flush": 46481920,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 102.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 46481920,
+  "frame_real_ms": 73.0,
+  "frame_user_ms": 59.0,
+  "frame_sys_ms": 12.0,
+  "frame_real_ms_all": [
+   73.0,
+   73.0
+  ],
+  "frame_cpu_ms_all": [
+   71.0,
+   73.0
+  ],
+  "real_1_min": 0.48,
+  "real_N_min": 1.21,
+  "user_1_min": 0.37,
+  "user_N_min": 0.97,
+  "sys_1_min": 0.1,
+  "sys_N_min": 0.22,
+  "maxrss_1": 184156160,
+  "maxrss_N": 212008960,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.4906239580013789,
+    "exit": 0,
+    "layers": 102,
+    "transient_at_flush": 46481920,
+    "pass_through": 0,
+    "real": 0.48,
+    "user": 0.38,
+    "sys": 0.1,
+    "maxrss": 184156160
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.4882690419908613,
+    "exit": 0,
+    "layers": 102,
+    "transient_at_flush": 46481920,
+    "pass_through": 0,
+    "real": 0.48,
+    "user": 0.37,
+    "sys": 0.1,
+    "maxrss": 184205312
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.2127920830389485,
+    "exit": 0,
+    "layers": 1122,
+    "transient_at_flush": 46481920,
+    "pass_through": 0,
+    "real": 1.21,
+    "user": 0.97,
+    "sys": 0.22,
+    "maxrss": 212008960
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.2193883329746313,
+    "exit": 0,
+    "layers": 1122,
+    "transient_at_flush": 46481920,
+    "pass_through": 0,
+    "real": 1.21,
+    "user": 0.97,
+    "sys": 0.23,
+    "maxrss": 219709440
+   }
+  ],
+  "frame_cpu_ms": 71.0,
+  "frame_gpu_wait_ms": 2.0,
+  "set": "busey"
+ },
+ {
+  "file": "ox-alpha",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 94,
+  "pass_through": 0,
+  "transient_at_flush": 32130720,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 94.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 32130720,
+  "frame_real_ms": 82.99999999999999,
+  "frame_user_ms": 68.99999999999999,
+  "frame_sys_ms": 16.999999999999996,
+  "frame_real_ms_all": [
+   82.99999999999999,
+   84.99999999999999
+  ],
+  "frame_cpu_ms_all": [
+   86.0,
+   88.0
+  ],
+  "real_1_min": 0.57,
+  "real_N_min": 1.42,
+  "user_1_min": 0.44,
+  "user_N_min": 1.14,
+  "sys_1_min": 0.13,
+  "sys_N_min": 0.3,
+  "maxrss_1": 229179392,
+  "maxrss_N": 278675456,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.5943793340120465,
+    "exit": 0,
+    "layers": 94,
+    "transient_at_flush": 32130720,
+    "pass_through": 0,
+    "real": 0.59,
+    "user": 0.45,
+    "sys": 0.13,
+    "maxrss": 229441536
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.579831084003672,
+    "exit": 0,
+    "layers": 94,
+    "transient_at_flush": 32130720,
+    "pass_through": 0,
+    "real": 0.57,
+    "user": 0.44,
+    "sys": 0.13,
+    "maxrss": 229179392
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.4304279159987345,
+    "exit": 0,
+    "layers": 1034,
+    "transient_at_flush": 32130720,
+    "pass_through": 0,
+    "real": 1.42,
+    "user": 1.14,
+    "sys": 0.3,
+    "maxrss": 279003136
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.426983791985549,
+    "exit": 0,
+    "layers": 1034,
+    "transient_at_flush": 32130720,
+    "pass_through": 0,
+    "real": 1.42,
+    "user": 1.14,
+    "sys": 0.31,
+    "maxrss": 278675456
+   }
+  ],
+  "frame_cpu_ms": 85.99999999999999,
+  "frame_gpu_wait_ms": -3.0,
+  "set": "busey"
+ },
+ {
+  "file": "qwen3-8-2-4t-a95b",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 200,
+  "pass_through": 0,
+  "transient_at_flush": 60065264,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 200.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 60065264,
+  "frame_real_ms": 237.00000000000003,
+  "frame_user_ms": 188.0,
+  "frame_sys_ms": 61.999999999999986,
+  "frame_real_ms_all": [
+   238.00000000000006,
+   237.00000000000003
+  ],
+  "frame_cpu_ms_all": [
+   251.0,
+   250.0
+  ],
+  "real_1_min": 0.86,
+  "real_N_min": 3.24,
+  "user_1_min": 0.55,
+  "user_N_min": 2.44,
+  "sys_1_min": 0.33,
+  "sys_N_min": 0.95,
+  "maxrss_1": 574849024,
+  "maxrss_N": 727400448,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.8664151660050265,
+    "exit": 0,
+    "layers": 200,
+    "transient_at_flush": 60065264,
+    "pass_through": 0,
+    "real": 0.86,
+    "user": 0.55,
+    "sys": 0.33,
+    "maxrss": 575340544
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.881857791042421,
+    "exit": 0,
+    "layers": 200,
+    "transient_at_flush": 60065264,
+    "pass_through": 0,
+    "real": 0.87,
+    "user": 0.56,
+    "sys": 0.33,
+    "maxrss": 574849024
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 3.24800162500469,
+    "exit": 0,
+    "layers": 2200,
+    "transient_at_flush": 60065264,
+    "pass_through": 0,
+    "real": 3.24,
+    "user": 2.44,
+    "sys": 0.95,
+    "maxrss": 727531520
+   },
+   {
+    "frames": 11,
+    "wall_py": 3.2505833330214955,
+    "exit": 0,
+    "layers": 2200,
+    "transient_at_flush": 60065264,
+    "pass_through": 0,
+    "real": 3.24,
+    "user": 2.44,
+    "sys": 0.95,
+    "maxrss": 727400448
+   }
+  ],
+  "frame_cpu_ms": 250.0,
+  "frame_gpu_wait_ms": -12.999999999999972,
+  "set": "busey"
+ },
+ {
+  "file": "qwen3-8-27b",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 100,
+  "pass_through": 0,
+  "transient_at_flush": 36012032,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 100.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 36012032,
+  "frame_real_ms": 102.00000000000001,
+  "frame_user_ms": 83.0,
+  "frame_sys_ms": 20.999999999999996,
+  "frame_real_ms_all": [
+   102.00000000000001,
+   102.00000000000001
+  ],
+  "frame_cpu_ms_all": [
+   104.00000000000001,
+   105.00000000000001
+  ],
+  "real_1_min": 0.56,
+  "real_N_min": 1.58,
+  "user_1_min": 0.41,
+  "user_N_min": 1.25,
+  "sys_1_min": 0.15,
+  "sys_N_min": 0.36,
+  "maxrss_1": 263749632,
+  "maxrss_N": 300580864,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.5787601250340231,
+    "exit": 0,
+    "layers": 100,
+    "transient_at_flush": 36012032,
+    "pass_through": 0,
+    "real": 0.57,
+    "user": 0.42,
+    "sys": 0.15,
+    "maxrss": 263749632
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.5706594999646768,
+    "exit": 0,
+    "layers": 100,
+    "transient_at_flush": 36012032,
+    "pass_through": 0,
+    "real": 0.56,
+    "user": 0.41,
+    "sys": 0.15,
+    "maxrss": 264077312
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.5954338330193423,
+    "exit": 0,
+    "layers": 1100,
+    "transient_at_flush": 36012032,
+    "pass_through": 0,
+    "real": 1.59,
+    "user": 1.25,
+    "sys": 0.36,
+    "maxrss": 300580864
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.5875535000232048,
+    "exit": 0,
+    "layers": 1100,
+    "transient_at_flush": 36012032,
+    "pass_through": 0,
+    "real": 1.58,
+    "user": 1.25,
+    "sys": 0.36,
+    "maxrss": 304857088
+   }
+  ],
+  "frame_cpu_ms": 104.0,
+  "frame_gpu_wait_ms": -1.9999999999999858,
+  "set": "busey"
+ },
+ {
+  "file": "qwen3-8-flash",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 119,
+  "pass_through": 0,
+  "transient_at_flush": 48574064,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 119.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 48574064,
+  "frame_real_ms": 137.0,
+  "frame_user_ms": 112.99999999999999,
+  "frame_sys_ms": 27.999999999999996,
+  "frame_real_ms_all": [
+   139.0,
+   137.0
+  ],
+  "frame_cpu_ms_all": [
+   145.0,
+   141.0
+  ],
+  "real_1_min": 0.69,
+  "real_N_min": 2.06,
+  "user_1_min": 0.5,
+  "user_N_min": 1.63,
+  "sys_1_min": 0.19,
+  "sys_N_min": 0.48,
+  "maxrss_1": 337149952,
+  "maxrss_N": 400375808,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.6946597909554839,
+    "exit": 0,
+    "layers": 119,
+    "transient_at_flush": 48574064,
+    "pass_through": 0,
+    "real": 0.69,
+    "user": 0.5,
+    "sys": 0.19,
+    "maxrss": 337625088
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.6994220829801634,
+    "exit": 0,
+    "layers": 119,
+    "transient_at_flush": 48574064,
+    "pass_through": 0,
+    "real": 0.69,
+    "user": 0.5,
+    "sys": 0.2,
+    "maxrss": 337149952
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 2.0886669579776935,
+    "exit": 0,
+    "layers": 1309,
+    "transient_at_flush": 48574064,
+    "pass_through": 0,
+    "real": 2.08,
+    "user": 1.65,
+    "sys": 0.49,
+    "maxrss": 416284672
+   },
+   {
+    "frames": 11,
+    "wall_py": 2.063862709037494,
+    "exit": 0,
+    "layers": 1309,
+    "transient_at_flush": 48574064,
+    "pass_through": 0,
+    "real": 2.06,
+    "user": 1.63,
+    "sys": 0.48,
+    "maxrss": 400375808
+   }
+  ],
+  "frame_cpu_ms": 140.99999999999997,
+  "frame_gpu_wait_ms": -3.9999999999999716,
+  "set": "busey"
+ },
+ {
+  "file": "qwen3-8-max",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 94,
+  "pass_through": 0,
+  "transient_at_flush": 51554816,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 94.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 51554816,
+  "frame_real_ms": 97.0,
+  "frame_user_ms": 79.0,
+  "frame_sys_ms": 22.0,
+  "frame_real_ms_all": [
+   98.0,
+   97.0
+  ],
+  "frame_cpu_ms_all": [
+   102.00000000000001,
+   101.0
+  ],
+  "real_1_min": 0.62,
+  "real_N_min": 1.6,
+  "user_1_min": 0.46,
+  "user_N_min": 1.26,
+  "sys_1_min": 0.15,
+  "sys_N_min": 0.37,
+  "maxrss_1": 265928704,
+  "maxrss_N": 288178176,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.6245090420125052,
+    "exit": 0,
+    "layers": 94,
+    "transient_at_flush": 51554816,
+    "pass_through": 0,
+    "real": 0.62,
+    "user": 0.46,
+    "sys": 0.15,
+    "maxrss": 266289152
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.6378623750060797,
+    "exit": 0,
+    "layers": 94,
+    "transient_at_flush": 51554816,
+    "pass_through": 0,
+    "real": 0.63,
+    "user": 0.47,
+    "sys": 0.16,
+    "maxrss": 265928704
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 1.6051804589806125,
+    "exit": 0,
+    "layers": 1034,
+    "transient_at_flush": 51554816,
+    "pass_through": 0,
+    "real": 1.6,
+    "user": 1.26,
+    "sys": 0.37,
+    "maxrss": 288178176
+   },
+   {
+    "frames": 11,
+    "wall_py": 1.6054124999791384,
+    "exit": 0,
+    "layers": 1034,
+    "transient_at_flush": 51554816,
+    "pass_through": 0,
+    "real": 1.6,
+    "user": 1.26,
+    "sys": 0.38,
+    "maxrss": 288735232
+   }
+  ],
+  "frame_cpu_ms": 101.0,
+  "frame_gpu_wait_ms": -4.0,
+  "set": "busey"
+ },
+ {
+  "file": "google-workspace-48px",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 1,
+  "pass_through": 0,
+  "transient_at_flush": 5308416,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 1.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 5308416,
+  "frame_real_ms": 3.9999999999999982,
+  "frame_user_ms": 3.0,
+  "frame_sys_ms": 1.0000000000000002,
+  "frame_real_ms_all": [
+   3.9999999999999982,
+   4.999999999999999
+  ],
+  "frame_cpu_ms_all": [
+   4.0,
+   4.0
+  ],
+  "real_1_min": 0.19,
+  "real_N_min": 0.24,
+  "user_1_min": 0.16,
+  "user_N_min": 0.19,
+  "sys_1_min": 0.03,
+  "sys_N_min": 0.04,
+  "maxrss_1": 38977536,
+  "maxrss_N": 39649280,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.20953608298441395,
+    "exit": 0,
+    "layers": 1,
+    "transient_at_flush": 5308416,
+    "pass_through": 0,
+    "real": 0.2,
+    "user": 0.16,
+    "sys": 0.03,
+    "maxrss": 38977536
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.19929991697426885,
+    "exit": 0,
+    "layers": 1,
+    "transient_at_flush": 5308416,
+    "pass_through": 0,
+    "real": 0.19,
+    "user": 0.16,
+    "sys": 0.03,
+    "maxrss": 38977536
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.24447329103713855,
+    "exit": 0,
+    "layers": 11,
+    "transient_at_flush": 5308416,
+    "pass_through": 0,
+    "real": 0.24,
+    "user": 0.19,
+    "sys": 0.04,
+    "maxrss": 40091648
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.24476483301259577,
+    "exit": 0,
+    "layers": 11,
+    "transient_at_flush": 5308416,
+    "pass_through": 0,
+    "real": 0.24,
+    "user": 0.19,
+    "sys": 0.04,
+    "maxrss": 39649280
+   }
+  ],
+  "frame_cpu_ms": 4.0,
+  "frame_gpu_wait_ms": -1.7763568394002505e-15,
+  "set": "icons"
+ },
+ {
+  "file": "clipdemo",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 0,
+  "pass_through": 0,
+  "transient_at_flush": 0,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 0.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 0,
+  "frame_real_ms": 2.0000000000000018,
+  "frame_user_ms": 1.0000000000000009,
+  "frame_sys_ms": 0.9999999999999998,
+  "frame_real_ms_all": [
+   2.0000000000000018,
+   2.0000000000000018
+  ],
+  "frame_cpu_ms_all": [
+   2.000000000000001,
+   2.000000000000001
+  ],
+  "real_1_min": 0.15,
+  "real_N_min": 0.17,
+  "user_1_min": 0.12,
+  "user_N_min": 0.13,
+  "sys_1_min": 0.02,
+  "sys_N_min": 0.03,
+  "maxrss_1": 32227328,
+  "maxrss_N": 32374784,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.15723712497856468,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.15,
+    "user": 0.12,
+    "sys": 0.02,
+    "maxrss": 32227328
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.16024100000504404,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.15,
+    "user": 0.12,
+    "sys": 0.02,
+    "maxrss": 32358400
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.17583758296677843,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.17,
+    "user": 0.13,
+    "sys": 0.03,
+    "maxrss": 32374784
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.17536550003569573,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.17,
+    "user": 0.13,
+    "sys": 0.03,
+    "maxrss": 32571392
+   }
+  ],
+  "frame_cpu_ms": 2.000000000000001,
+  "frame_gpu_wait_ms": 8.881784197001252e-16,
+  "set": "icons"
+ },
+ {
+  "file": "kit",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 2,
+  "pass_through": 0,
+  "transient_at_flush": 2097152,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 2.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 2097152,
+  "frame_real_ms": 3.9999999999999982,
+  "frame_user_ms": 3.0,
+  "frame_sys_ms": 0.0,
+  "frame_real_ms_all": [
+   3.9999999999999982,
+   3.9999999999999982
+  ],
+  "frame_cpu_ms_all": [
+   3.0,
+   4.000000000000001
+  ],
+  "real_1_min": 0.2,
+  "real_N_min": 0.24,
+  "user_1_min": 0.16,
+  "user_N_min": 0.19,
+  "sys_1_min": 0.03,
+  "sys_N_min": 0.03,
+  "maxrss_1": 37339136,
+  "maxrss_N": 38420480,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.20777212496614084,
+    "exit": 0,
+    "layers": 2,
+    "transient_at_flush": 2097152,
+    "pass_through": 0,
+    "real": 0.2,
+    "user": 0.16,
+    "sys": 0.03,
+    "maxrss": 37683200
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.20665675000054762,
+    "exit": 0,
+    "layers": 2,
+    "transient_at_flush": 2097152,
+    "pass_through": 0,
+    "real": 0.2,
+    "user": 0.16,
+    "sys": 0.03,
+    "maxrss": 37339136
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.24913629097864032,
+    "exit": 0,
+    "layers": 22,
+    "transient_at_flush": 2097152,
+    "pass_through": 0,
+    "real": 0.24,
+    "user": 0.19,
+    "sys": 0.03,
+    "maxrss": 38420480
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.2518241250072606,
+    "exit": 0,
+    "layers": 22,
+    "transient_at_flush": 2097152,
+    "pass_through": 0,
+    "real": 0.24,
+    "user": 0.2,
+    "sys": 0.03,
+    "maxrss": 38535168
+   }
+  ],
+  "frame_cpu_ms": 3.0,
+  "frame_gpu_wait_ms": 0.9999999999999982,
+  "set": "icons"
+ },
+ {
+  "file": "splash-logo",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 0,
+  "pass_through": 0,
+  "transient_at_flush": 0,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 0.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 0,
+  "frame_real_ms": 3.0,
+  "frame_user_ms": 3.0,
+  "frame_sys_ms": 0.9999999999999998,
+  "frame_real_ms_all": [
+   3.0,
+   3.0
+  ],
+  "frame_cpu_ms_all": [
+   4.0,
+   4.0
+  ],
+  "real_1_min": 0.14,
+  "real_N_min": 0.17,
+  "user_1_min": 0.1,
+  "user_N_min": 0.13,
+  "sys_1_min": 0.02,
+  "sys_N_min": 0.03,
+  "maxrss_1": 32423936,
+  "maxrss_N": 32800768,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.1448639999725856,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.14,
+    "user": 0.1,
+    "sys": 0.02,
+    "maxrss": 32423936
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.14358066697604954,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.14,
+    "user": 0.1,
+    "sys": 0.02,
+    "maxrss": 32604160
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.17405700002564117,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.17,
+    "user": 0.13,
+    "sys": 0.03,
+    "maxrss": 32800768
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.1736437079962343,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.17,
+    "user": 0.13,
+    "sys": 0.03,
+    "maxrss": 32817152
+   }
+  ],
+  "frame_cpu_ms": 4.0,
+  "frame_gpu_wait_ms": -1.0,
+  "set": "icons"
+ },
+ {
+  "file": "mr-settodefault",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 2,
+  "pass_through": 0,
+  "transient_at_flush": 1048576,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 2.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 1048576,
+  "frame_real_ms": 6.0,
+  "frame_user_ms": 5.000000000000002,
+  "frame_sys_ms": 0.0,
+  "frame_real_ms_all": [
+   7.000000000000001,
+   6.0
+  ],
+  "frame_cpu_ms_all": [
+   5.000000000000002,
+   5.000000000000002
+  ],
+  "real_1_min": 0.18,
+  "real_N_min": 0.25,
+  "user_1_min": 0.15,
+  "user_N_min": 0.2,
+  "sys_1_min": 0.03,
+  "sys_N_min": 0.03,
+  "maxrss_1": 35913728,
+  "maxrss_N": 35962880,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.19086608296493068,
+    "exit": 0,
+    "layers": 2,
+    "transient_at_flush": 1048576,
+    "pass_through": 0,
+    "real": 0.18,
+    "user": 0.15,
+    "sys": 0.03,
+    "maxrss": 35913728
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.1935308749671094,
+    "exit": 0,
+    "layers": 2,
+    "transient_at_flush": 1048576,
+    "pass_through": 0,
+    "real": 0.19,
+    "user": 0.15,
+    "sys": 0.03,
+    "maxrss": 36093952
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.2610653750016354,
+    "exit": 0,
+    "layers": 22,
+    "transient_at_flush": 1048576,
+    "pass_through": 0,
+    "real": 0.25,
+    "user": 0.2,
+    "sys": 0.03,
+    "maxrss": 36749312
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.25328612502198666,
+    "exit": 0,
+    "layers": 22,
+    "transient_at_flush": 1048576,
+    "pass_through": 0,
+    "real": 0.25,
+    "user": 0.2,
+    "sys": 0.03,
+    "maxrss": 35962880
+   }
+  ],
+  "frame_cpu_ms": 5.000000000000002,
+  "frame_gpu_wait_ms": 0.9999999999999982,
+  "set": "icons"
+ },
+ {
+  "file": "fox-with-box-on-cloud",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 0,
+  "pass_through": 0,
+  "transient_at_flush": 0,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 0.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 0,
+  "frame_real_ms": 7.000000000000001,
+  "frame_user_ms": 7.000000000000001,
+  "frame_sys_ms": 0.9999999999999998,
+  "frame_real_ms_all": [
+   7.000000000000001,
+   7.000000000000001
+  ],
+  "frame_cpu_ms_all": [
+   8.0,
+   8.0
+  ],
+  "real_1_min": 0.16,
+  "real_N_min": 0.23,
+  "user_1_min": 0.12,
+  "user_N_min": 0.19,
+  "sys_1_min": 0.02,
+  "sys_N_min": 0.03,
+  "maxrss_1": 33013760,
+  "maxrss_N": 33193984,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.16595512494677678,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.16,
+    "user": 0.12,
+    "sys": 0.02,
+    "maxrss": 33013760
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.16316820902284235,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.16,
+    "user": 0.12,
+    "sys": 0.02,
+    "maxrss": 33062912
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.23858704103622586,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.23,
+    "user": 0.19,
+    "sys": 0.03,
+    "maxrss": 33193984
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.2387867079814896,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.23,
+    "user": 0.19,
+    "sys": 0.03,
+    "maxrss": 33226752
+   }
+  ],
+  "frame_cpu_ms": 8.0,
+  "frame_gpu_wait_ms": -0.9999999999999991,
+  "set": "icons"
+ },
+ {
+  "file": "duckduckgo-com_2x",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 1,
+  "pass_through": 0,
+  "transient_at_flush": 1048576,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 1.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 1048576,
+  "frame_real_ms": 3.0,
+  "frame_user_ms": 1.9999999999999991,
+  "frame_sys_ms": 0.0,
+  "frame_real_ms_all": [
+   3.0,
+   3.0
+  ],
+  "frame_cpu_ms_all": [
+   1.9999999999999991,
+   2.999999999999999
+  ],
+  "real_1_min": 0.17,
+  "real_N_min": 0.2,
+  "user_1_min": 0.14,
+  "user_N_min": 0.16,
+  "sys_1_min": 0.02,
+  "sys_N_min": 0.03,
+  "maxrss_1": 33210368,
+  "maxrss_N": 33095680,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.18197079200763255,
+    "exit": 0,
+    "layers": 1,
+    "transient_at_flush": 1048576,
+    "pass_through": 0,
+    "real": 0.17,
+    "user": 0.14,
+    "sys": 0.03,
+    "maxrss": 33308672
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.18155770900193602,
+    "exit": 0,
+    "layers": 1,
+    "transient_at_flush": 1048576,
+    "pass_through": 0,
+    "real": 0.17,
+    "user": 0.14,
+    "sys": 0.02,
+    "maxrss": 33210368
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.2050164159736596,
+    "exit": 0,
+    "layers": 11,
+    "transient_at_flush": 1048576,
+    "pass_through": 0,
+    "real": 0.2,
+    "user": 0.16,
+    "sys": 0.03,
+    "maxrss": 33095680
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.2049318749923259,
+    "exit": 0,
+    "layers": 11,
+    "transient_at_flush": 1048576,
+    "pass_through": 0,
+    "real": 0.2,
+    "user": 0.16,
+    "sys": 0.03,
+    "maxrss": 33292288
+   }
+  ],
+  "frame_cpu_ms": 1.9999999999999991,
+  "frame_gpu_wait_ms": 1.0000000000000009,
+  "set": "icons"
+ },
+ {
+  "file": "Ghostscript_Tiger",
+  "framing": "640x480",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 0,
+  "pass_through": 0,
+  "transient_at_flush": 0,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 0.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 0,
+  "frame_real_ms": 32.0,
+  "frame_user_ms": 31.000000000000007,
+  "frame_sys_ms": 0.0,
+  "frame_real_ms_all": [
+   32.0,
+   32.0
+  ],
+  "frame_cpu_ms_all": [
+   31.000000000000007,
+   30.000000000000007
+  ],
+  "real_1_min": 0.19,
+  "real_N_min": 0.51,
+  "user_1_min": 0.15,
+  "user_N_min": 0.46,
+  "sys_1_min": 0.03,
+  "sys_N_min": 0.03,
+  "maxrss_1": 34865152,
+  "maxrss_N": 35553280,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.198102124966681,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.19,
+    "user": 0.15,
+    "sys": 0.03,
+    "maxrss": 35012608
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.20167795900488272,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.19,
+    "user": 0.16,
+    "sys": 0.03,
+    "maxrss": 34865152
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.5226912089856341,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.51,
+    "user": 0.46,
+    "sys": 0.03,
+    "maxrss": 35651584
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.5208473340026103,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.51,
+    "user": 0.46,
+    "sys": 0.03,
+    "maxrss": 35553280
+   }
+  ],
+  "frame_cpu_ms": 31.000000000000007,
+  "frame_gpu_wait_ms": 0.9999999999999929,
+  "set": "icons"
+ },
+ {
+  "file": "google-workspace-48px",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 1,
+  "pass_through": 0,
+  "transient_at_flush": 21233664,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 1.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 21233664,
+  "frame_real_ms": 8.000000000000002,
+  "frame_user_ms": 4.000000000000001,
+  "frame_sys_ms": 2.0000000000000004,
+  "frame_real_ms_all": [
+   8.000000000000002,
+   8.000000000000002
+  ],
+  "frame_cpu_ms_all": [
+   6.000000000000002,
+   6.000000000000002
+  ],
+  "real_1_min": 0.26,
+  "real_N_min": 0.34,
+  "user_1_min": 0.22,
+  "user_N_min": 0.26,
+  "sys_1_min": 0.03,
+  "sys_N_min": 0.05,
+  "maxrss_1": 52625408,
+  "maxrss_N": 53329920,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.26952837500721216,
+    "exit": 0,
+    "layers": 1,
+    "transient_at_flush": 21233664,
+    "pass_through": 0,
+    "real": 0.26,
+    "user": 0.22,
+    "sys": 0.03,
+    "maxrss": 52625408
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.2705942500033416,
+    "exit": 0,
+    "layers": 1,
+    "transient_at_flush": 21233664,
+    "pass_through": 0,
+    "real": 0.26,
+    "user": 0.22,
+    "sys": 0.03,
+    "maxrss": 52625408
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.3455143329920247,
+    "exit": 0,
+    "layers": 11,
+    "transient_at_flush": 21233664,
+    "pass_through": 0,
+    "real": 0.34,
+    "user": 0.26,
+    "sys": 0.05,
+    "maxrss": 53477376
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.34431395900901407,
+    "exit": 0,
+    "layers": 11,
+    "transient_at_flush": 21233664,
+    "pass_through": 0,
+    "real": 0.34,
+    "user": 0.26,
+    "sys": 0.05,
+    "maxrss": 53329920
+   }
+  ],
+  "frame_cpu_ms": 6.000000000000002,
+  "frame_gpu_wait_ms": 2.0,
+  "set": "icons"
+ },
+ {
+  "file": "clipdemo",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 0,
+  "pass_through": 0,
+  "transient_at_flush": 0,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 0.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 0,
+  "frame_real_ms": 1.9999999999999991,
+  "frame_user_ms": 2.0000000000000018,
+  "frame_sys_ms": 0.0,
+  "frame_real_ms_all": [
+   3.0,
+   1.9999999999999991
+  ],
+  "frame_cpu_ms_all": [
+   2.0000000000000018,
+   2.0000000000000018
+  ],
+  "real_1_min": 0.22,
+  "real_N_min": 0.24,
+  "user_1_min": 0.18,
+  "user_N_min": 0.2,
+  "sys_1_min": 0.03,
+  "sys_N_min": 0.03,
+  "maxrss_1": 45842432,
+  "maxrss_N": 45809664,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.22909045801497996,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.22,
+    "user": 0.18,
+    "sys": 0.03,
+    "maxrss": 45842432
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.2276297920034267,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.22,
+    "user": 0.18,
+    "sys": 0.03,
+    "maxrss": 46055424
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.25278304202947766,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.25,
+    "user": 0.2,
+    "sys": 0.03,
+    "maxrss": 46170112
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.2506597919855267,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.24,
+    "user": 0.2,
+    "sys": 0.03,
+    "maxrss": 45809664
+   }
+  ],
+  "frame_cpu_ms": 2.0000000000000018,
+  "frame_gpu_wait_ms": -2.6645352591003757e-15,
+  "set": "icons"
+ },
+ {
+  "file": "kit",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 2,
+  "pass_through": 0,
+  "transient_at_flush": 9469952,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 2.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 9469952,
+  "frame_real_ms": 4.999999999999999,
+  "frame_user_ms": 3.0,
+  "frame_sys_ms": 1.0000000000000002,
+  "frame_real_ms_all": [
+   6.0,
+   4.999999999999999
+  ],
+  "frame_cpu_ms_all": [
+   5.000000000000001,
+   4.0
+  ],
+  "real_1_min": 0.27,
+  "real_N_min": 0.32,
+  "user_1_min": 0.23,
+  "user_N_min": 0.26,
+  "sys_1_min": 0.03,
+  "sys_N_min": 0.04,
+  "maxrss_1": 51265536,
+  "maxrss_N": 51806208,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.27759662503376603,
+    "exit": 0,
+    "layers": 2,
+    "transient_at_flush": 9469952,
+    "pass_through": 0,
+    "real": 0.27,
+    "user": 0.23,
+    "sys": 0.03,
+    "maxrss": 51298304
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.28023491700878367,
+    "exit": 0,
+    "layers": 2,
+    "transient_at_flush": 9469952,
+    "pass_through": 0,
+    "real": 0.27,
+    "user": 0.23,
+    "sys": 0.03,
+    "maxrss": 51265536
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.3394069170462899,
+    "exit": 0,
+    "layers": 22,
+    "transient_at_flush": 9469952,
+    "pass_through": 0,
+    "real": 0.33,
+    "user": 0.27,
+    "sys": 0.04,
+    "maxrss": 52527104
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.328409833018668,
+    "exit": 0,
+    "layers": 22,
+    "transient_at_flush": 9469952,
+    "pass_through": 0,
+    "real": 0.32,
+    "user": 0.26,
+    "sys": 0.04,
+    "maxrss": 51806208
+   }
+  ],
+  "frame_cpu_ms": 4.0,
+  "frame_gpu_wait_ms": 0.9999999999999991,
+  "set": "icons"
+ },
+ {
+  "file": "splash-logo",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 0,
+  "pass_through": 0,
+  "transient_at_flush": 0,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 0.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 0,
+  "frame_real_ms": 3.0,
+  "frame_user_ms": 1.9999999999999991,
+  "frame_sys_ms": 0.0,
+  "frame_real_ms_all": [
+   3.0,
+   3.9999999999999982
+  ],
+  "frame_cpu_ms_all": [
+   1.9999999999999991,
+   1.9999999999999991
+  ],
+  "real_1_min": 0.2,
+  "real_N_min": 0.24,
+  "user_1_min": 0.17,
+  "user_N_min": 0.19,
+  "sys_1_min": 0.03,
+  "sys_N_min": 0.03,
+  "maxrss_1": 46055424,
+  "maxrss_N": 46186496,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.21358058304758742,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.21,
+    "user": 0.17,
+    "sys": 0.03,
+    "maxrss": 46055424
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.21177745796740055,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.2,
+    "user": 0.17,
+    "sys": 0.03,
+    "maxrss": 46301184
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.24568241694942117,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.24,
+    "user": 0.19,
+    "sys": 0.03,
+    "maxrss": 46186496
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.2454114580177702,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.24,
+    "user": 0.19,
+    "sys": 0.03,
+    "maxrss": 46399488
+   }
+  ],
+  "frame_cpu_ms": 1.9999999999999991,
+  "frame_gpu_wait_ms": 1.0000000000000009,
+  "set": "icons"
+ },
+ {
+  "file": "mr-settodefault",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 2,
+  "pass_through": 0,
+  "transient_at_flush": 4734976,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 2.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 4734976,
+  "frame_real_ms": 9.000000000000004,
+  "frame_user_ms": 6.000000000000003,
+  "frame_sys_ms": 0.0,
+  "frame_real_ms_all": [
+   9.000000000000004,
+   9.000000000000004
+  ],
+  "frame_cpu_ms_all": [
+   6.000000000000003,
+   6.000000000000003
+  ],
+  "real_1_min": 0.25,
+  "real_N_min": 0.34,
+  "user_1_min": 0.21,
+  "user_N_min": 0.27,
+  "sys_1_min": 0.03,
+  "sys_N_min": 0.03,
+  "maxrss_1": 49971200,
+  "maxrss_N": 50151424,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.26006100000813603,
+    "exit": 0,
+    "layers": 2,
+    "transient_at_flush": 4734976,
+    "pass_through": 0,
+    "real": 0.25,
+    "user": 0.21,
+    "sys": 0.03,
+    "maxrss": 49971200
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.2609761669882573,
+    "exit": 0,
+    "layers": 2,
+    "transient_at_flush": 4734976,
+    "pass_through": 0,
+    "real": 0.25,
+    "user": 0.21,
+    "sys": 0.03,
+    "maxrss": 50167808
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.34597691701492295,
+    "exit": 0,
+    "layers": 22,
+    "transient_at_flush": 4734976,
+    "pass_through": 0,
+    "real": 0.34,
+    "user": 0.27,
+    "sys": 0.03,
+    "maxrss": 50331648
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.34356016700621694,
+    "exit": 0,
+    "layers": 22,
+    "transient_at_flush": 4734976,
+    "pass_through": 0,
+    "real": 0.34,
+    "user": 0.27,
+    "sys": 0.03,
+    "maxrss": 50151424
+   }
+  ],
+  "frame_cpu_ms": 6.000000000000003,
+  "frame_gpu_wait_ms": 3.000000000000001,
+  "set": "icons"
+ },
+ {
+  "file": "fox-with-box-on-cloud",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 0,
+  "pass_through": 0,
+  "transient_at_flush": 0,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 0.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 0,
+  "frame_real_ms": 9.0,
+  "frame_user_ms": 7.000000000000001,
+  "frame_sys_ms": 0.9999999999999998,
+  "frame_real_ms_all": [
+   9.0,
+   9.0
+  ],
+  "frame_cpu_ms_all": [
+   8.0,
+   7.000000000000001
+  ],
+  "real_1_min": 0.22,
+  "real_N_min": 0.31,
+  "user_1_min": 0.19,
+  "user_N_min": 0.26,
+  "sys_1_min": 0.02,
+  "sys_N_min": 0.03,
+  "maxrss_1": 46465024,
+  "maxrss_N": 47087616,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.22878029203275219,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.22,
+    "user": 0.19,
+    "sys": 0.02,
+    "maxrss": 46465024
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.23563412501243874,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.23,
+    "user": 0.19,
+    "sys": 0.03,
+    "maxrss": 47038464
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.3187612080364488,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.31,
+    "user": 0.26,
+    "sys": 0.03,
+    "maxrss": 47284224
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.3229101249598898,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.32,
+    "user": 0.26,
+    "sys": 0.03,
+    "maxrss": 47087616
+   }
+  ],
+  "frame_cpu_ms": 8.0,
+  "frame_gpu_wait_ms": 1.0,
+  "set": "icons"
+ },
+ {
+  "file": "duckduckgo-com_2x",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 1,
+  "pass_through": 0,
+  "transient_at_flush": 4734976,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 1.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 4734976,
+  "frame_real_ms": 3.0000000000000027,
+  "frame_user_ms": 3.0,
+  "frame_sys_ms": 0.0,
+  "frame_real_ms_all": [
+   3.0000000000000027,
+   4.0000000000000036
+  ],
+  "frame_cpu_ms_all": [
+   3.0,
+   3.0
+  ],
+  "real_1_min": 0.24,
+  "real_N_min": 0.28,
+  "user_1_min": 0.2,
+  "user_N_min": 0.23,
+  "sys_1_min": 0.03,
+  "sys_N_min": 0.03,
+  "maxrss_1": 47169536,
+  "maxrss_N": 47267840,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.2558320829994045,
+    "exit": 0,
+    "layers": 1,
+    "transient_at_flush": 4734976,
+    "pass_through": 0,
+    "real": 0.25,
+    "user": 0.2,
+    "sys": 0.03,
+    "maxrss": 47169536
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.2507820000173524,
+    "exit": 0,
+    "layers": 1,
+    "transient_at_flush": 4734976,
+    "pass_through": 0,
+    "real": 0.24,
+    "user": 0.2,
+    "sys": 0.03,
+    "maxrss": 47185920
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.28729999996721745,
+    "exit": 0,
+    "layers": 11,
+    "transient_at_flush": 4734976,
+    "pass_through": 0,
+    "real": 0.28,
+    "user": 0.23,
+    "sys": 0.03,
+    "maxrss": 47267840
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.28594416700070724,
+    "exit": 0,
+    "layers": 11,
+    "transient_at_flush": 4734976,
+    "pass_through": 0,
+    "real": 0.28,
+    "user": 0.23,
+    "sys": 0.03,
+    "maxrss": 47480832
+   }
+  ],
+  "frame_cpu_ms": 3.0,
+  "frame_gpu_wait_ms": 2.6645352591003757e-15,
+  "set": "icons"
+ },
+ {
+  "file": "Ghostscript_Tiger",
+  "framing": "1080p",
+  "frames_n": 11,
+  "repeats": 2,
+  "layers": 0,
+  "pass_through": 0,
+  "transient_at_flush": 0,
+  "filters_skipped": null,
+  "cfgs": null,
+  "layers_per_frame_N": 0.0,
+  "pass_through_per_frame_N": 0.0,
+  "transient_at_flush_N": 0,
+  "frame_real_ms": 34.99999999999999,
+  "frame_user_ms": 33.00000000000001,
+  "frame_sys_ms": 0.0,
+  "frame_real_ms_all": [
+   34.99999999999999,
+   34.99999999999999
+  ],
+  "frame_cpu_ms_all": [
+   33.00000000000001,
+   32.00000000000001
+  ],
+  "real_1_min": 0.26,
+  "real_N_min": 0.61,
+  "user_1_min": 0.22,
+  "user_N_min": 0.54,
+  "sys_1_min": 0.03,
+  "sys_N_min": 0.03,
+  "maxrss_1": 49954816,
+  "maxrss_N": 48807936,
+  "runs1": [
+   {
+    "frames": 1,
+    "wall_py": 0.2684350410127081,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.26,
+    "user": 0.22,
+    "sys": 0.03,
+    "maxrss": 50102272
+   },
+   {
+    "frames": 1,
+    "wall_py": 0.27217433403711766,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.26,
+    "user": 0.22,
+    "sys": 0.03,
+    "maxrss": 49954816
+   }
+  ],
+  "runsN": [
+   {
+    "frames": 11,
+    "wall_py": 0.6203293339931406,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.61,
+    "user": 0.55,
+    "sys": 0.03,
+    "maxrss": 50593792
+   },
+   {
+    "frames": 11,
+    "wall_py": 0.6141251659719273,
+    "exit": 0,
+    "layers": 0,
+    "transient_at_flush": 0,
+    "pass_through": 0,
+    "real": 0.61,
+    "user": 0.54,
+    "sys": 0.03,
+    "maxrss": 48807936
+   }
+  ],
+  "frame_cpu_ms": 33.00000000000001,
+  "frame_gpu_wait_ms": 1.9999999999999858,
+  "set": "icons"
+ }
+]
