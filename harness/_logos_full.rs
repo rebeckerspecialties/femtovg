@@ -430,6 +430,74 @@ fn draw_filtered(
 }
 
 #[allow(dead_code)]
+/// Filter Effects Module Level 1, section 5 "Graphic filters: the filter
+/// property": "If the filter references a non-existent object or the
+/// referenced object is not a filter element, then the whole filter chain is
+/// ignored. No filter is applied to the object." Chromium and Firefox do
+/// that; usvg 0.48 keeps SVG 1.1's error behaviour and drops the element
+/// instead (parser/converter.rs: "when a `filter` link is invalid then the
+/// whole element should be ignored", test e-filter-051.svg). So before usvg
+/// sees the document, every `filter` attribute whose url() targets are not
+/// all `<filter>` elements is removed: the element then renders unfiltered,
+/// as in the browsers. The attributes are located by a real XML parse
+/// (usvg's re-exported roxmltree) and spliced out by byte range, so nothing
+/// else in the text changes. Filter functions (`blur(2px)`) are not
+/// references and never invalidate a chain. Counted under LAYER_STATS;
+/// `KEEP_INVALID_FILTERS=1` skips the pass to reproduce usvg's behaviour.
+static INVALID_FILTER_REFS_DROPPED: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
+fn drop_invalid_filter_references(svg: &str) -> std::borrow::Cow<'_, str> {
+    use std::collections::HashMap;
+    let Ok(doc) = usvg::roxmltree::Document::parse(svg) else {
+        return std::borrow::Cow::Borrowed(svg); // let usvg report the parse error
+    };
+    let tag_by_id: HashMap<&str, &str> = doc
+        .descendants()
+        .filter(|n| n.is_element())
+        .filter_map(|n| n.attribute("id").map(|id| (id, n.tag_name().name())))
+        .collect();
+    let mut ranges: Vec<std::ops::Range<usize>> = Vec::new();
+    for node in doc.descendants().filter(|n| n.is_element()) {
+        let Some(attr) = node.attributes().find(|a| a.name() == "filter" && a.namespace().is_none()) else {
+            continue;
+        };
+        let value = attr.value();
+        let mut invalid = false;
+        let mut rest = value;
+        while let Some(start) = rest.find("url(") {
+            let after = &rest[start + 4..];
+            let Some(end) = after.find(')') else { break };
+            let target = after[..end].trim().trim_matches(|c| c == '"' || c == '\'');
+            invalid |= match target.strip_prefix('#') {
+                Some(id) => tag_by_id.get(id) != Some(&"filter"),
+                None => true, // external references: not a filter element in this document
+            };
+            rest = &after[end + 1..];
+        }
+        if invalid {
+            ranges.push(attr.range());
+        }
+    }
+    if ranges.is_empty() {
+        return std::borrow::Cow::Borrowed(svg);
+    }
+    INVALID_FILTER_REFS_DROPPED.fetch_add(ranges.len(), std::sync::atomic::Ordering::Relaxed);
+    ranges.sort_by_key(|r| r.start);
+    let mut out = String::with_capacity(svg.len());
+    let mut at = 0;
+    for r in ranges {
+        // take the whitespace before `filter="..."` with it: `<path a="1" filter="..." d=` -> `<path a="1" d=`
+        let mut start = r.start;
+        while start > at && svg.as_bytes()[start - 1].is_ascii_whitespace() {
+            start -= 1;
+        }
+        out.push_str(&svg[at..start]);
+        at = r.end;
+    }
+    out.push_str(&svg[at..]);
+    std::borrow::Cow::Owned(out)
+}
+
 fn dump(children: &[usvg::Node], depth: usize) {
     for node in children {
         match node {
@@ -821,7 +889,13 @@ fn main() {
     let tree = {
         let mut opt = usvg::Options::default();
         opt.fontdb_mut().load_system_fonts();
-        usvg::Tree::from_data(&std::fs::read(svg_path).unwrap(), &opt).unwrap()
+        let text = std::fs::read_to_string(svg_path).unwrap();
+        let text = if std::env::var("KEEP_INVALID_FILTERS").is_ok() {
+            std::borrow::Cow::Borrowed(text.as_str())
+        } else {
+            drop_invalid_filter_references(&text)
+        };
+        usvg::Tree::from_str(&text, &opt).unwrap()
     };
     if std::env::var("TREE_DUMP").is_ok() {
         dump(tree.root().children(), 0);
@@ -959,6 +1033,10 @@ fn main() {
         eprintln!(
             "clip paths drawn unclipped (no harness_clip): {}",
             CLIPS_UNSUPPORTED.load(std::sync::atomic::Ordering::Relaxed)
+        );
+        eprintln!(
+            "filter attributes with invalid references dropped (Filter Effects 5): {}",
+            INVALID_FILTER_REFS_DROPPED.load(std::sync::atomic::Ordering::Relaxed)
         );
     }
 }

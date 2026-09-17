@@ -84,7 +84,8 @@ Zoom ladders: 8-11 steps in and out (e.g. 0.6 .. 2.35) for a feature PR; a
 `PATH_RANGE=lo:hi` draw only those path indices (contact sheets of single
 paths find the offending path fast); `PATH_DUMP=1` print segments;
 `GRAD_DUMP=1` gradient stops + transform; `TREE_DUMP=1` usvg group tree
-(mask/clip/filter/opacity); `NO_MASK=1`, `MASK_ONLY=1`, `SHOW_CAPTURE=1`;
+(mask/clip/filter/opacity); `KEEP_INVALID_FILTERS=1` hand usvg the file
+unrewritten (rule 5 off); `NO_MASK=1`, `MASK_ONLY=1`, `SHOW_CAPTURE=1`;
 `FORCE_SOLID=1` replaces gradient paints with magenta - the fastest way to
 tell a geometry bug from a paint bug; `NO_CLIP=1`, `NO_OPACITY=1`,
 `NO_BLEND=1` drop one feature class at a time (a render that *improves*
@@ -260,6 +261,68 @@ takes the mean to 0.205% (gemini-3-1-pro-preview 0.35 -> 0.03,
 turbulence alone to 0.087% (claude-opus-5 3.65 -> 0.01, qwen3-8-max 0.46 ->
 0.04). Evidence: `busey-turbulence.png` (full frames with diff overlays) and
 `busey-turbulence-detail.png` (3x crops against both browsers).
+
+## Invalid filter references (rule 5, 2026-09-16)
+
+**5. A `filter` that references anything but a `<filter>` is no filter at
+all - drop the attribute, keep the element.** Filter Effects Module Level 1
+(W3C Working Draft, 18 December 2018), section 5 "Graphic filters: the
+filter property", on the `<url>` value: "If the filter references a
+non-existent object or the referenced object is not a filter element, then
+the whole filter chain is ignored. No filter is applied to the object."
+Chromium 131 and Firefox 157 do exactly that: the noodles file's
+`<path fill="url(#c)" filter="url(#b)" d="M0 0h160v144H0z"/>` (`#b` is the
+file's `<mask>`) renders in both browsers pixel-identically to a copy with
+the attribute removed (0 px differ at 0.7x, 1.3x and 2.1x, each browser
+against itself). usvg 0.48 keeps SVG 1.1's error processing instead (the
+1.1 `filter` property only admits a FuncIRI "to a 'filter' element", and
+Appendix F.2 renders "up to, but not including, the first element which has
+an error"): `parser/converter.rs` says "when a `filter` link is invalid then
+the whole element should be ignored" and resvg's own test
+`filters/filter/invalid-FuncIRI.svg` expects the rect to vanish (its
+reference PNG has 0 red pixels). So the element never reached femtovg:
+`TREE_DUMP=1` listed four paths, not five, and the group's luminance mask
+came out 135 user units wide instead of 160 because the dropped rect was
+also the masked group's bounding box (`maskUnits` default). That was the
+red block in the upper right of `luminance-mask-alpha-before-after.png` at
+every zoom: femtovg-vs-Chromium structural bbox (233,62)-(275,89) at 0.7x,
+(228,2)-(317,56) at 1.3x, (322,2)-(337,15) at 2.1x, within 1 px of the
+ablation bbox of that one element in Chromium (page with and without it),
+and against the element-less page femtovg was already at 0.000 %
+structural. Not a femtovg rendering difference: nothing in the renderer
+changed.
+
+`_logos_full.rs` now runs `drop_invalid_filter_references` on the SVG text
+before usvg parses it: a real XML parse (usvg re-exports roxmltree) finds
+every `filter` attribute whose `url()` targets are not all `<filter>`
+elements in the document, and their byte ranges (`Attribute::range`) are
+spliced out, so the element renders unfiltered as in the browsers and no
+other byte changes. Filter functions (`blur(2px)`) are not references and
+never invalidate a chain; a `filter:` declaration inside a `style`
+attribute is not rewritten (none in the corpus). `LAYER_STATS=1` prints
+the count dropped; `KEEP_INVALID_FILTERS=1` skips the pass, which
+reproduces the previous build bit-for-bit on the noodles file at all
+eleven ladder zooms. Zero cost to the library: the fix is in the document.
+
+Noodles ladder, 460x260, px>20 / structural, Chromium 131 references:
+
+    zoom   before (usvg dropped the rect)   after vs Chromium   after vs Firefox 157   Chromium vs Firefox
+    0.6    0.49 % / 0.309 %                 0.01 % / 0.000 %    0.01 % / 0.000 %       0.00 % / 0.000 %
+    0.7    0.66 % / 0.452 %                 0.01 % / 0.000 %    0.01 % / 0.000 %       0.00 % / 0.000 %
+    0.75   0.76 % / 0.534 %                 0.01 % / 0.000 %    0.01 % / 0.000 %       0.00 % / 0.000 %
+    0.9    1.08 % / 0.811 %                 0.01 % / 0.000 %    0.01 % / 0.000 %       0.00 % / 0.000 %
+    1.0    1.33 % / 1.027 %                 0.01 % / 0.000 %    0.01 % / 0.000 %       0.00 % / 0.000 %
+    1.15   1.75 % / 1.399 %                 0.01 % / 0.000 %    0.01 % / 0.000 %       0.00 % / 0.000 %
+    1.3    2.25 % / 1.833 %                 0.03 % / 0.000 %    0.03 % / 0.000 %       0.00 % / 0.000 %
+    1.6    1.13 % / 0.855 %                 0.03 % / 0.000 %    0.03 % / 0.000 %       0.00 % / 0.000 %
+    1.9    0.51 % / 0.297 %                 0.06 % / 0.000 %    0.06 % / 0.000 %       0.00 % / 0.000 %
+    2.1    0.20 % / 0.093 %                 0.02 % / 0.000 %    0.02 % / 0.000 %       0.00 % / 0.000 %
+    2.35   0.05 % / 0.000 %                 0.03 % / 0.000 %    0.03 % / 0.000 %       0.00 % / 0.000 %
+
+The 27 BuseyBench files and the Google Workspace icon carry 919 `filter`
+attributes between them, all resolving to `<filter>` elements (0 dropped),
+and render bit-identically to the previous build at 1x (28 of 28 frames by
+`cmp`; the same binary run twice is also bit-identical, so 0 means 0).
 
 ## Sub-pixel probe (`subpx.svg`, `subpx_ink.py`)
 
