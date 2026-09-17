@@ -352,7 +352,7 @@ pub struct Canvas<T: Renderer> {
     dist_tol: f32,
     gradients: GradientStore,
     // Layer backing stores, filter scratches and shadow coverage, reused
-    // within the frame and deleted at the flush; see `transient.rs`.
+    // within the frame and across flushes; see `transient.rs`.
     transients: TransientPool,
     // Open layers from begin_layer(), innermost last.
     layers: Vec<LayerRecord>,
@@ -1148,13 +1148,15 @@ where
     }
 
     /// Bytes currently held by transient images - layer backings, filter-chain
-    /// scratches and shadow coverage. A transient lives until the next flush
-    /// and is reused within the frame, so just before a flush this is the
-    /// frame's peak: the figure to size
+    /// scratches and shadow coverage. A transient is reused within the frame
+    /// and kept across the flush for the next frames' layers of its size, so
+    /// this is what the frame drew through plus what recent frames left for
+    /// it; the budget it is sized against with
     /// [`set_transient_image_budget`](Self::set_transient_image_budget)
-    /// against. An open layer's images (its store, a mask's coverage, a
-    /// chain's result and scratches) stay held across a flush and return to
-    /// the pool when the layer ends or is discarded.
+    /// bounds the two together, and just before a flush it is the frame's
+    /// peak when nothing was retained. An open layer's images (its store, a
+    /// mask's coverage, a chain's result and scratches) stay held across a
+    /// flush and return to the pool when the layer ends or is discarded.
     pub fn transient_image_bytes(&self) -> usize {
         self.transients.bytes()
     }
@@ -1168,7 +1170,11 @@ where
     /// layers: at 1080p a viewport-sized layer is 4.7 MB and a blurred one three
     /// times that (its capture, its result and one scratch; the blur's
     /// horizontal-pass buffer is the renderer's own, outside the pool), so a frame of hundreds of sibling layers holds a few tens of
-    /// MB. Past the cap [`begin_layer`](Self::begin_layer) returns `false` and
+    /// MB. The images a frame releases stay pooled across the flush so the
+    /// next frames' layers of the same size allocate nothing; they count
+    /// against the cap, and are the first to go, least recently used first,
+    /// when a frame needs the room (one no frame took for two frames goes at
+    /// the flush regardless). Past the cap [`begin_layer`](Self::begin_layer) returns `false` and
     /// the layer passes through with its effects dropped - a layer reserves
     /// every image its effects draw through with its store, so it is
     /// admitted whole or not at all -
@@ -1199,8 +1205,9 @@ where
     /// transient scratch images sized like the source; a blur pass allocates
     /// one more full-size buffer of its own for its duration, so peak transient
     /// memory is twice the source image, or three times across a blur - bounded
-    /// regardless of chain length either way. The scratches are freed at the
-    /// next flush. All color work is in unpremultiplied sRGB with output
+    /// regardless of chain length either way. The scratches return to the
+    /// pool once the chain is recorded and stay pooled across the flush for
+    /// the next chains of that size. All color work is in unpremultiplied sRGB with output
     /// clamped to [0, 1] per pass, so an alpha-amplifying matrix feeding a blur
     /// cannot blow out later passes.
     ///
@@ -2513,14 +2520,15 @@ where
         }
     }
 
-    /// Deletes the frame's transient images, except those of layers still
-    /// open across the flush: a layer's draws so far already live in its
-    /// capture and the ones still to come must land in the same image, and
-    /// its effects draw at `end_layer` through the images reserved for them
-    /// with it.
+    /// Ends the frame for the transient pool: the frame's released images
+    /// stay pooled for the next frames, stale ones are deleted (see
+    /// `transient.rs`), and the images of layers still open across the flush
+    /// stay held: a layer's draws so far already live in its capture and the
+    /// ones still to come must land in the same image, and its effects draw
+    /// at `end_layer` through the images reserved for them with it.
     fn release_transient_images(&mut self) {
         let held: Vec<ImageId> = self.layers.iter().flat_map(LayerRecord::images).collect();
-        self.transients.release_all(&mut self.images, &mut self.renderer, &held);
+        self.transients.end_frame(&mut self.images, &mut self.renderer, &held);
     }
 
     /// After a flush the renderer starts the next command stream on the
@@ -5389,16 +5397,179 @@ fn layer_bounds_follow_the_scissor() {
     // Two plain layers cost one transient each (their sizes differ, so no
     // reuse); the blurred layer costs its capture, the filtered target, and
     // the chain's single ping-pong scratch. All five are free again once
-    // their layers have ended, and the flush deletes them.
+    // their layers have ended, and the flush keeps them pooled for the next
+    // frame's layers of these sizes.
     assert_eq!(canvas.transients.images.len(), 5);
     assert_eq!(canvas.transients.free.len(), 5);
+    let bytes = canvas.transient_image_bytes();
     canvas.flush_to_output(());
-    assert_eq!(canvas.transients.images.len(), 0);
-    assert_eq!(canvas.transients.free.len(), 0);
-    assert_eq!(canvas.transient_image_bytes(), 0);
+    assert_eq!(canvas.transients.images.len(), 5);
+    assert_eq!(canvas.transients.free.len(), 5);
+    assert_eq!(canvas.transient_image_bytes(), bytes);
 
     // Unbalanced end_layer is ignored.
     canvas.end_layer();
+}
+
+/// A frame's released transients stay pooled across the flush: the next
+/// frame's layer of the same size takes the images the last one left
+/// instead of allocating, so an animation at one zoom creates no images
+/// after its first frame, and the pool holds exactly one frame's worth.
+#[test]
+fn retained_stores_back_the_next_frames_without_allocating() {
+    use crate::ImageFilter;
+    let renderer = RecordingRenderer::default();
+    let mut canvas = Canvas::new(renderer).unwrap();
+    canvas.set_size(320, 200, 1.0);
+    let blur = LayerEffects::new().with_filters(&[ImageFilter::GaussianBlur { sigma: 2.0 }]);
+    assert!(canvas.begin_layer(&blur));
+    canvas.end_layer();
+    let mut first: Vec<ImageId> = canvas.transients.images.iter().map(|t| t.id).collect();
+    first.sort();
+    assert_eq!(first.len(), 3, "capture, filtered target, one scratch");
+    let bytes = canvas.transient_image_bytes();
+    for frame in 1..4 {
+        canvas.flush_to_output(());
+        assert_eq!(canvas.transients.free.len(), 3, "frame {frame}: all three retained");
+        assert!(canvas.begin_layer(&blur));
+        assert!(
+            canvas.transients.free.is_empty(),
+            "frame {frame}: the layer takes exactly the retained set"
+        );
+        canvas.end_layer();
+        let mut again: Vec<ImageId> = canvas.transients.images.iter().map(|t| t.id).collect();
+        again.sort();
+        assert_eq!(again, first, "frame {frame}: the same images, none created");
+        assert_eq!(canvas.transient_image_bytes(), bytes);
+    }
+}
+
+/// A retained transient no frame takes lives through two idle frames and is
+/// deleted at the second one's flush: a layer drawn every other frame keeps
+/// its store, one drawn every third frame allocates it anew each time.
+#[test]
+fn a_retained_store_outlives_two_idle_frames_not_three() {
+    let renderer = RecordingRenderer::default();
+    let mut canvas = Canvas::new(renderer).unwrap();
+    canvas.set_size(256, 256, 1.0);
+    let bytes = 256 * 256 * 4;
+    let opacity = LayerEffects::new().with_opacity(0.5);
+    assert!(canvas.begin_layer(&opacity));
+    canvas.end_layer();
+    let store = canvas.transients.images[0].id;
+    canvas.flush_to_output(()); // ends the frame that drew it
+    assert_eq!(canvas.transient_image_bytes(), bytes);
+    canvas.flush_to_output(()); // one idle frame
+    assert_eq!(
+        canvas.transient_image_bytes(),
+        bytes,
+        "kept through the first idle frame"
+    );
+    canvas.flush_to_output(()); // two idle frames
+    assert_eq!(
+        canvas.transient_image_bytes(),
+        0,
+        "deleted at the second idle frame's flush"
+    );
+    assert!(canvas.transients.images.is_empty());
+    assert!(canvas.images.info(store).is_none(), "the image itself is gone");
+
+    // Every other frame: the idle frame between two draws keeps the store.
+    assert!(canvas.begin_layer(&opacity));
+    canvas.end_layer();
+    let store = canvas.transients.images[0].id;
+    for _ in 0..3 {
+        canvas.flush_to_output(());
+        canvas.flush_to_output(());
+        assert!(canvas.begin_layer(&opacity));
+        assert_eq!(
+            canvas.layers.last().unwrap().image,
+            Some(store),
+            "the retained store, not a new one"
+        );
+        canvas.end_layer();
+    }
+    assert_eq!(canvas.transients.images.len(), 1);
+}
+
+/// Retention never costs a layer its admission: under a budget of one store,
+/// a frame whose layer needs another size than the last frame's evicts the
+/// retained store and captures. Only images no command of this frame reads
+/// are evicted, so a store this frame drew through stays, and a third size
+/// is refused as it always was.
+#[test]
+fn a_fresh_store_evicts_retained_ones_the_frame_has_not_touched() {
+    let renderer = RecordingRenderer::default();
+    let mut canvas = Canvas::new(renderer).unwrap();
+    canvas.set_size(256, 256, 1.0);
+    let opacity = LayerEffects::new().with_opacity(0.5);
+    canvas.set_transient_image_budget(256 * 256 * 4);
+    assert!(canvas.begin_layer(&opacity));
+    canvas.end_layer();
+    canvas.flush_to_output(());
+    assert_eq!(canvas.transients.images.len(), 1);
+
+    canvas.save();
+    canvas.scissor(0.0, 0.0, 100.0, 100.0);
+    assert!(canvas.begin_layer(&opacity), "the retained store makes room");
+    assert_eq!(
+        canvas.transients.images.len(),
+        1,
+        "evicted, not kept beside the new store"
+    );
+    assert_eq!(canvas.transient_image_bytes(), 128 * 128 * 4);
+    canvas.end_layer();
+    canvas.restore();
+
+    canvas.save();
+    canvas.scissor(0.0, 0.0, 200.0, 200.0);
+    assert!(
+        !canvas.begin_layer(&opacity),
+        "the 128 px store's composite is pending: it cannot go, and a third store does not fit"
+    );
+    canvas.end_layer();
+    canvas.restore();
+    assert_eq!(canvas.transients.images.len(), 1);
+}
+
+/// A budget lowered between frames is enforced at the next acquire and at
+/// the flush, by evicting retained images least recently used first, so a
+/// platform that tightens its budget at runtime sees the pool shrink to it
+/// without a frame of pass-throughs.
+#[test]
+fn lowering_the_budget_evicts_retained_stores() {
+    let renderer = RecordingRenderer::default();
+    let mut canvas = Canvas::new(renderer).unwrap();
+    canvas.set_size(256, 256, 1.0);
+    let large = 256 * 256 * 4;
+    let small = 128 * 128 * 4;
+    let opacity = LayerEffects::new().with_opacity(0.5);
+    assert!(canvas.begin_layer(&opacity));
+    canvas.end_layer();
+    canvas.save();
+    canvas.scissor(0.0, 0.0, 100.0, 100.0);
+    assert!(canvas.begin_layer(&opacity));
+    canvas.end_layer();
+    canvas.restore();
+    canvas.flush_to_output(());
+    assert_eq!(canvas.transient_image_bytes(), large + small);
+
+    // The next frame reuses the large store and the acquire trims the rest.
+    canvas.set_transient_image_budget(large);
+    assert!(canvas.begin_layer(&opacity));
+    assert_eq!(
+        canvas.transient_image_bytes(),
+        large,
+        "the small store went, the large one is in use"
+    );
+    canvas.end_layer();
+    canvas.flush_to_output(());
+
+    // Lowered below what is retained, the flush itself trims.
+    canvas.set_transient_image_budget(small);
+    canvas.flush_to_output(());
+    assert_eq!(canvas.transient_image_bytes(), 0);
+    assert!(canvas.transients.images.is_empty());
 }
 
 /// Chain execution stays within a bounded transient budget: a run of
@@ -5541,11 +5712,11 @@ fn sibling_layers_reuse_backing_stores() {
     assert_eq!(canvas.transients.images.len(), 2 + 3);
     assert_eq!(canvas.transient_image_bytes(), 2 * bytes + 3 * padded);
 
-    // Everything is free between layers, nothing after the flush.
+    // Everything is free between layers, and stays pooled across the flush.
     assert_eq!(canvas.transients.free.len(), 5);
     canvas.flush_to_output(());
-    assert_eq!(canvas.transients.images.len(), 0);
-    assert_eq!(canvas.transient_image_bytes(), 0);
+    assert_eq!(canvas.transients.images.len(), 5);
+    assert_eq!(canvas.transient_image_bytes(), 2 * bytes + 3 * padded);
 }
 
 /// A budget that fits exactly one blurred layer's images (capture, filtered
@@ -5855,7 +6026,7 @@ fn shadow_stores_round_to_eight_pixels() {
     let mut path = Path::new();
     path.rect(40.0, 40.0, 20.0, 20.0);
     canvas.fill_path(&path, &Paint::color(Color::rgb(200, 0, 0)));
-    let info = canvas.images.info(canvas.transients.images[0]).unwrap();
+    let info = canvas.images.info(canvas.transients.images[0].id).unwrap();
     assert_eq!((info.width(), info.height()), (40, 40));
 }
 
@@ -5897,7 +6068,11 @@ fn masked_siblings_reuse_mask_transients() {
         "four masked siblings, one set of images"
     );
     canvas.flush_to_output(());
-    assert_eq!(canvas.transients.images.len(), 0);
+    assert_eq!(
+        canvas.transients.images.len(),
+        3,
+        "kept for the next frame's masked layers"
+    );
 }
 
 /// A reset or a resize inside a masked layer returns everything the layer
@@ -6006,7 +6181,7 @@ fn shadow_passes_reuse_their_images() {
     );
     assert_eq!(canvas.transients.free.len(), 2);
     canvas.flush_to_output(());
-    assert_eq!(canvas.transients.images.len(), 0);
+    assert_eq!(canvas.transients.images.len(), 2, "kept for the next frame's shadows");
 }
 
 /// A stroke thinner than the fringe is drawn at fringe width with its alpha
