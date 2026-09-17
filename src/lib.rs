@@ -5876,12 +5876,11 @@ fn layer_bounds_follow_the_scissor() {
     canvas.restore();
 
     // Two plain layers cost one transient each (their sizes differ, so no
-    // reuse); the blurred layer costs its capture and its blurred result (a
-    // lone blur keeps the capture's parity: no chain scratch, no parity
-    // pass). All four are free again once their layers have ended, and the
-    // flush deletes them.
-    assert_eq!(canvas.transients.images.len(), 4);
-    assert_eq!(canvas.transients.free.len(), 4);
+    // reuse); the blurred layer costs its capture, the filtered target, and
+    // the chain's single ping-pong scratch. All five are free again once
+    // their layers have ended, and the flush deletes them.
+    assert_eq!(canvas.transients.images.len(), 5);
+    assert_eq!(canvas.transients.free.len(), 5);
     canvas.flush_to_output(());
     assert_eq!(canvas.transients.images.len(), 0);
     assert_eq!(canvas.transients.free.len(), 0);
@@ -6021,19 +6020,18 @@ fn sibling_layers_reuse_backing_stores() {
     canvas.end_layer();
     assert_eq!(canvas.transients.images.len(), 2);
 
-    // Blurred siblings: capture and blurred result, once (a lone blur needs
-    // no chain scratch).
+    // Blurred siblings: capture, filtered target and one chain scratch, once.
     let blur = LayerEffects::new().with_filters(&[ImageFilter::GaussianBlur { sigma: 2.0 }]);
     for _ in 0..4 {
         assert!(canvas.begin_layer(&blur));
         canvas.end_layer();
     }
     let padded = 384 * 256 * 4; // 336 x 216 padded, rounded
-    assert_eq!(canvas.transients.images.len(), 2 + 2);
-    assert_eq!(canvas.transient_image_bytes(), 2 * bytes + 2 * padded);
+    assert_eq!(canvas.transients.images.len(), 2 + 3);
+    assert_eq!(canvas.transient_image_bytes(), 2 * bytes + 3 * padded);
 
     // Everything is free between layers, nothing after the flush.
-    assert_eq!(canvas.transients.free.len(), 4);
+    assert_eq!(canvas.transients.free.len(), 5);
     canvas.flush_to_output(());
     assert_eq!(canvas.transients.images.len(), 0);
     assert_eq!(canvas.transient_image_bytes(), 0);
@@ -6049,7 +6047,7 @@ fn a_budget_for_one_layer_fits_a_frame_of_them() {
     let mut canvas = Canvas::new(renderer).unwrap();
     canvas.set_size(256, 256, 1.0);
     let padded = 320 * 320 * 4; // 272 x 272 padded, rounded
-    canvas.set_transient_image_budget(2 * padded);
+    canvas.set_transient_image_budget(3 * padded);
     let blur = LayerEffects::new().with_filters(&[ImageFilter::GaussianBlur { sigma: 2.0 }]);
     for i in 0..200 {
         assert!(canvas.begin_layer(&blur));
@@ -6059,8 +6057,8 @@ fn a_budget_for_one_layer_fits_a_frame_of_them() {
         );
         canvas.end_layer();
     }
-    assert_eq!(canvas.transients.images.len(), 2);
-    assert_eq!(canvas.transient_image_bytes(), 2 * padded);
+    assert_eq!(canvas.transients.images.len(), 3);
+    assert_eq!(canvas.transient_image_bytes(), 3 * padded);
 }
 
 /// A budget that fits a blurred layer's capture and filtered target but not
