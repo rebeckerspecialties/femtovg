@@ -12,7 +12,7 @@ is pixel work on content that changes with the zoom - nothing there is reusable.
 needlessly, zoom or no zoom, is its transient images: the pool deleted every layer store, filter scratch and
 shadow coverage at the flush and the next frame allocated them again (4-25 textures per frame on these files,
 each with a Stencil8 companion the wgpu backend creates the first time the store is a render target). A
-prototype that retains released transients across the flush (`pool-retain`, 8ad0eb8 in `/private/tmp/wt-pc`)
+prototype that retains released transients across the flush (`pool-retain`, dd6ca0f in `/private/tmp/wt-pc`)
 takes that to 0 per frame at a fixed zoom and to 0 on 20-29 of 39 sweep frames (23-26 % of the master count
 over the sweep), for -16..-24 % frame time on the icon and -4..-8 % on a 57-layer file here; the Pi Zero model prices
 each texture allocation at 600 us, so the same counts are worth 2-15 ms per frame there.
@@ -120,7 +120,7 @@ the only zoom-specific cost that grows faster than linearly is #340's pass count
 largest *reusable* cost is the pool's per-frame allocation: every store and its stencil companion, every frame.
 That is what the prototype retains.
 
-## 3. Prototype: `pool-retain` (8ad0eb8, `/private/tmp/wt-pc`, off upstream/master 384060f)
+## 3. Prototype: `pool-retain` (dd6ca0f, `/private/tmp/wt-pc`, off upstream/master 384060f)
 
 `src/transient.rs`: the flush (`end_frame`, replacing `release_all`) keeps every released transient on the free
 list for the frames to come; deletes those no frame took for `RETAIN_FRAMES = 2` consecutive frames (at the
