@@ -3,44 +3,169 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- Fixed strokes thinner than a pixel drawing too faint: their alpha was scaled
+  by the square of the device width (a nanovg heuristic), so a 0.2 px line
+  carried 4% of its coverage and a 0.5 px line 25%. The scale is now linear -
+  a 0.5 px line is 50% - which is the coverage Skia's hairline path puts down
+  and what both browsers render. Fine detail drawn with sub-pixel strokes
+  (hatching, iris lines, thin outlines at small zoom) was visibly lighter than
+  in a browser before.
+- Fixed filled paths landing a pixel too wide when the contour runs clockwise.
+  The antialiasing fringe is extruded along each point's miter vector, whose
+  direction follows the order the points are in, so a clockwise contour pushed
+  it outward instead of inward - `Path::rect()` and `Path::circle()` emit
+  counter-clockwise and were exact, while an SVG arc with `sweep = 1`, or any
+  imported path wound the other way, was a pixel fat all round. Fills now cover
+  the same pixels either way, and the authored winding still selects holes for
+  `FillRule::NonZero`. This also takes most of the over-inking out of thin
+  filled shapes, which were paying the same pixel on both edges.
+- Added `Canvas::filter_image_chain()`, which applies a list of image filters in
+  one call the way a Canvas `ctx.filter` list (`"blur(5px) brightness(1.2)"`) or
+  an SVG filter chain does. Consecutive color-matrix filters fold into a single
+  GPU pass (`ImageFilter::fold_with()`) when doing so is exact - a matrix that
+  can push a channel outside [0, 1] keeps its own pass so its clamp still
+  happens, matching per-filter clamping in browsers and Skia. Non-folding passes
+  share two source-sized scratch images (a blur pass adds one internal buffer of
+  its own), so peak transient memory is bounded regardless of chain length.
+  `ImageFilter::identity()` is the explicit no-op filter.
+- Fixed `ImageFilter::GaussianBlur` with a zero, negative or non-finite
+  standard deviation blanking the image instead of leaving it unchanged, and
+  with a very large one using inconsistent coefficients. Both backends now
+  clamp the value the same way.
+- Fixed multi-stop gradients whose last stop ends before 1.0: the rest of the
+  ramp was left transparent (or holding stale texture data) instead of the last
+  stop's color, as SVG's default `spreadMethod="pad"` and Canvas gradients
+  render it. Showed as a wedge cut out of the Firefox logo's flame.
+- Added layer masks: `LayerEffects::with_mask()` multiplies a layer's alpha by
+  a mask image placed in device space, using either its luminance times alpha
+  (SVG `mask`'s default `mask-type`, via the new
+  `ImageFilter::luminance_to_alpha()`) or its alpha. Masks apply after the
+  layer's filters, as in SVG, and reserve their coverage images with the
+  layer's store, so a masked layer the transient budget cannot fit passes
+  through as a whole (`begin_layer()` returns `false`) rather than composite
+  unmasked.
+- Added layers: `Canvas::begin_layer()` and `end_layer()` draw a group into an
+  offscreen image and composite it back with `LayerEffects` - group opacity, so
+  overlapping shapes fade as one like an SVG group, and/or an image-filter
+  chain. The offscreen image is sized to the current scissor rect (under any
+  axis-aligned scale, so a device-pixel-ratio scale still bounds it) plus the
+  blur reach of the whole chain (successive blurs compound in quadrature),
+  not the whole canvas or render target. A rounded or rotated scissor clips
+  the layer's composite once, after its filters, where it was set - a blur
+  samples content past the clip edge, as SVG's `clip-path` over a filtered
+  group does - instead of also clipping the draws inside the layer (which
+  squared the edge coverage and, in a blur-padded store, landed in the wrong
+  place). `begin_layer()` returns whether the
+  layer captured: `false` means it passed through with its effects dropped -
+  over the transient budget, past the backend's texture limit
+  (`Renderer::max_texture_size()`, 2048 on a VideoCore IV), or degenerate
+  bounds. Layers stay open across a flush of the same size; a `set_size()`
+  that changes the size, and `reset()`, discard open layers as a Canvas 2D
+  reset does. A layer opened under a non-invertible transform draws nothing,
+  as in Canvas 2D. The web-platform-tests layer suite is ported where the API
+  can express it (`tests/wpt_layers_wgpu.rs`). The shadow state in effect at 
+  `begin_layer()` is cast once by the layer's result (the Canvas 2D `beginLayer()` 
+  rule, and what SVG `feDropShadow` on a group means) and resets inside the layer,
+  so children are not each shadowed on their own.
+- A layer's backing images return to a pool at `end_layer()` and the next
+  layer of the same size takes them (commands run in order, so this needs no
+  synchronization; store sizes round up to 64 px so siblings with different
+  blur reaches share one), as do filter-chain scratches and shadow coverage; a
+  frame's transient memory is therefore its deepest nesting, not its layer
+  count - at 1080p a viewport-sized layer is 4.7 MB and thirteen blurred ones
+  would fill 256 MiB, while real artwork opens hundreds per frame.
+  `Canvas::set_transient_image_budget()` caps what is held at once (default
+  256 MiB) and `transient_image_bytes()` reports it; past the cap, layers pass
+  through (`begin_layer()` returns `false` - a layer reserves every image its
+  effects draw through, a filter chain's result and scratches included, with
+  its store, so it is admitted whole or not at all; each open filtered level
+  holds its result and scratches for its whole life, so nesting filtered
+  layers costs their sum), `filter_image_chain()`
+  returns `ErrorKind::TransientImageBudgetExceeded`, and shadows are skipped
+  rather than allocate. Shadow coverage rounds to 8 px, not the layers' 64,
+  since shadows are many and small.
+- Fixed two-stop gradients fading a transparent stop through the wrong colors:
+  the stop's own color was discarded, so `transparent` to blue turned a plain
+  light blue instead of darkening, and transparent red to blue lost its red.
+  Two-stop and multi-stop gradients now interpolate the same way, fixing flame
+  gradient accuracy in Firefox's kit.svg embedded art, and now matching
+  Canvas and SVG gradient behaviors in multiple web browsers.
+- Added two-point radial gradients, the general Canvas
+  `createRadialGradient(x0, y0, r0, x1, y1, r1)` form where the start and end
+  circles can have different centres. New `Paint` constructors
+  `two_point_radial_gradient()` and `two_point_radial_gradient_stops()`;
+  concentric gradients keep using the existing cheaper path.
+- Added gradient transforms, the role of SVG's `gradientTransform`: new `Paint`
+  methods `set_gradient_transform()` and `with_gradient_transform()` transform
+  the gradient without affecting the shape it fills, which is how SVG tools
+  express skewed or unevenly scaled gradients.
+- Fixed the WGPU backend painting a nonzero fill's whole bounding box after an
+  even-odd fill, because the even-odd fill left winding counts in the stencil
+  buffer. Showed as a block above the bow tie of the DuckDuckGo logo.
+
+## [0.27.0] - 2026-08-31
+
+- Added text decoration for `fill_text()` and `stroke_text()`: underline,
+  strikethrough and overline. New `TextDecoration` type, set through
+  `Paint::set_text_decoration()` and `with_text_decoration()`. Line position and
+  thickness come from the font's own metrics.
+- Added `Path::svg_arc_to()`, the SVG path data `A` command: an elliptical arc
+  to an endpoint, with per-axis radii, an x-axis rotation, and the large-arc and
+  sweep flags.
+- Added `ImageFilter::ColorMatrix` (SVG `feColorMatrix`) with constructors for
+  the CSS filter functions: `grayscale()`, `sepia()`, `saturate()`,
+  `hue_rotate()`, `brightness()`, `contrast()`, `invert()` and `opacity()`.
+- Added elliptical radial gradients, matching CSS `radial-gradient(ellipse ...)`.
+  New `Paint` constructors `elliptical_gradient()` and
+  `elliptical_gradient_stops()` take separate radii per axis.
+  `radial_gradient()` and `radial_gradient_stops()` are unchanged.
+- **Breaking:** `PaintFlavor::RadialGradient`'s `in_radius` and `out_radius`
+  changed from `f32` to `(f32, f32)` to hold the per-axis radii. Paints
+  serialized by earlier versions no longer deserialize.
+- Added typesetting metrics to `FontMetrics`: `subscript_size()`,
+  `subscript_offset()`, `superscript_size()`, `superscript_offset()`,
+  `x_height()`, `cap_height()`, `line_gap()`, `underline_position()`,
+  `underline_thickness()`, `strikeout_position()` and `strikeout_thickness()`.
+  Missing or zeroed font tables fall back to conventional em fractions.
+- Added `TextMetrics::baseline()`, the run's baseline in the same space as the
+  glyph positions.
+- Fixed the paragraph base direction of shaped text: it now follows the first
+  strong character (UAX #9 P2/P3) instead of always being left to right, so an
+  Arabic or Hebrew sentence orders its punctuation and embedded words
+  correctly. The shaped word cache now also keys on the run direction, so a word
+  shaped in one direction is no longer reused in the other.
 - Fixed `stroke_text()` line widths under a scaled canvas transform. The width
-  crossed into the rasterizer's space inconsistently per regime: baked-atlas
-  glyphs never scaled it, while path-fallback glyphs scaled it twice, so the
-  drawn width changed law with the zoom, the font size, and even the paint
-  flavor. All user-space text quantities now cross through the baked scale at
-  one place, and a zoom-invariance test suite holds the regime seams.
-- Added elliptical radial gradients, matching CSS's `radial-gradient(ellipse ...)`.
-  New `Paint` constructors `elliptical_gradient()` and `elliptical_gradient_stops()`
-  take separate inner/outer radii per axis. `PaintFlavor::RadialGradient`'s
-  `in_radius` and `out_radius` fields changed from `f32` to `(f32, f32)` to hold the
-  per-axis radii; `Paint::radial_gradient()` and `radial_gradient_stops()` keep their
-  existing scalar-radius signatures unchanged.
-- Fixed `Canvas::measure_font()` scaling its result by the canvas transform's
-  internal glyph-rasterization scale and the DPI factor. It now reports
-  user-space metrics that depend only on the paint's font size, matching
-  `measure_text()`, `TextContext::measure_font()` and the coordinate space
-  `fill_text()` consumes. Previously, metrics read from a zoomed canvas came
-  back inflated - for example sub/superscript runs sized via
-  `subscript_size()` grew with the zoom level instead of staying proportional
-  to the run's font size.
-- Fixed `Path::rounded_rect()` and `rounded_rect_varying()` flattening corners
-  into ellipses when a radius did not fit. Radii that overlap along a side are
-  now reduced by one common factor, as CSS Backgrounds and Borders Level 3 and
-  the Canvas `roundRect()` algorithm both specify, so corners keep their shape:
-  a radius larger than half the height now gives a fully rounded end rather than
-  a squashed one. A corner may also use a whole side when the corner next to it
-  is square, which the previous clamp cut in half. Negative and NaN radii leave
-  the corner square instead of bulging it outwards or emitting NaN coordinates,
-  and an infinite radius rounds as far as the box allows. This changes rendering
-  for shapes whose radii did not fit.
-- Fixed the WGPU renderer aborting instead of reporting an error when
+  was left unscaled for atlas glyphs and scaled twice for path fallback glyphs,
+  so it changed with the zoom, the font size and the paint.
+- Fixed `Canvas::measure_font()` scaling its result by the internal glyph
+  rasterization scale and the DPI factor. It now reports user space metrics,
+  like `measure_text()` and `TextContext::measure_font()` do.
+- Fixed `measure_text()` returning a run box shifted down by the glyph bearing
+  (about 4.5px at font size 12). `TextMetrics::y` and `height()` are measured
+  from the glyph ink again, not from the baseline.
+- Fixed `Path::rounded_rect()` and `rounded_rect_varying()` squashing corners
+  into ellipses when a radius did not fit. Radii that overlap are now reduced by
+  one common factor, as CSS and the Canvas `roundRect()` algorithm specify, and
+  negative or NaN radii leave the corner square. This changes rendering for
+  shapes whose radii did not fit.
+- Fixed `Path::arc_to()` drawing a thin seam across the fill when the corner
+  could not be rounded, and `Path::arc()` producing NaN control points for a
+  zero sweep (#309).
+- Fixed the WGPU renderer aborting instead of returning an error when
   `update_image()` is given a copy that reaches past the destination image, or a
-  source in a different pixel format. Both now return
-  `ErrorKind::ImageUpdateOutOfBounds` and
-  `ErrorKind::ImageUpdateWithDifferentFormat`, as the OpenGL and `Void`
-  renderers already did. The shared check is exposed as
-  `ImageSource::check_update()` for out-of-tree renderers, and reports rather
-  than overflows for an origin close to `usize::MAX`.
+  source in a different pixel format, as the other renderers already did. The
+  shared check is exposed as `ImageSource::check_update()` for out-of-tree
+  renderers.
+- Fixed Gray texture updates being dropped by strict OpenGL drivers: the
+  external format passed to `glTexSubImage2D` is now `RED`, not the sized `R8`,
+  which is invalid there.
+- Fixed OpenGL textures being created with undefined contents, which could show
+  up as specks at glyph edges on embedded drivers (#310). They are now zeroed at
+  creation, as the WGPU backend already guaranteed.
+- Sped up the WGPU backend, most of all on WebAssembly. The frame's uniforms go
+  into one buffer, uploaded in a single call and bound with dynamic offsets; the
+  vertex buffer stays resident across frames; and samplers, texture views,
+  pipeline and bind group state are no longer rebuilt for every draw.
 
 ## [0.26.0] - 2026-07-20
 
@@ -471,3 +596,5 @@ All notable changes to this project will be documented in this file.
 [0.24.0]: https://github.com/femtovg/femtovg/releases/tag/v0.24.0
 [0.25.0]: https://github.com/femtovg/femtovg/releases/tag/v0.25.0
 [0.25.1]: https://github.com/femtovg/femtovg/releases/tag/v0.25.1
+[0.26.0]: https://github.com/femtovg/femtovg/releases/tag/v0.26.0
+[0.27.0]: https://github.com/femtovg/femtovg/releases/tag/v0.27.0

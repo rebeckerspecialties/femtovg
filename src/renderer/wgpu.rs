@@ -847,6 +847,10 @@ impl Renderer for WGPURenderer {
         drop(image);
     }
 
+    fn max_texture_size(&self) -> usize {
+        self.device.limits().max_texture_dimension_2d as usize
+    }
+
     fn screenshot(&mut self) -> Result<imgref::ImgVec<rgb::RGBA8>, crate::ErrorKind> {
         return Err(crate::ErrorKind::UnsupportedOperation);
     }
@@ -890,18 +894,10 @@ fn gaussian_blur_filter(
     );
     blur_params.shader_type = ShaderType::FilterImage;
 
-    let gauss_coeff_x = 1. / ((2. * std::f32::consts::PI).sqrt() * sigma);
-    let gauss_coeff_y = f32::exp(-0.5 / (sigma * sigma));
-    let gauss_coeff_z = gauss_coeff_y * gauss_coeff_y;
-
-    blur_params.image_blur_filter_coeff[0] = gauss_coeff_x;
-    blur_params.image_blur_filter_coeff[1] = gauss_coeff_y;
-    blur_params.image_blur_filter_coeff[2] = gauss_coeff_z;
-
+    let (coeff, sigma) = crate::renderer::gaussian_blur_coefficients(sigma);
+    blur_params.image_blur_filter_coeff[..3].copy_from_slice(&coeff);
     blur_params.image_blur_filter_direction = [1.0, 0.0];
-    // GLES 2.0 does not allow non-constant loop indices, so limit the standard devitation to allow for a upper fixed limit
-    // on the number of iterations in the fragment shader.
-    blur_params.image_blur_filter_sigma = sigma.min(8.);
+    blur_params.image_blur_filter_sigma = sigma;
 
     let horizontal_blur_buffer = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("blur horizontal"),
@@ -1341,10 +1337,13 @@ fn concave_fill(
                         FillRule::NonZero => 0xff,
                         FillRule::EvenOdd => 0x1,
                     },
-                    write_mask: match command.fill_rule {
-                        FillRule::NonZero => 0xff,
-                        FillRule::EvenOdd => 0x1,
-                    },
+                    // Even-odd reads only the parity bit, but the winding pass
+                    // wrote the full count (2 in overlaps, 0xff for a wrapped
+                    // -1). Clearing only bit 0 left those high bits behind,
+                    // and the next nonzero fill's NotEqual-0 test painted its
+                    // whole bounding quad over them. Clear every bit, as the
+                    // OpenGL backend's 0xff stencil mask already does.
+                    write_mask: 0xff,
                 },
                 stencil_reference: 0,
             },

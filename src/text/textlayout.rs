@@ -28,6 +28,7 @@ pub struct ShapedGlyph {
     pub advance_y: f32,
     pub offset_x: f32,
     pub offset_y: f32,
+    pub bearing_y: f32,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -42,6 +43,15 @@ pub(super) struct ShapingId {
     word_hash: u64,
     font_ids: [Option<FontId>; 8],
     variation_hash: u64,
+    // The same word shapes differently right-to-left than left-to-right
+    // (mirrored brackets, reversed cluster order), so the cached shaping is
+    // only valid for the direction it was produced under. Direction-neutral
+    // words (digits, punctuation) genuinely occur in both. `None` marks a
+    // whole-run key, where the direction is derived from the text itself.
+    rtl: Option<bool>,
+    // Letter spacing is baked into the cached advances by `shape_word`, so
+    // shapings at different spacings must not share an entry.
+    letter_spacing_key: u32,
 }
 
 impl ShapingId {
@@ -51,6 +61,8 @@ impl ShapingId {
         word: &str,
         max_width: Option<f32>,
         variations: &FontVariations,
+        letter_spacing: f32,
+        rtl: Option<bool>,
     ) -> Self {
         let mut hasher = FnvHasher::default();
         word.hash(&mut hasher);
@@ -63,6 +75,8 @@ impl ShapingId {
             word_hash: hasher.finish(),
             font_ids,
             variation_hash: variations.hash(),
+            rtl,
+            letter_spacing_key: (letter_spacing * 10.0).trunc() as u32,
         }
     }
 }
@@ -200,6 +214,7 @@ impl TextMetrics {
             glyph.y *= scale;
             glyph.width *= scale;
             glyph.height *= scale;
+            glyph.bearing_y *= scale;
         }
     }
 
@@ -239,6 +254,10 @@ pub fn shape(
         text,
         max_width,
         variations,
+        text_settings.letter_spacing,
+        // The run cache keys the whole string; per-run direction is derived
+        // from the text itself below.
+        None,
     );
 
     if !context.shaping_run_cache.contains(&id) {
@@ -282,7 +301,11 @@ fn shape_run(
         final_byte_index: 0,
     };
 
-    let bidi_info = BidiInfo::new(text, Some(unicode_bidi::Level::ltr()));
+    // The paragraph base direction follows the first strong character
+    // (UAX #9 rules P2/P3) rather than being pinned left-to-right: an Arabic
+    // or Hebrew sentence is an RTL paragraph, so its neutral punctuation
+    // sits at its visual left end and embedded LTR words order correctly.
+    let bidi_info = BidiInfo::new(text, None);
 
     // this controls whether we should break within words
     let mut first_word_in_paragraph = true;
@@ -312,8 +335,18 @@ fn shape_run(
         let mut word_break_reached = false;
         let mut byte_index = run.start;
 
+        let is_rtl_run = hb_direction == rustybuzz::Direction::RightToLeft;
+
         for mut word_txt in sub_text.split_word_bounds() {
-            let id = ShapingId::new(font_size, font_ids, word_txt, max_width, variations);
+            let id = ShapingId::new(
+                font_size,
+                font_ids,
+                word_txt,
+                max_width,
+                variations,
+                letter_spacing,
+                Some(is_rtl_run),
+            );
 
             if !context.shaped_words_cache.contains(&id) {
                 let word = shape_word(
@@ -359,7 +392,15 @@ fn shape_run(
                             }
 
                             let subword_txt = &word_txt[..bytes_included];
-                            let id = ShapingId::new(font_size, font_ids, subword_txt, Some(max_width), variations);
+                            let id = ShapingId::new(
+                                font_size,
+                                font_ids,
+                                subword_txt,
+                                Some(max_width),
+                                variations,
+                                letter_spacing,
+                                Some(is_rtl_run),
+                            );
                             if !context.shaped_words_cache.contains(&id) {
                                 let subword = shape_word(
                                     subword_txt,
@@ -485,11 +526,13 @@ fn shape_word(
                 advance_y: position.y_advance as f32 * scale,
                 offset_x: position.x_offset as f32 * scale,
                 offset_y: position.y_offset as f32 * scale,
+                bearing_y: 0.0,
             };
 
             if let Some(glyph) = font.glyph(&font_face, g.glyph_id, &normalized_coords) {
                 g.width = glyph.metrics.width * scale;
                 g.height = glyph.metrics.height * scale;
+                g.bearing_y = glyph.metrics.bearing_y * scale;
             }
 
             shaped_word.width += g.advance_x + letter_spacing;
@@ -560,8 +603,10 @@ fn layout(
         glyph.x = cursor_x + glyph.offset_x;
         glyph.y = cursor_y + alignment_offset_y + glyph.offset_y;
 
-        min_y = min_y.min(glyph.y);
-        max_y = max_y.max(glyph.y + glyph.height);
+        // `glyph.y` is the baseline, so the ink box starts `bearing_y` above it.
+        let ink_top = glyph.y - glyph.bearing_y;
+        min_y = min_y.min(ink_top);
+        max_y = max_y.max(ink_top + glyph.height);
 
         cursor_x += glyph.advance_x + text_settings.letter_spacing;
         cursor_y += glyph.advance_y;

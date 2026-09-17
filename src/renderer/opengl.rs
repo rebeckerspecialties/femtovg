@@ -42,9 +42,9 @@ pub struct OpenGl {
     view: [f32; 2],
     screen_view: [f32; 2],
     // All types of the vertex/fragment shader, indexed by shader_type when has_glyph_texture is true
-    main_programs_with_glyph_texture: [Option<MainProgram>; 11],
+    main_programs_with_glyph_texture: [Option<MainProgram>; 13],
     // Same shader programs but with has_glyph_texture being false
-    main_programs_without_glyph_texture: [Option<MainProgram>; 11],
+    main_programs_without_glyph_texture: [Option<MainProgram>; 13],
     current_program: u8,
     current_program_needs_glyph_texture: bool,
     vert_arr: Option<<glow::Context as glow::HasContext>::VertexArray>,
@@ -53,6 +53,7 @@ pub struct OpenGl {
     context: Rc<glow::Context>,
     screen_target: Option<Framebuffer>,
     current_render_target: RenderTarget,
+    max_texture_size: usize,
 }
 
 impl OpenGl {
@@ -120,6 +121,11 @@ impl OpenGl {
         let antialias = true;
 
         let context = Rc::new(context);
+        // What the driver can allocate; a VideoCore IV reports 2048.
+        let max_texture_size = match unsafe { context.get_parameter_i32(glow::MAX_TEXTURE_SIZE) } {
+            size if size > 0 => size as usize,
+            _ => 2048,
+        };
 
         let generate_shader_program_variants = |with_glyph_texture| -> Result<_, ErrorKind> {
             Ok([
@@ -194,6 +200,18 @@ impl OpenGl {
                         false,
                     )?)
                 },
+                Some(MainProgram::new(
+                    &context,
+                    antialias,
+                    ShaderType::FillGradientTwoPointRadial,
+                    with_glyph_texture,
+                )?),
+                Some(MainProgram::new(
+                    &context,
+                    antialias,
+                    ShaderType::FillImageGradientTwoPointRadial,
+                    with_glyph_texture,
+                )?),
             ])
         };
 
@@ -216,6 +234,7 @@ impl OpenGl {
             context,
             screen_target: None,
             current_render_target: RenderTarget::Screen,
+            max_texture_size,
         };
 
         unsafe {
@@ -684,19 +703,10 @@ impl OpenGl {
         );
         blur_params.shader_type = ShaderType::FilterImage;
 
-        let gauss_coeff_x = 1. / ((2. * std::f32::consts::PI).sqrt() * sigma);
-        let gauss_coeff_y = f32::exp(-0.5 / (sigma * sigma));
-        let gauss_coeff_z = gauss_coeff_y * gauss_coeff_y;
-
-        blur_params.image_blur_filter_coeff[0] = gauss_coeff_x;
-        blur_params.image_blur_filter_coeff[1] = gauss_coeff_y;
-        blur_params.image_blur_filter_coeff[2] = gauss_coeff_z;
-
+        let (coeff, sigma) = crate::renderer::gaussian_blur_coefficients(sigma);
+        blur_params.image_blur_filter_coeff[..3].copy_from_slice(&coeff);
         blur_params.image_blur_filter_direction = [1.0, 0.0];
-
-        // GLES 2.0 does not allow non-constant loop indices, so limit the standard devitation to allow for a upper fixed limit
-        // on the number of iterations in the fragment shader.
-        blur_params.image_blur_filter_sigma = sigma.min(8.);
+        blur_params.image_blur_filter_sigma = sigma;
 
         let horizontal_blur_buffer = images.alloc(self, source_image_info).unwrap();
         self.set_target(images, RenderTarget::Image(horizontal_blur_buffer));
@@ -929,6 +939,10 @@ impl Renderer for OpenGl {
     fn delete_image(&mut self, image: Self::Image, image_id: ImageId) {
         self.framebuffers.remove(&image_id);
         image.delete(&self.context);
+    }
+
+    fn max_texture_size(&self) -> usize {
+        self.max_texture_size
     }
 
     fn screenshot(&mut self) -> Result<ImgVec<RGBA8>, ErrorKind> {

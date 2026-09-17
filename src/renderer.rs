@@ -179,6 +179,14 @@ pub trait Renderer {
 
     /// Take a screenshot of the current render target.
     fn screenshot(&mut self) -> Result<ImgVec<RGBA8>, ErrorKind>;
+
+    /// The largest width or height this backend can allocate for an image, in
+    /// pixels. Layers and shadows whose stores would exceed it degrade rather
+    /// than fail. The default matches current desktop GPUs; a VideoCore IV
+    /// (Raspberry Pi Zero through 3) reports 2048.
+    fn max_texture_size(&self) -> usize {
+        8192
+    }
 }
 
 /// Marker trait for renderers that don't have a surface.
@@ -248,6 +256,15 @@ pub enum ShaderType {
     FillImageGradientConic,
     /// Color-matrix image filter shader (`feColorMatrix` / CSS color functions).
     FilterImageColorMatrix,
+    /// Fill two-point (independently centered) radial gradient shader.
+    ///
+    /// This is the general Canvas `createRadialGradient(x0, y0, r0, x1, y1, r1)`
+    /// form, where the start and end circles may have different centers. Ordinary
+    /// concentric radial gradients keep using the cheaper box-gradient
+    /// [`FillGradient`](Self::FillGradient) path.
+    FillGradientTwoPointRadial,
+    /// Fill image two-point radial gradient shader (multi-stop LUT variant).
+    FillImageGradientTwoPointRadial,
 }
 
 impl ShaderType {
@@ -265,6 +282,8 @@ impl ShaderType {
             Self::FillGradientConic => 8,
             Self::FillImageGradientConic => 9,
             Self::FilterImageColorMatrix => 10,
+            Self::FillGradientTwoPointRadial => 11,
+            Self::FillImageGradientTwoPointRadial => 12,
         }
     }
 
@@ -272,4 +291,18 @@ impl ShaderType {
     pub fn to_f32(self) -> f32 {
         self.to_u8() as f32
     }
+}
+
+/// Gaussian blur coefficients for `sigma`, sanitized the same way for every
+/// backend. Sigma 0 (or negative / NaN) would divide the coefficient by zero
+/// and blank the output instead of passing the image through, and a huge sigma
+/// must clamp to the bound the fragment shader's loop uses (GLES 2.0 needs a
+/// constant loop bound) so the coefficients and the iteration count agree.
+/// Near-zero renders as a visually exact copy. Returns the three coefficients
+/// and the sanitized sigma the shader must be given.
+pub(crate) fn gaussian_blur_coefficients(sigma: f32) -> ([f32; 3], f32) {
+    let sigma = if sigma > 0.0 { sigma.min(8.0) } else { 1e-3 };
+    let x = 1. / ((2. * std::f32::consts::PI).sqrt() * sigma);
+    let y = f32::exp(-0.5 / (sigma * sigma));
+    ([x, y, y * y], sigma)
 }
