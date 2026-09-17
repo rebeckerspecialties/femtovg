@@ -1,0 +1,18 @@
+<!doctype html><body style="margin:0;background:#fff">
+<canvas id="c" width="256" height="256"></canvas>
+<script>
+// the _chainmx.rs source, straight alpha, via putImageData on an offscreen canvas; then ctx.filter = blur(3px) + drawImage over white
+const off = document.createElement('canvas'); off.width = 256; off.height = 256;
+const o = off.getContext('2d'); const id = o.createImageData(256, 256); const d = id.data;
+for (let y = 0; y < 256; y++) for (let x = 0; x < 256; x++) {
+  const i = 4 * (y * 256 + x); const on = ((x >> 4) + (y >> 4)) % 2 == 0;
+  let p = on ? [60, 120, 220, 255] : [240, 200, 60, 255];
+  const dx = x - 96, dy = y - 72; if (dx * dx + dy * dy <= 1600) p = [200, 30, 30, 255];
+  if (y >= 160 && y < 200) p = [40, 180, 40, 128];
+  d[i] = p[0]; d[i + 1] = p[1]; d[i + 2] = p[2]; d[i + 3] = p[3];
+}
+o.putImageData(id, 0, 0);
+const c = document.getElementById('c').getContext('2d');
+c.fillStyle = '#fff'; c.fillRect(0, 0, 256, 256);
+c.filter = 'blur(3px)'; c.drawImage(off, 0, 0);
+</script></body>
