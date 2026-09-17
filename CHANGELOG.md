@@ -3,6 +3,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- Fixed strokes thinner than a pixel drawing too faint: their alpha was scaled
+  by the square of the device width (a nanovg heuristic), so a 0.2 px line
+  carried 4% of its coverage and a 0.5 px line 25%. The scale is now linear -
+  a 0.5 px line is 50% - which is the coverage Skia's hairline path puts down
+  and what both browsers render. Fine detail drawn with sub-pixel strokes
+  (hatching, iris lines, thin outlines at small zoom) was visibly lighter than
+  in a browser before.
+- Fixed filled paths landing a pixel too wide when the contour runs clockwise.
+  The antialiasing fringe is extruded along each point's miter vector, whose
+  direction follows the order the points are in, so a clockwise contour pushed
+  it outward instead of inward - `Path::rect()` and `Path::circle()` emit
+  counter-clockwise and were exact, while an SVG arc with `sweep = 1`, or any
+  imported path wound the other way, was a pixel fat all round. Fills now cover
+  the same pixels either way, and the authored winding still selects holes for
+  `FillRule::NonZero`. This also takes most of the over-inking out of thin
+  filled shapes, which were paying the same pixel on both edges.
 - Added `Canvas::filter_image_chain()`, which applies a list of image filters in
   one call the way a Canvas `ctx.filter` list (`"blur(5px) brightness(1.2)"`) or
   an SVG filter chain does. Consecutive color-matrix filters fold into a single
@@ -26,8 +42,10 @@ All notable changes to this project will be documented in this file.
   the stencil buffer both backends already have, so they add no textures or
   render passes; a clip taken while drawing into a layer lives on the layer's
   store and gates its content, while the clips underneath gate the composite.
-  `clear_rect()` stays a raw clear the clip does not affect. Clip edges are not
-  antialiased yet.
+  `clear_rect()` stays a raw clear the clip does not affect; it clears the
+  stencil with the color so a winding count a cover pass missed cannot reach
+  the next frame - the whole stencil, or only the winding bits while a clip is
+  armed on the target. Clip edges are not antialiased yet.
 - Added layer masks: `LayerEffects::with_mask()` multiplies a layer's alpha by
   a mask image placed in device space, using either its luminance times alpha
   (SVG `mask`'s default `mask-type`, via the new
@@ -42,7 +60,12 @@ All notable changes to this project will be documented in this file.
   chain. The offscreen image is sized to the current scissor rect (under any
   axis-aligned scale, so a device-pixel-ratio scale still bounds it) plus the
   blur reach of the whole chain (successive blurs compound in quadrature),
-  not the whole canvas or render target. `begin_layer()` returns whether the
+  not the whole canvas or render target. A rounded or rotated scissor clips
+  the layer's composite once, after its filters, where it was set - a blur
+  samples content past the clip edge, as SVG's `clip-path` over a filtered
+  group does - instead of also clipping the draws inside the layer (which
+  squared the edge coverage and, in a blur-padded store, landed in the wrong
+  place). `begin_layer()` returns whether the
   layer captured: `false` means it passed through with its effects dropped -
   over the transient budget, past the backend's texture limit
   (`Renderer::max_texture_size()`, 2048 on a VideoCore IV), or degenerate
@@ -50,8 +73,11 @@ All notable changes to this project will be documented in this file.
   that changes the size, and `reset()`, discard open layers as a Canvas 2D
   reset does. A layer opened under a non-invertible transform draws nothing,
   as in Canvas 2D. The web-platform-tests layer suite is ported where the API
-  can express it (`tests/wpt_layers_wgpu.rs`). The shadow state in effect at `begin_layer()` is cast once by the layer's result (the Canvas 2D `beginLayer()` rule, and what SVG `feDropShadow` on a group means) and resets inside the layer, so children are not each shadowed on their own.
-  A layer's backing images return to a pool at `end_layer()` and the next
+  can express it (`tests/wpt_layers_wgpu.rs`). The shadow state in effect at 
+  `begin_layer()` is cast once by the layer's result (the Canvas 2D `beginLayer()` 
+  rule, and what SVG `feDropShadow` on a group means) and resets inside the layer,
+  so children are not each shadowed on their own.
+- A layer's backing images return to a pool at `end_layer()` and the next
   layer of the same size takes them (commands run in order, so this needs no
   synchronization; store sizes round up to 64 px so siblings with different
   blur reaches share one), as do filter-chain scratches and shadow coverage; a
@@ -60,11 +86,14 @@ All notable changes to this project will be documented in this file.
   would fill 256 MiB, while real artwork opens hundreds per frame.
   `Canvas::set_transient_image_budget()` caps what is held at once (default
   256 MiB) and `transient_image_bytes()` reports it; past the cap, layers pass
-  through (`begin_layer()` returns `false`), `filter_image_chain()` returns
-  `ErrorKind::TransientImageBudgetExceeded` and a layer whose chain cannot run
-  composites its unfiltered capture, and shadows are skipped rather than
-  allocate. Shadow coverage rounds to 8 px, not the layers' 64, since shadows
-  are many and small.
+  through (`begin_layer()` returns `false` - a layer reserves every image its
+  effects draw through, a filter chain's result and scratches included, with
+  its store, so it is admitted whole or not at all; each open filtered level
+  holds its result and scratches for its whole life, so nesting filtered
+  layers costs their sum), `filter_image_chain()`
+  returns `ErrorKind::TransientImageBudgetExceeded`, and shadows are skipped
+  rather than allocate. Shadow coverage rounds to 8 px, not the layers' 64,
+  since shadows are many and small.
 - Fixed two-stop gradients fading a transparent stop through the wrong colors:
   the stop's own color was discarded, so `transparent` to blue turned a plain
   light blue instead of darkening, and transparent red to blue lost its red.
