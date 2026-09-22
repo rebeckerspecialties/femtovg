@@ -1,0 +1,188 @@
+{
+  "captured_utc": "2026-09-22T19:56:57.243302+00:00",
+  "base_commit": "9fb5dba17989637281372abc8c30eb4d6d521afb",
+  "pr_commit": "ad6e0d74a8a73e767adc46eaf84bfb6deecabd2d",
+  "fixture_asset_commit": "5bd6adcf99a9780edcf16851b1866b763a5d2c02",
+  "chromium": "Google Chrome 156.0.8068.0 canary",
+  "firefox": "Mozilla Firefox 157.0b4",
+  "host": "Apple M4 Max",
+  "rustc": "rustc 1.94.1 (e408947bf 2026-03-25)",
+  "platform": "macOS WGPU/Metal, 460x260 Rgba8Unorm, white background",
+  "build_cfg": {
+    "base": [
+      "harness_turbulence"
+    ],
+    "pr": [
+      "harness_clip",
+      "harness_turbulence"
+    ]
+  },
+  "render_env": {
+    "SKIP_UNSUPPORTED_FILTERS": "1",
+    "VIEWPORT_CLIP": "1"
+  },
+  "framing": "200x200 SVG box at (130,30), pivot zoom about (230,130)",
+  "comparison": "max RGB channel delta >20/255; structural is two-pixel binary erosion",
+  "harness_sha256": "17a60026badf3239b7215dec6de3b425adfa86c402fad549eb46095f5a3ca039",
+  "make_ref_sha256": "7ad69b6704fcce661a8be7ff4218cfb9bfe484af1ff80f1afb6172d98a000699",
+  "inputs": {
+    "clipdemo.svg": "6e75d4a6201b2518c9c51dd1a07c232bb3dc7740ba635345e0da09349d681174",
+    "corpus/buseybench/gpt-6-astra.svg": "f5af6f2a4e9ce2a101846d96c95774fb0d9ff7bdca8adc93e291db68202dc47c"
+  },
+  "scenes": {
+    "clipdemo": {
+      "zoom": 1.5,
+      "base_vs_chromium": {
+        "raw_percent": 24.675,
+        "structural_percent": 21.671
+      },
+      "pr_vs_chromium": {
+        "raw_percent": 0.769,
+        "structural_percent": 0.0
+      },
+      "pr_vs_firefox": {
+        "raw_percent": 0.75,
+        "structural_percent": 0.0
+      },
+      "chromium_vs_firefox": {
+        "raw_percent": 0.203,
+        "structural_percent": 0.0
+      }
+    },
+    "gpt-6-astra": {
+      "zoom": 1.0,
+      "base_vs_chromium": {
+        "raw_percent": 0.728,
+        "structural_percent": 0.05
+      },
+      "pr_vs_chromium": {
+        "raw_percent": 0.149,
+        "structural_percent": 0.0
+      },
+      "pr_vs_firefox": {
+        "raw_percent": 0.15,
+        "structural_percent": 0.0
+      },
+      "chromium_vs_firefox": {
+        "raw_percent": 0.027,
+        "structural_percent": 0.0
+      }
+    }
+  },
+  "zoom_ladder": {
+    "0.5": {
+      "base_vs_chromium": {
+        "raw_percent": 3.39,
+        "structural_percent": 2.322
+      },
+      "pr_vs_chromium": {
+        "raw_percent": 0.262,
+        "structural_percent": 0.0
+      }
+    },
+    "0.6": {
+      "base_vs_chromium": {
+        "raw_percent": 4.789,
+        "structural_percent": 3.492
+      },
+      "pr_vs_chromium": {
+        "raw_percent": 0.285,
+        "structural_percent": 0.0
+      }
+    },
+    "0.75": {
+      "base_vs_chromium": {
+        "raw_percent": 7.478,
+        "structural_percent": 5.828
+      },
+      "pr_vs_chromium": {
+        "raw_percent": 0.398,
+        "structural_percent": 0.0
+      }
+    },
+    "0.9": {
+      "base_vs_chromium": {
+        "raw_percent": 10.673,
+        "structural_percent": 8.697
+      },
+      "pr_vs_chromium": {
+        "raw_percent": 0.463,
+        "structural_percent": 0.0
+      }
+    },
+    "1": {
+      "base_vs_chromium": {
+        "raw_percent": 13.153,
+        "structural_percent": 10.936
+      },
+      "pr_vs_chromium": {
+        "raw_percent": 0.547,
+        "structural_percent": 0.0
+      }
+    },
+    "1.1": {
+      "base_vs_chromium": {
+        "raw_percent": 16.008,
+        "structural_percent": 13.586
+      },
+      "pr_vs_chromium": {
+        "raw_percent": 0.577,
+        "structural_percent": 0.0
+      }
+    },
+    "1.3": {
+      "base_vs_chromium": {
+        "raw_percent": 22.14,
+        "structural_percent": 19.253
+      },
+      "pr_vs_chromium": {
+        "raw_percent": 0.707,
+        "structural_percent": 0.0
+      }
+    },
+    "1.5": {
+      "base_vs_chromium": {
+        "raw_percent": 24.675,
+        "structural_percent": 21.671
+      },
+      "pr_vs_chromium": {
+        "raw_percent": 0.769,
+        "structural_percent": 0.0
+      }
+    },
+    "1.7": {
+      "base_vs_chromium": {
+        "raw_percent": 28.349,
+        "structural_percent": 25.233
+      },
+      "pr_vs_chromium": {
+        "raw_percent": 0.699,
+        "structural_percent": 0.0
+      }
+    },
+    "2.1": {
+      "base_vs_chromium": {
+        "raw_percent": 37.003,
+        "structural_percent": 33.994
+      },
+      "pr_vs_chromium": {
+        "raw_percent": 0.681,
+        "structural_percent": 0.0
+      }
+    },
+    "2.5": {
+      "base_vs_chromium": {
+        "raw_percent": 42.594,
+        "structural_percent": 39.889
+      },
+      "pr_vs_chromium": {
+        "raw_percent": 0.657,
+        "structural_percent": 0.0
+      }
+    }
+  },
+  "output_sha256": {
+    "clip-and-corpus-static.png": "7871693cab4c4df416bbebd3bef0d6c81de8cd4a70184f62746367d11210ef2d",
+    "clip-zoom-11.gif": "656c993261f5abb8bd21e7421b0a3e0d533b9396b12a9f8b81879668c5209c42"
+  }
+}
