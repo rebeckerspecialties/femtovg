@@ -32,6 +32,20 @@ retraced tail keeps its area (tests/zero_area_fill_wgpu.rs, six zooms from
     kimi-k3 4 | 4.90% 0.158% | 4.87% 0.158% 
     kimi-k3 1840x1040 | 0.60% 0.046% | 0.60% 0.046% 
 
+## 920x520 (twice the default framing, the tooth strokes at their thinnest visible width), zoom 1
+
+    file | master px>8/struct | #341 px>8/struct
+    zero-area-fill 920x520 | 0.27% 0.000% | 0.00% 0.000% 
+    qwen3-8-max 920x520 | 0.52% 0.000% | 0.49% 0.000% 
+    kimi-k3 920x520 | 1.39% 0.023% | 1.29% 0.022% 
+    gemini-3-1-pro-preview 920x520 | 2.60% 0.136% | 2.46% 0.136%
+
+Darkness (sum of 255 - min channel, /255) over the 240x135 window where the
+PR fixes most pixels, master / #341 / Chromium: qwen3-8-max 23877 / 23830 /
+23816, kimi-k3 18675 / 18589 / 18486, gemini-3-1-pro-preview 16676 / 16500 /
+16453 - the fill under the tooth strokes is what the PR removes, and it is
+most of the way to Chromium. Sheet: `zero-area-evidence-2x.png` (1:1 crops).
+
 The reduction (a bare path and a bare line under the default black fill)
 goes to exact. The three BuseyBench portraits draw their teeth as open
 paths with strokes on top; the black band under a stroke narrower than
