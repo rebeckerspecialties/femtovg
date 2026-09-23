@@ -223,12 +223,10 @@ fn group_effects(
             .and_then(|m| m.get(&(group as *const usvg::Group as usize)).copied());
         if let Some(backdrop) = source {
             if blend_linear != linear {
-                blurs.push(if blend_linear {
-                    ImageFilter::SrgbToLinearRgb
-                } else {
-                    ImageFilter::LinearRgbToSrgb
-                });
-                linear = blend_linear;
+                if let Some(transfer) = color_space_pass(blend_linear) {
+                    blurs.push(transfer);
+                    linear = blend_linear;
+                }
             }
             blurs.push(ImageFilter::Blend {
                 mode: blend_mode(mode),
@@ -241,7 +239,7 @@ fn group_effects(
         }
     }
     if linear {
-        blurs.push(ImageFilter::LinearRgbToSrgb);
+        blurs.extend(color_space_pass(false));
     }
     let mask = masks.get(&(group as *const usvg::Group as usize)).copied();
     // `mix-blend-mode` composites the group's layer with its backdrop. A
@@ -429,17 +427,41 @@ fn layer_chain(group: &usvg::Group, scale: f32) -> LayerChain {
         };
         let linear = prim.color_interpolation() == ColorInterpolation::LinearRGB;
         if linear != chain.linear {
-            chain.passes.push(if linear {
-                ImageFilter::SrgbToLinearRgb
-            } else {
-                ImageFilter::LinearRgbToSrgb
-            });
-            chain.linear = linear;
+            if let Some(transfer) = color_space_pass(linear) {
+                chain.passes.push(transfer);
+                chain.linear = linear;
+            }
         }
         chain.passes.push(pass);
         previous = Some(prim.result());
     }
     chain
+}
+
+/// The pass into (`to_linear`) or out of linearRGB; none on a tree without
+/// #338's transfer curves, which keeps everything in sRGB.
+#[cfg(harness_turbulence)]
+fn color_space_pass(to_linear: bool) -> Option<ImageFilter> {
+    Some(if to_linear {
+        ImageFilter::SrgbToLinearRgb
+    } else {
+        ImageFilter::LinearRgbToSrgb
+    })
+}
+
+#[cfg(not(harness_turbulence))]
+fn color_space_pass(_to_linear: bool) -> Option<ImageFilter> {
+    None
+}
+
+#[cfg(not(harness_turbulence))]
+fn color_matrix(_kind: &usvg::filter::ColorMatrixKind) -> Option<ImageFilter> {
+    None
+}
+
+#[cfg(not(harness_turbulence))]
+fn alpha_transfer_matrix(_ct: &usvg::filter::ComponentTransfer) -> Option<ImageFilter> {
+    None
 }
 
 /// The group's `feGaussianBlur` primitives as layer filters, in device pixels.
