@@ -262,6 +262,11 @@ struct NoisePlan {
     #[cfg_attr(not(harness_blend), allow(dead_code))]
     stencil_transform: Transform2D,
     stencil: bool,
+    /// The chain starts with `feFlood` instead of `feTurbulence`: the image
+    /// is filled with this color (already in the blend's color space) over
+    /// the primitive's subregion, and `chain` is empty.
+    #[cfg_attr(not(harness_blend), allow(dead_code))]
+    flood: Option<Color>,
     /// The chain ends in `feBlend` between the noise and the source graphic:
     /// the mode, whether the blend runs in linearRGB, and the noise's rect in
     /// root device space for the layer's blend pass.
@@ -333,8 +338,10 @@ fn turbulence_plan(canvas: &Canvas<WGPURenderer>, group: &usvg::Group) -> Option
     }
     let [f] = group.filters() else { return None };
     let prims = f.primitives();
-    let Kind::Turbulence(t) = prims.first()?.kind() else {
-        return None;
+    let (turbulence, flood) = match prims.first()?.kind() {
+        Kind::Turbulence(t) => (Some(t), None),
+        Kind::Flood(fl) => (None, Some(fl)),
+        _ => return None,
     };
 
     // The filter region in device pixels, clamped to the canvas, and the
@@ -342,7 +349,9 @@ fn turbulence_plan(canvas: &Canvas<WGPURenderer>, group: &usvg::Group) -> Option
     // onto that image's pixels.
     let mut device = canvas.transform();
     device.premultiply(&ts_to_t2d(group.abs_transform()));
-    let r = f.rect();
+    // The filter region in device pixels for a noise chain; a flood fills
+    // its own primitive subregion.
+    let r = if flood.is_some() { prims[0].rect() } else { f.rect() };
     let corners = [
         (r.x(), r.y()),
         (r.right(), r.y()),
@@ -392,17 +401,20 @@ fn turbulence_plan(canvas: &Canvas<WGPURenderer>, group: &usvg::Group) -> Option
         (nx - (dx - x0)).abs() < 1e-3 && (ny - (dy - y0)).abs() < 1e-3
     });
 
-    let mut chain = vec![ImageFilter::Turbulence {
-        base_frequency: [t.base_frequency_x().get(), t.base_frequency_y().get()],
-        num_octaves: t.num_octaves(),
-        seed: t.seed(),
-        stitch_tiles: t.stitch_tiles(),
-        kind: match t.kind() {
-            usvg::filter::TurbulenceKind::FractalNoise => TurbulenceKind::FractalNoise,
-            usvg::filter::TurbulenceKind::Turbulence => TurbulenceKind::Turbulence,
-        },
-        transform: noise_transform,
-    }];
+    let mut chain = match turbulence {
+        Some(t) => vec![ImageFilter::Turbulence {
+            base_frequency: [t.base_frequency_x().get(), t.base_frequency_y().get()],
+            num_octaves: t.num_octaves(),
+            seed: t.seed(),
+            stitch_tiles: t.stitch_tiles(),
+            kind: match t.kind() {
+                usvg::filter::TurbulenceKind::FractalNoise => TurbulenceKind::FractalNoise,
+                usvg::filter::TurbulenceKind::Turbulence => TurbulenceKind::Turbulence,
+            },
+            transform: noise_transform,
+        }],
+        None => Vec::new(),
+    };
     let mut interpolation = prims[0].color_interpolation();
     let mut stencil = false;
     let mut blend: Option<BlendPlan> = None;
@@ -466,6 +478,30 @@ fn turbulence_plan(canvas: &Canvas<WGPURenderer>, group: &usvg::Group) -> Option
     if interpolation == ColorInterpolation::LinearRGB && !blend.is_some_and(|b| b.linear) {
         chain.push(ImageFilter::LinearRgbToSrgb);
     }
+    let flood = match flood {
+        Some(fl) => {
+            // A flood alone replaces the source; only its blend with the
+            // source graphic is mapped.
+            let blend = blend?;
+            let c = fl.color();
+            let to_channel = |v: u8| {
+                let x = f32::from(v) / 255.0;
+                if blend.linear {
+                    if x <= 0.04045 {
+                        x / 12.92
+                    } else {
+                        ((x + 0.055) / 1.055).powf(2.4)
+                    }
+                } else {
+                    x
+                }
+            };
+            let mut color = Color::rgbf(to_channel(c.red), to_channel(c.green), to_channel(c.blue));
+            color.set_alphaf(fl.opacity().get());
+            Some(color)
+        }
+        None => None,
+    };
     if std::env::var("PLAN_DUMP").is_ok() {
         eprintln!(
             "noise plan: rect=({x0},{y0} {}x{}) stencil={stencil} blend={} chain={chain:?}",
@@ -481,6 +517,7 @@ fn turbulence_plan(canvas: &Canvas<WGPURenderer>, group: &usvg::Group) -> Option
         abs_transform: ts_to_t2d(group.abs_transform()),
         stencil_transform,
         stencil,
+        flood,
         blend,
     })
 }
@@ -514,7 +551,7 @@ fn blend_commutes(mode: usvg::BlendMode) -> bool {
     use usvg::BlendMode as M;
     matches!(
         mode,
-        M::Normal | M::Multiply | M::Screen | M::Darken | M::Lighten | M::Difference | M::Exclusion
+        M::Multiply | M::Screen | M::Darken | M::Lighten | M::Difference | M::Exclusion
     )
 }
 
@@ -559,8 +596,19 @@ fn draw_filtered(
         return;
     };
     track_image(noise);
+    #[cfg(harness_blend)]
+    if let Some(color) = plan.flood {
+        let previous = canvas.render_target();
+        canvas.set_render_target(RenderTarget::Image(noise));
+        canvas.clear_rect(0, 0, w as u32, h as u32, color);
+        canvas.set_render_target(previous);
+    }
+    #[cfg(not(harness_blend))]
+    let _ = plan.flood;
     // Turbulence reads nothing from its source; it only sizes the quad.
-    let _ = canvas.filter_image_chain(noise, &plan.chain, noise);
+    if !plan.chain.is_empty() {
+        let _ = canvas.filter_image_chain(noise, &plan.chain, noise);
+    }
     #[cfg(harness_blend)]
     if let Some(blend) = plan.blend {
         // `feComposite in` before the blend: keep the noise only where the
