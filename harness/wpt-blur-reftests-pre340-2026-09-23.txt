@@ -1,0 +1,7 @@
+blur-axis-zero-directional | 0.00% | 0.00% / 5.67% | 0.00% / 5.67% |
+blur-chained-quadrature-variance | 0.00% | 0.00% / 0.00% | 0.00% / 0.00% |
+blur-color-interpolation-linear-vs-srgb | 0.00% | 0.00% / 0.00% | 0.00% / 0.00% |
+blur-edge-mode-transparent-fade | 0.00% | 0.00% / 0.00% | 0.00% / 0.00% |
+blur-element-expansion-vs-child-clip | 0.00% | 0.00% / 5.30% | 0.00% / 0.00% |
+blur-negative-and-zero-stddev | 0.00% | 0.00% / 0.00% | 0.00% / 0.00% |
+blur-primitive-subregion-clipping | 0.00% | 0.00% / 11.30% | 9.57% / 9.57% |

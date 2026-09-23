@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="200" height="200" viewBox="0 0 200 200">
+  <!--
+    Cross-checks: PR #360 (Closes #341: "Fill nothing for a contour whose points lie on one line")
+    Spec: SVG 2 § 13.4.2 ("The 'fill' property")
+    Invariant: Collinear points specified with fractional, non-integer coordinates must not suffer
+               from floating-point precision leakage and must evaluate to zero area.
+               Points lie exactly on line y = 0.5 * (x - 10.333333) + 20.25:
+               - P1: (10.333333, 20.25)
+               - P2: (100.333333, 65.25)
+               - P3: (190.333333, 110.25)
+               Test passes if the canvas remains 100% blank white.
+  -->
+  <html:link rel="match" href="fill-path-fractional-collinear-ref.svg"/>
+
+  <!-- Canvas background: white -->
+  <rect width="200" height="200" fill="#FFFFFF"/>
+
+  <!-- Fractional collinear path -->
+  <path d="M 10.333333 20.25 L 190.333333 110.25 L 100.333333 65.25 Z" fill="#FF0000" stroke="none"/>
+</svg>

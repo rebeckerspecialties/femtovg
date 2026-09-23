@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="220" height="120" viewBox="0 0 220 120">
+  <!--
+    Cross-checks: Issue #325 ("Gaussian blur kernel diverges from browser rendering on structured content")
+    Mathematical Invariant: Successive Gaussian convolutions compound in quadrature:
+                            sigma_total = sqrt(sigma_1^2 + sigma_2^2).
+                            Two chained blurs with sigma_1=3 and sigma_2=4 produce an aggregate
+                            blur with sigma = sqrt(9 + 16) = 5.0.
+                            Left element uses chained feGaussianBlur (stdDev=3 followed by stdDev=4).
+                            Right element uses a single feGaussianBlur (stdDev=5).
+  -->
+  <html:link rel="match" href="blur-chained-quadrature-variance-ref.svg"/>
+  <defs>
+    <!-- Chained blur: sigma 3 then sigma 4 -->
+    <filter id="chained-blur" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="3" result="b1"/>
+      <feGaussianBlur in="b1" stdDeviation="4" result="b2"/>
+    </filter>
+    <!-- Equivalent single blur: sigma 5 -->
+    <filter id="single-blur-5" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+  </defs>
+
+  <!-- Canvas background: black -->
+  <rect width="220" height="120" fill="#000000"/>
+
+  <!-- Left: chained blur (sigma 3 + 4) -->
+  <rect x="30" y="35" width="50" height="50" fill="#00FF00" filter="url(#chained-blur)"/>
+
+  <!-- Right: single blur (sigma 5) -->
+  <rect x="140" y="35" width="50" height="50" fill="#00FF00" filter="url(#single-blur-5)"/>
+</svg>

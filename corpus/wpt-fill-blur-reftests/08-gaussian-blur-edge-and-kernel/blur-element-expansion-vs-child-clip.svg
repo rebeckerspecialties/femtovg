@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="200" height="200" viewBox="0 0 200 200">
+  <!--
+    Cross-checks: Issue #325 & Bugzilla 1459065
+    WPT Test: css/filter-effects/blur-clip-stacking-context-002.html
+    Spec: CSS Filter Effects 1 § 14.1 & CSS Overflow 3
+    Invariant: Filter effects applied to an element itself expand its visual overflow bounds.
+               The element's own bounding box does not clip its filter output.
+               A red square (60x60 at 70,70) has feGaussianBlur stdDeviation="15".
+               A covering green square (60x60 at 70,70) is painted on top.
+               Because the red blur expands outside the 60x60 area, a red blur halo extends
+               visibly around the green square.
+               If the engine erroneously pre-clips the element's filter pass to its own bounding box,
+               no red blur halo will be visible.
+  -->
+  <html:link rel="match" href="blur-element-expansion-vs-child-clip-ref.svg"/>
+  <defs>
+    <filter id="blur15" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="15"/>
+    </filter>
+  </defs>
+
+  <!-- Canvas background: black -->
+  <rect width="200" height="200" fill="#000000"/>
+
+  <!-- Red square with blur expanding outside 60x60 bounds -->
+  <rect x="70" y="70" width="60" height="60" fill="#FF0000" filter="url(#blur15)"/>
+
+  <!-- Covering green square matching the unblurred bounds -->
+  <rect x="70" y="70" width="60" height="60" fill="#008000"/>
+</svg>

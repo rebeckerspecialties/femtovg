@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="200" height="200" viewBox="0 0 200 200">
+  <!--
+    Cross-checks: PR #360 (Closes #341: "Fill nothing for a contour whose points lie on one line")
+    Spec: SVG 2 § 13.4.2 ("The 'fill' property")
+    Invariant: A path that retraces its own segment back to the start point has zero enclosed area.
+               Filling it must produce zero inked pixels.
+  -->
+  <html:link rel="match" href="fill-path-retraced-line-ref.svg"/>
+
+  <!-- Canvas background: white -->
+  <rect width="200" height="200" fill="#FFFFFF"/>
+
+  <!-- Horizontal retraced path -->
+  <path d="M 20 50 L 180 50 L 20 50 Z" fill="#FF0000" stroke="none"/>
+
+  <!-- Vertical retraced path -->
+  <path d="M 100 20 L 100 180 L 100 20 Z" fill="#FF0000" stroke="none"/>
+
+  <!-- Diagonal retraced path -->
+  <path d="M 20 20 L 180 180 L 20 20 Z" fill="#FF0000" stroke="none"/>
+</svg>

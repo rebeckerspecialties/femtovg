@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="120" viewBox="0 0 220 120">
+  <!-- Reference for blur-axis-zero-directional.svg -->
+  <defs>
+    <filter id="blur-vertical-only" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="0 8"/>
+    </filter>
+    <filter id="blur-horizontal-only" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8 0"/>
+    </filter>
+  </defs>
+
+  <rect x="25" y="30" width="60" height="60" fill="#008000" filter="url(#blur-vertical-only)"/>
+  <rect x="135" y="30" width="60" height="60" fill="#008000" filter="url(#blur-horizontal-only)"/>
+</svg>

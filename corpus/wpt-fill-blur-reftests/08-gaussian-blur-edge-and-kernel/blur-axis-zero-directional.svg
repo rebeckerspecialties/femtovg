@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="220" height="120" viewBox="0 0 220 120">
+  <!--
+    Cross-checks: Issue #325 ("Gaussian blur kernel diverges from browser rendering on structured content")
+    WPT Test: css/filter-effects/feGaussianBlur-stdDeviation-axis-zero.html
+    W3C Test: svg/import/filters-gauss-02-f-manual.svg
+    Spec: https://drafts.csswg.org/filter-effects-1/#element-attrdef-fegaussianblur-stddeviation
+    Invariant: When stdDeviation has zero on one axis ("0 Y" or "X 0"), the blur is applied
+               strictly along the non-zero axis without blurring the perpendicular axis or dividing by zero.
+               - Left rect: stdDeviation="0 8" blurs vertically only; vertical side edges remain crisp.
+               - Right rect: stdDeviation="8 0" blurs horizontally only; horizontal top/bottom edges remain crisp.
+  -->
+  <html:link rel="match" href="blur-axis-zero-directional-ref.svg"/>
+  <defs>
+    <filter id="blur-vertical-only" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="0 8"/>
+    </filter>
+    <filter id="blur-horizontal-only" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8 0"/>
+    </filter>
+  </defs>
+
+  <!-- Left: vertical blur only (crisp horizontal edges) -->
+  <rect x="25" y="30" width="60" height="60" fill="#008000" filter="url(#blur-vertical-only)"/>
+
+  <!-- Right: horizontal blur only (crisp vertical edges) -->
+  <rect x="135" y="30" width="60" height="60" fill="#008000" filter="url(#blur-horizontal-only)"/>
+</svg>

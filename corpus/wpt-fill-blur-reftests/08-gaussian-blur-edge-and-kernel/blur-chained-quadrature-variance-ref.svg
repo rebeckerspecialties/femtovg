@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="120" viewBox="0 0 220 120">
+  <!-- Reference for blur-chained-quadrature-variance.svg: Both sides rendered with single blur sigma=5 -->
+  <defs>
+    <filter id="single-blur-5" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="5"/>
+    </filter>
+  </defs>
+
+  <rect width="220" height="120" fill="#000000"/>
+  <rect x="30" y="35" width="50" height="50" fill="#00FF00" filter="url(#single-blur-5)"/>
+  <rect x="140" y="35" width="50" height="50" fill="#00FF00" filter="url(#single-blur-5)"/>
+</svg>

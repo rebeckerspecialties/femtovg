@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="200" height="200" viewBox="0 0 200 200">
+  <!--
+    Cross-checks: PR #360 (Closes #341: "Fill nothing for a contour whose points lie on one line")
+    Spec: SVG 2 § 13.4.2 ("The 'fill' property")
+    Invariant: An open path without closepath whose vertices lie on a straight line has zero
+               enclosed area. Filling such an open path must not ink any pixels.
+               Test passes if the canvas remains 100% blank white.
+  -->
+  <html:link rel="match" href="fill-path-open-collinear-ref.svg"/>
+
+  <!-- Canvas background: white -->
+  <rect width="200" height="200" fill="#FFFFFF"/>
+
+  <!-- Open horizontal path with fill -->
+  <path d="M 20 50 L 100 50 L 180 50" fill="#FF0000" stroke="none"/>
+
+  <!-- Open diagonal path with fill -->
+  <path d="M 20 20 L 100 100 L 180 180" fill="#FF0000" stroke="none"/>
+
+  <!-- Open path with default fill (black in SVG) -->
+  <path d="M 20 150 L 180 150"/>
+</svg>

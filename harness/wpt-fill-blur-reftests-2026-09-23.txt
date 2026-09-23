@@ -1,0 +1,15 @@
+fill-line-bare | 0.00% |  /  | 1.61% / 1.61% | 0.00% / 0.00% |
+fill-path-closed-collinear | 0.00% |  /  | 1.10% / 1.10% | 0.00% / 0.00% |
+fill-path-collinear-bezier | 0.05% |  /  | 1.06% / 1.06% | 0.00% / 0.05% |
+fill-path-fractional-collinear | 0.00% |  /  | 0.15% / 0.15% | 0.00% / 0.00% |
+fill-path-open-collinear | 0.00% |  /  | 1.12% / 1.12% | 0.00% / 0.00% |
+fill-path-retraced-line | 0.00% |  /  | 1.19% / 1.19% | 0.00% / 0.00% |
+fill-path-shape-with-collinear-tail | 0.00% |  /  | 0.52% / 0.52% | 0.00% / 0.00% |
+fill-path-subpixel-sliver-control | 0.00% |  /  | 0.00% / 0.00% | 0.00% / 0.00% |
+blur-axis-zero-directional | 0.00% |  /  | 0.00% / 5.67% | 0.00% / 5.67% |
+blur-chained-quadrature-variance | 0.00% |  /  | 0.00% / 0.00% | 0.00% / 0.00% |
+blur-color-interpolation-linear-vs-srgb | 0.00% |  /  | 0.00% / 0.00% | 0.00% / 0.00% |
+blur-edge-mode-transparent-fade | 0.00% |  /  | 0.00% / 0.00% | 0.00% / 0.00% |
+blur-element-expansion-vs-child-clip | 0.00% |  /  | 0.00% / 0.00% | 0.00% / 0.00% |
+blur-negative-and-zero-stddev | 0.00% |  /  | 0.00% / 0.00% | 0.00% / 0.00% |
+blur-primitive-subregion-clipping | 0.00% |  /  | 9.57% / 9.57% | 9.57% / 9.57% |

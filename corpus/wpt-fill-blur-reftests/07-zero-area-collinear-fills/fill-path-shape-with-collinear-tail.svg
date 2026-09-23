@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="200" height="200" viewBox="0 0 200 200">
+  <!--
+    Cross-checks: PR #360 (Closes #341: "Fill nothing for a contour whose points lie on one line")
+    Test suite origin: tests/zero_area_fill_wgpu.rs ("a unit square on a 1,000-unit retraced tail keeps a filled centre")
+    Spec: SVG 2 § 13.4.2 ("The 'fill' property")
+    Invariant: A path composed of a valid non-zero area polygon (50x50 square at 25,25) attached
+               to an open or retraced 1,000-unit collinear tail must fill the square normally,
+               while the collinear tail produces zero inked pixels.
+               Test passes if you see only a green 50x50 square on a white background.
+  -->
+  <html:link rel="match" href="fill-path-shape-with-collinear-tail-ref.svg"/>
+
+  <!-- Canvas background: white -->
+  <rect width="200" height="200" fill="#FFFFFF"/>
+
+  <!-- Path with 50x50 square subpath and a 1000-unit retraced collinear tail -->
+  <path d="M 25 25 H 75 V 75 H 25 Z M 50 50 L 1000 1000 L 50 50" fill="#008000" stroke="none"/>
+</svg>

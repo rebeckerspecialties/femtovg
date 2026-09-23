@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="200" height="200" viewBox="0 0 200 200">
+  <!--
+    Cross-checks: PR #360 (Closes #341: "Fill nothing for a contour whose points lie on one line")
+    Spec: SVG 2 § 13.4.2 & Paths § 9.3
+    Invariant: Bézier curves whose control points lie entirely on the line segment between their
+               endpoints have zero curvature and zero enclosed area. Filling them must not ink any pixels.
+  -->
+  <html:link rel="match" href="fill-path-collinear-bezier-ref.svg"/>
+
+  <!-- Canvas background: white -->
+  <rect width="200" height="200" fill="#FFFFFF"/>
+
+  <!-- Collinear cubic curve (control points at 60,60 and 140,140 on line from 20,20 to 180,180) -->
+  <path d="M 20 20 C 60 60 140 140 180 180 Z" fill="#FF0000" stroke="none"/>
+
+  <!-- Collinear quadratic curve (control point at 100,100 on line from 20,20 to 180,180) -->
+  <path d="M 20 100 Q 100 100 180 100 Z" fill="#FF0000" stroke="none"/>
+
+  <!-- Open collinear cubic curve -->
+  <path d="M 20 150 C 70 150 130 150 180 150" fill="#FF0000" stroke="none"/>
+</svg>

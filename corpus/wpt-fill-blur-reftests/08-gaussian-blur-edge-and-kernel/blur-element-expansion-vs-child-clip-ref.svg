@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <!-- Reference for blur-element-expansion-vs-child-clip.svg -->
+  <defs>
+    <filter id="blur15" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="15"/>
+    </filter>
+  </defs>
+
+  <rect width="200" height="200" fill="#000000"/>
+  <rect x="70" y="70" width="60" height="60" fill="#FF0000" filter="url(#blur15)"/>
+  <rect x="70" y="70" width="60" height="60" fill="#008000"/>
+</svg>

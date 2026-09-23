@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="200" height="200" viewBox="0 0 200 200">
+  <!--
+    Cross-checks: PR #360 (Closes #341: "Fill nothing for a contour whose points lie on one line")
+    Spec: SVG 2 § 13.4.2 ("The 'fill' property")
+    Invariant: A closed path whose vertices all lie on a single straight line encloses zero
+               geometric area (area = 0.0). Even though closed with 'Z', filling it must not
+               produce any inked pixels.
+  -->
+  <html:link rel="match" href="fill-path-closed-collinear-ref.svg"/>
+
+  <!-- Canvas background: white -->
+  <rect width="200" height="200" fill="#FFFFFF"/>
+
+  <!-- Degenerate triangle (3 collinear points, horizontal) -->
+  <path d="M 20 50 L 180 50 L 100 50 Z" fill="#FF0000" stroke="none"/>
+
+  <!-- Degenerate triangle (3 collinear points, diagonal) -->
+  <path d="M 20 20 L 180 180 L 100 100 Z" fill="#FF0000" stroke="none"/>
+
+  <!-- Degenerate quad (4 collinear points) -->
+  <path d="M 30 140 L 70 140 L 170 140 L 110 140 Z" fill="#FF0000" stroke="none"/>
+</svg>
