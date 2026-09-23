@@ -51,3 +51,16 @@ goes to exact. The three BuseyBench portraits draw their teeth as open
 paths with strokes on top; the black band under a stroke narrower than
 about three device pixels, or translucent, is gone at 1x and 2x, and at 4x
 the strokes cover it either way. Sheet: `zero-area-evidence-4x.png`.
+
+## Old-vs-new A/B over every corpus (`harness/ab.py`)
+
+`ab.py --a _logos_full_master_h6 --b _logos_full_zeroarea` over the 8 corpus
+icons, 27 BuseyBench portraits, 55 Firefox assets, 33 resvg cases, 9 probes
+and the 10 demo-assets reductions at 1x/2x/4x (426 frames), plus 100
+SVGenius files at 1x: 50 + 6 frames differ
+(`harness/zero-area-fill-ab-2026-09-23.txt`): the reduction, 15 BuseyBench
+portraits whose teeth or hair strands are open paths under the default
+fill, five icons and six SVGenius files by single-digit pixel counts.
+Every changed file with a Chromium reference moves toward it or stays
+within a few pixels (`harness/zero-area-fill-changed-2026-09-23.txt`).
+Everything else is bit-identical.
