@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="100" height="100" viewBox="0 0 100 100">
+  <!--
+    WPT Test: css/filter-effects/svg-filter-vs-clip-path.html
+    Spec: https://drafts.fxtf.org/filter-effects-1/#FilterProperty & https://drafts.fxtf.org/filter-effects-1/#placement
+    Invariant: Filter effects apply before clip-path on SVG elements.
+               The red square is blurred with feGaussianBlur (stdDeviation=20), then clipped
+               by clipPath to 100x100. Because clip-path applies to the filtered output,
+               no red blur fringes escape beyond the 100x100 boundary.
+               The covering 100x100 green rectangle completely obscures the clipped element.
+  -->
+  <html:link rel="match" href="filter-vs-clip-precedence-ref.svg"/>
+  <defs>
+    <filter id="blur20" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="20"/>
+    </filter>
+    <clipPath id="rect-clip">
+      <rect width="100" height="100"/>
+    </clipPath>
+  </defs>
+
+  <!-- Blurred element with clipPath -->
+  <rect width="100" height="100" fill="#FF0000" filter="url(#blur20)" clip-path="url(#rect-clip)"/>
+
+  <!-- Covering green rect -->
+  <rect width="100" height="100" fill="#00FF00"/>
+</svg>

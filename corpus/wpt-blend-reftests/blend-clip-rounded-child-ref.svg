@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <!-- Reference for blend-clip-rounded-child.svg: Aqua square with lime rounded inner rectangle -->
+  <defs>
+    <clipPath id="rounded-child-clip">
+      <rect x="0" y="0" width="150" height="150" rx="32" ry="32"/>
+    </clipPath>
+  </defs>
+
+  <!-- Parent backdrop: aqua -->
+  <rect x="0" y="0" width="150" height="150" fill="#00FFFF"/>
+
+  <!-- Pre-computed multiply result (lime) clipped with identical geometry -->
+  <g clip-path="url(#rounded-child-clip)">
+    <rect x="0" y="0" width="150" height="150" fill="#00FF00"/>
+  </g>
+</svg>

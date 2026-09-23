@@ -1,0 +1,269 @@
+{
+  "suite_name": "WPT SVG Mix-Blend-Mode and Compositing Reftests",
+  "description": "Self-contained SVG test and reference pairs extracted from Web Platform Tests covering mix-blend-mode interactions with stacking contexts, filter chains, and clip masks, tailored for FemtoVG.",
+  "target_engine": "femtovg",
+  "total_test_pairs": 23,
+  "categories": [
+    "01-clip-and-blend",
+    "02-filter-and-blend",
+    "03-mask-and-blend",
+    "04-stacking-context-and-isolation",
+    "05-filter-clip-regressions",
+    "06-svg-compositing-primitives"
+  ],
+  "tests": [
+    {
+      "id": "blend-clip-rounded-child",
+      "category": "01-clip-and-blend",
+      "test_file": "01-clip-and-blend/blend-clip-rounded-child.svg",
+      "ref_file": "01-clip-and-blend/blend-clip-rounded-child-ref.svg",
+      "wpt_source": "css/compositing/mix-blend-mode/mix-blend-mode-blended-element-overflow-hidden-and-border-radius.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [],
+      "femtovg_features": ["separable_blend_modes", "multiply", "clip_path", "rounded_rect_clipping"],
+      "description": "Blended element having mix-blend-mode: multiply and rounded clip-path blends with parent aqua backdrop, producing lime inside clip while preserving aqua outside."
+    },
+    {
+      "id": "blend-clip-rounded-parent",
+      "category": "01-clip-and-blend",
+      "test_file": "01-clip-and-blend/blend-clip-rounded-parent.svg",
+      "ref_file": "01-clip-and-blend/blend-clip-rounded-parent-ref.svg",
+      "wpt_source": "css/compositing/mix-blend-mode/mix-blend-mode-parent-element-overflow-hidden-and-border-radius.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": ["https://crbug.com/328339028"],
+      "femtovg_features": ["separable_blend_modes", "difference", "parent_clip_path", "elliptical_rounded_clip"],
+      "description": "Parent has asymmetrical rounded clip (rx=16, ry=80) and red backdrop. Oversized child (200x200 yellow) blends with difference, producing lime strictly within parent clip without bleed."
+    },
+    {
+      "id": "blend-clip-sibling-overlap",
+      "category": "01-clip-and-blend",
+      "test_file": "01-clip-and-blend/blend-clip-sibling-overlap.svg",
+      "ref_file": "01-clip-and-blend/blend-clip-sibling-overlap-ref.svg",
+      "wpt_source": "css/compositing/mix-blend-mode/mix-blend-mode-intermediate-element-overflow-hidden-and-border-radius.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [],
+      "femtovg_features": ["separable_blend_modes", "difference", "sibling_compositing", "clip_path"],
+      "description": "Tests backdrop evaluation across clipped sibling boundaries. Blended sibling overlaps both a clipped rounded sibling and the parent container backdrop."
+    },
+    {
+      "id": "blend-clip-rotated",
+      "category": "01-clip-and-blend",
+      "test_file": "01-clip-and-blend/blend-clip-rotated.svg",
+      "ref_file": "01-clip-and-blend/blend-clip-rotated-ref.svg",
+      "wpt_source": "css/compositing/mix-blend-mode/mix-blend-mode-rotated-clip.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [],
+      "femtovg_features": ["separable_blend_modes", "overlay", "rotated_clip_path", "transform_coordinate_mapping"],
+      "description": "Blended element under rotated clip path. Red rect rotated -45 deg with overlay blend mode over lime yields lime; tests transformed clip stencil mapping in offscreen blend resolve."
+    },
+    {
+      "id": "blend-clip-parent-non-overflow",
+      "category": "01-clip-and-blend",
+      "test_file": "01-clip-and-blend/blend-clip-parent-non-overflow.svg",
+      "ref_file": "01-clip-and-blend/blend-clip-parent-non-overflow-ref.svg",
+      "wpt_source": "css/compositing/mix-blend-mode/mix-blend-mode-parent-with-border-radius.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [],
+      "femtovg_features": ["difference", "stacking_context_isolation", "non_rectangular_backdrop"],
+      "description": "Parent circular shape without overflow clipping. Child yellow square blends with red circle to produce green circle, while non-overlapping yellow child does not blend with gray canvas."
+    },
+    {
+      "id": "blend-filter-order-grayscale-screen",
+      "category": "02-filter-and-blend",
+      "test_file": "02-filter-and-blend/blend-filter-order-grayscale-screen.svg",
+      "ref_file": "02-filter-and-blend/blend-filter-order-grayscale-screen-ref.svg",
+      "wpt_source": "css/filter-effects/filter-with-mix-blend-mode.html",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#FilterProperty",
+      "bug_trackers": [],
+      "femtovg_features": ["feColorMatrix", "screen", "filter_blend_precedence"],
+      "description": "Order of operations: filter (feColorMatrix grayscale) applies to element before mix-blend-mode: screen blends with backdrop."
+    },
+    {
+      "id": "blend-filter-identity-isolation",
+      "category": "02-filter-and-blend",
+      "test_file": "02-filter-and-blend/blend-filter-identity-isolation.svg",
+      "ref_file": "02-filter-and-blend/blend-filter-identity-isolation-ref.svg",
+      "wpt_source": "css/compositing/mix-blend-mode/mix-blend-mode-filter.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [],
+      "femtovg_features": ["feColorMatrix", "difference", "filter_backdrop_pass"],
+      "description": "Presence of a filter does not isolate the element from its backdrop or disrupt the blend pass; red difference over yellow yields lime."
+    },
+    {
+      "id": "filter-chained-identity",
+      "category": "02-filter-and-blend",
+      "test_file": "02-filter-and-blend/filter-chained-identity.svg",
+      "ref_file": "02-filter-and-blend/filter-chained-identity-ref.svg",
+      "wpt_source": "css/filter-effects/filter-chained-url-url-001.html",
+      "spec_link": "https://drafts.fxtf.org/filter-effects/#FilterProperty",
+      "bug_trackers": [],
+      "femtovg_features": ["filter_graphs", "feColorMatrix", "multi_stage_filter_evaluation"],
+      "description": "Chained filter primitives evaluated sequentially preserve color values and alpha channels without loss or degradation."
+    },
+    {
+      "id": "blend-mask-circle-difference",
+      "category": "03-mask-and-blend",
+      "test_file": "03-mask-and-blend/blend-mask-circle-difference.svg",
+      "ref_file": "03-mask-and-blend/blend-mask-circle-difference-ref.svg",
+      "wpt_source": "css/compositing/mix-blend-mode/mix-blend-mode-mask.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [],
+      "femtovg_features": ["vector_mask", "difference", "mask_blending_interaction"],
+      "description": "Mask restricts where blended element is visible; red difference over yellow produces green circle, while backdrop outside mask remains intact."
+    },
+    {
+      "id": "filter-vs-mask-precedence",
+      "category": "03-mask-and-blend",
+      "test_file": "03-mask-and-blend/filter-vs-mask-precedence.svg",
+      "ref_file": "03-mask-and-blend/filter-vs-mask-precedence-ref.svg",
+      "wpt_source": "css/filter-effects/svg-filter-vs-mask.html",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#FilterProperty",
+      "bug_trackers": [],
+      "femtovg_features": ["feGaussianBlur", "vector_mask", "filter_mask_order"],
+      "description": "Filter applies before mask on SVG elements; blurred red square is clipped by mask to 100x100, preventing red blur fringe leakage."
+    },
+    {
+      "id": "filter-vs-clip-precedence",
+      "category": "03-mask-and-blend",
+      "test_file": "03-mask-and-blend/filter-vs-clip-precedence.svg",
+      "ref_file": "03-mask-and-blend/filter-vs-clip-precedence-ref.svg",
+      "wpt_source": "css/filter-effects/svg-filter-vs-clip-path.html",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#FilterProperty",
+      "bug_trackers": [],
+      "femtovg_features": ["feGaussianBlur", "clip_path", "filter_clip_order"],
+      "description": "Filter applies before clip-path on SVG elements; blurred red square is clipped to 100x100, preventing red blur fringe leakage."
+    },
+    {
+      "id": "blend-isolation-explicit",
+      "category": "04-stacking-context-and-isolation",
+      "test_file": "04-stacking-context-and-isolation/blend-isolation-explicit.svg",
+      "ref_file": "04-stacking-context-and-isolation/blend-isolation-explicit-ref.svg",
+      "wpt_source": "css/compositing/isolation/blend-isolation.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#isolation",
+      "bug_trackers": [],
+      "femtovg_features": ["isolation_isolate", "difference", "isolated_backdrop"],
+      "description": "Group with isolation: isolate prevents inner element with difference blend mode from blending with outer green backdrop; solid green passes."
+    },
+    {
+      "id": "blend-isolation-group-opacity",
+      "category": "04-stacking-context-and-isolation",
+      "test_file": "04-stacking-context-and-isolation/blend-isolation-group-opacity.svg",
+      "ref_file": "04-stacking-context-and-isolation/blend-isolation-group-opacity-ref.svg",
+      "wpt_source": "css/compositing/Blending_in_a_group_with_opacity.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [],
+      "femtovg_features": ["group_opacity_isolation", "lighten", "layer_compositing"],
+      "description": "Group with opacity < 1 creates isolated stacking context; inner lighten blend mode does not lighten against outer blue backdrop."
+    },
+    {
+      "id": "blend-stacking-context-bounds-isolation",
+      "category": "04-stacking-context-and-isolation",
+      "test_file": "04-stacking-context-and-isolation/blend-stacking-context-bounds-isolation.svg",
+      "ref_file": "04-stacking-context-and-isolation/blend-stacking-context-bounds-isolation-ref.svg",
+      "wpt_source": "css/compositing/mix-blend-mode/mix-blend-mode-stacking-context-creates-isolation.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [],
+      "femtovg_features": ["stacking_context_isolation", "multiply", "overflow_bounds_isolation"],
+      "description": "Isolated group (lime) with multiply child (red); intersection is black, but child overflowing the group bounds does not blend with container yellow."
+    },
+    {
+      "id": "blend-transparent-backdrop-boundary",
+      "category": "04-stacking-context-and-isolation",
+      "test_file": "04-stacking-context-and-isolation/blend-transparent-backdrop-boundary.svg",
+      "ref_file": "04-stacking-context-and-isolation/blend-transparent-backdrop-boundary-ref.svg",
+      "wpt_source": "css/compositing/mix-blend-mode/mix-blend-mode-blended-element-with-transparent-pixels.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [],
+      "femtovg_features": ["stacking_context_isolation", "difference", "transparent_backdrop_handling"],
+      "description": "Isolated group with oversized blended child; perimeter outside group bounds blends with group's transparent backdrop, resulting in aqua border (red indicates isolation leak to canvas)."
+    },
+    {
+      "id": "blend-overflowing-child",
+      "category": "04-stacking-context-and-isolation",
+      "test_file": "04-stacking-context-and-isolation/blend-overflowing-child.svg",
+      "ref_file": "04-stacking-context-and-isolation/blend-overflowing-child-ref.svg",
+      "wpt_source": "css/compositing/mix-blend-mode/mix-blend-mode-overflowing-child.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [],
+      "femtovg_features": ["stacking_context_isolation", "difference", "overflow_canvas_isolation"],
+      "description": "Two green squares with black intersection over lightgray canvas; overflowing blender child does not blend with lightgray canvas."
+    },
+    {
+      "id": "blend-interposed-child",
+      "category": "04-stacking-context-and-isolation",
+      "test_file": "04-stacking-context-and-isolation/blend-interposed-child.svg",
+      "ref_file": "04-stacking-context-and-isolation/blend-interposed-child-ref.svg",
+      "wpt_source": "css/compositing/mix-blend-mode/mix-blend-mode-blended-element-interposed.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [],
+      "femtovg_features": ["group_buffer_compositing", "difference"],
+      "description": "Children inside a blended group composite together into group buffer before blending with backdrop; red child covering dark base blends with yellow to yield lime."
+    },
+    {
+      "id": "filter-blur-clip-ancestor",
+      "category": "05-filter-clip-regressions",
+      "test_file": "05-filter-clip-regressions/filter-blur-clip-ancestor.svg",
+      "ref_file": "05-filter-clip-regressions/filter-blur-clip-ancestor-ref.svg",
+      "wpt_source": "css/filter-effects/blur-clip-stacking-context-001.html",
+      "spec_link": "https://drafts.fxtf.org/filter-effects/#funcdef-filter-blur",
+      "bug_trackers": ["https://bugzilla.mozilla.org/show_bug.cgi?id=1459065"],
+      "femtovg_features": ["feGaussianBlur", "ancestor_clip_path", "filter_bounds_clipping"],
+      "description": "Blur filter effect on elements is strictly clipped by ancestor clipPath; zero blue blur fringes escape from behind covering green rect."
+    },
+    {
+      "id": "filter-clip-under-blur",
+      "category": "05-filter-clip-regressions",
+      "test_file": "05-filter-clip-regressions/filter-clip-under-blur.svg",
+      "ref_file": "05-filter-clip-regressions/filter-clip-under-blur-ref.svg",
+      "wpt_source": "css/filter-effects/clip-under-filter-001.html",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#funcdef-filter-blur",
+      "bug_trackers": ["https://crbug.com/809102"],
+      "femtovg_features": ["feGaussianBlur", "descendant_clip_path", "filter_subgraph_clipping"],
+      "description": "Clips applied to descendants of a filter group are evaluated in the descendant local coordinate space before blur is executed."
+    },
+    {
+      "id": "filter-drop-shadow-overflow-clipped",
+      "category": "05-filter-clip-regressions",
+      "test_file": "05-filter-clip-regressions/filter-drop-shadow-overflow-clipped.svg",
+      "ref_file": "05-filter-clip-regressions/filter-drop-shadow-overflow-clipped-ref.svg",
+      "wpt_source": "css/filter-effects/drop-shadow-clipped-001.html",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#dropshadowEquivalent",
+      "bug_trackers": ["https://crbug.com/804670"],
+      "femtovg_features": ["feDropShadow", "ancestor_clip_path", "out_of_bounds_shadow_casting"],
+      "description": "Source element outside ancestor clip is clipped away, but its drop-shadow cast back into the clip bounds remains visible."
+    },
+    {
+      "id": "blend-plus-lighter-isolated",
+      "category": "06-svg-compositing-primitives",
+      "test_file": "06-svg-compositing-primitives/blend-plus-lighter-isolated.svg",
+      "ref_file": "06-svg-compositing-primitives/blend-plus-lighter-isolated-ref.svg",
+      "wpt_source": "css/compositing/mix-blend-mode/mix-blend-mode-plus-lighter-svg-basic.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-2/#mix-blend-mode",
+      "bug_trackers": [],
+      "femtovg_features": ["plus_lighter", "isolation_isolate", "additive_color_accumulation"],
+      "description": "Tests plus-lighter additive blending on overlapping semi-transparent SVG rects within an isolated group."
+    },
+    {
+      "id": "blend-svg-root-isolation",
+      "category": "06-svg-compositing-primitives",
+      "test_file": "06-svg-compositing-primitives/blend-svg-root-isolation.svg",
+      "ref_file": "06-svg-compositing-primitives/blend-svg-root-isolation-ref.svg",
+      "wpt_source": "css/compositing/svg/mix-blend-mode-in-svg-image.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#isolation",
+      "bug_trackers": [],
+      "femtovg_features": ["svg_root_isolated_backdrop", "difference"],
+      "description": "SVG root document establishes an isolated transparent backdrop; green difference with transparent black yields pure green."
+    },
+    {
+      "id": "blend-svg-rectangle-multiply",
+      "category": "06-svg-compositing-primitives",
+      "test_file": "06-svg-compositing-primitives/blend-svg-rectangle-multiply.svg",
+      "ref_file": "06-svg-compositing-primitives/blend-svg-rectangle-multiply-ref.svg",
+      "wpt_source": "css/compositing/svg/mix-blend-mode-svg-rectangle.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#csscompositingrules_SVG",
+      "bug_trackers": [],
+      "femtovg_features": ["separable_blend_modes", "multiply", "svg_geometry_blending"],
+      "description": "Element-to-element SVG blending using multiply; aqua rect overlapped by red rect produces solid black square."
+    }
+  ]
+}

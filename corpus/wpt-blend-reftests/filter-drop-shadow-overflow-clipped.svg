@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="100" height="100" viewBox="0 0 100 100">
+  <!--
+    WPT Test: css/filter-effects/drop-shadow-clipped-001.html
+    Regression: https://crbug.com/804670 (Overflowing parts of drop-shadowed elements cast shadows)
+    Spec: https://drafts.fxtf.org/filter-effects-1/#dropshadowEquivalent
+    Invariant: An element positioned outside an ancestor clip still casts a drop shadow
+               that falls inside the clip bounds.
+               The ancestor group has a 100x100 clipPath.
+               Inside, an element has a drop-shadow filter shifted -105px horizontally (flood-color green).
+               The source graphic is a 50x50 red rect at x=105 (outside the 100x100 clip).
+               The red source is clipped away, but its green shadow shifted to x=0 appears inside the clip.
+               Test passes if you see a green 50x50 square at (0,0).
+  -->
+  <html:link rel="match" href="filter-drop-shadow-overflow-clipped-ref.svg"/>
+  <defs>
+    <clipPath id="ancestor-100">
+      <rect x="0" y="0" width="100" height="100"/>
+    </clipPath>
+    <filter id="shadow-offset-left" x="-200%" y="0%" width="300%" height="100%">
+      <feDropShadow dx="-105" dy="0" stdDeviation="0" flood-color="#008000" flood-opacity="1"/>
+    </filter>
+  </defs>
+
+  <!-- Ancestor clip group -->
+  <g clip-path="url(#ancestor-100)">
+    <!-- Source element at x=105 with drop-shadow shifted -105px -->
+    <rect x="105" y="0" width="50" height="50" fill="#FF0000" filter="url(#shadow-offset-left)"/>
+  </g>
+</svg>

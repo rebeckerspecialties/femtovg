@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="120" height="120" viewBox="0 0 120 120">
+  <!--
+    WPT Test: css/filter-effects/blur-clip-stacking-context-001.html
+    Regression: https://bugzilla.mozilla.org/show_bug.cgi?id=1459065
+    Spec: https://drafts.fxtf.org/filter-effects/#funcdef-filter-blur
+    Invariant: Blur filter effects on elements are strictly clipped by an ancestor clipPath.
+               Inside a 100x100 clip at (10,10), a blue rect is blurred by stdDeviation=20.
+               A covering 100x100 green rect is placed at (10,10).
+               If the blur effect expands outside the ancestor clip boundary, blue blur fringes
+               will leak out from behind the green cover.
+               Test passes if you see only a solid green square at (10,10) with zero blue leakage.
+  -->
+  <html:link rel="match" href="filter-blur-clip-ancestor-ref.svg"/>
+  <defs>
+    <filter id="blur20" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="20"/>
+    </filter>
+    <clipPath id="ancestor-clip">
+      <rect x="10" y="10" width="100" height="100"/>
+    </clipPath>
+  </defs>
+
+  <!-- Ancestor clipped container with blurred blue child -->
+  <g clip-path="url(#ancestor-clip)">
+    <rect x="10" y="10" width="100" height="100" fill="#0000FF" filter="url(#blur20)"/>
+  </g>
+
+  <!-- Covering green rect matching the clip bounds exactly -->
+  <rect x="10" y="10" width="100" height="100" fill="#008000"/>
+</svg>

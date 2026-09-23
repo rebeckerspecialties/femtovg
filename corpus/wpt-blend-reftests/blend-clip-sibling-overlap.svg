@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="200" height="200" viewBox="0 0 200 200">
+  <!--
+    WPT Test: css/compositing/mix-blend-mode/mix-blend-mode-intermediate-element-overflow-hidden-and-border-radius.html
+    Spec: https://drafts.fxtf.org/compositing-1/#mix-blend-mode
+    Invariant: Tests backdrop evaluation across clipped sibling boundaries.
+               Parent is aqua (150x150). Sibling 1 is yellow with rounded clip (rx=32 ry=32).
+               Sibling 2 covers bottom half (y=75..150) with fuchsia (#FF00FF) and mix-blend-mode: difference.
+               - Top half: yellow rectangle with aqua rounded corners.
+               - Bottom half inside clip: yellow diff fuchsia = aqua (#00FFFF).
+               - Bottom half outside clip: parent aqua diff fuchsia = yellow (#FFFF00) corners.
+  -->
+  <html:link rel="match" href="blend-clip-sibling-overlap-ref.svg"/>
+  <defs>
+    <clipPath id="sibling-rounded-clip">
+      <rect x="0" y="0" width="150" height="150" rx="32" ry="32"/>
+    </clipPath>
+  </defs>
+
+  <!-- Parent container: aqua -->
+  <rect x="0" y="0" width="150" height="150" fill="#00FFFF"/>
+
+  <!-- Sibling 1: Yellow with rounded clip -->
+  <g clip-path="url(#sibling-rounded-clip)">
+    <rect x="0" y="0" width="150" height="150" fill="#FFFF00"/>
+  </g>
+
+  <!-- Sibling 2: Fuchsia spanning bottom half with mix-blend-mode: difference -->
+  <rect x="0" y="75" width="150" height="75" fill="#FF00FF" style="mix-blend-mode: difference;"/>
+</svg>

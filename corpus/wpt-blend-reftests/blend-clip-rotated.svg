@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="100" height="100" viewBox="0 0 100 100">
+  <!--
+    WPT Test: css/compositing/mix-blend-mode/mix-blend-mode-rotated-clip.html
+    Spec: https://drafts.fxtf.org/compositing-1/#mix-blend-mode
+    Invariant: Verifies mix-blend-mode (overlay) under a transformed (rotated 45deg) clip path.
+               Overlay of red (#FF0000) over lime (#00FF00) yields exact lime (#00FF00).
+               If the offscreen compositing pass misaligns transformed clip coordinates,
+               red fringes will leak out. The test passes if and only if the output is solid lime.
+  -->
+  <html:link rel="match" href="blend-clip-rotated-ref.svg"/>
+  <defs>
+    <clipPath id="rotated-clip">
+      <rect x="0" y="0" width="100" height="100" transform="rotate(45 50 50)"/>
+    </clipPath>
+  </defs>
+
+  <!-- Outer container: lime -->
+  <rect width="100" height="100" fill="#00FF00"/>
+
+  <!-- Rotated clip containing counter-rotated red square with overlay blend mode -->
+  <g clip-path="url(#rotated-clip)">
+    <rect width="100" height="100" fill="#00FF00"/>
+    <rect width="100" height="100" fill="#FF0000" transform="rotate(-45 50 50)" style="mix-blend-mode: overlay;"/>
+  </g>
+</svg>

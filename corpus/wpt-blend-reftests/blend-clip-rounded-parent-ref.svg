@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" viewBox="0 0 220 220">
+  <!-- Reference for blend-clip-rounded-parent.svg: Lime rectangle with rx=16 ry=80 -->
+  <defs>
+    <clipPath id="parent-rounded-clip">
+      <rect x="0" y="0" width="140" height="140" rx="16" ry="80"/>
+    </clipPath>
+  </defs>
+
+  <g clip-path="url(#parent-rounded-clip)">
+    <rect x="0" y="0" width="140" height="140" fill="#00FF00"/>
+  </g>
+</svg>

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="140" height="140" viewBox="0 0 140 140">
+  <!--
+    WPT Test: css/filter-effects/clip-under-filter-001.html
+    Regression: https://crbug.com/809102 (Clips on descendants of filter elements are applied)
+    Spec: https://drafts.fxtf.org/filter-effects-1/#funcdef-filter-blur
+    Invariant: Clips applied to descendants of an element with a filter must be properly
+               evaluated in the descendant's local coordinate space before the filter pass runs.
+               The parent group has filter="url(#blur10)".
+               Inside, a descendant has a 100x100 clip containing a blue base and an overflowing
+               green rect (x=50..150). The descendant clip constrains green to x=50..100.
+               The entire clipped result is then blurred.
+  -->
+  <html:link rel="match" href="filter-clip-under-blur-ref.svg"/>
+  <defs>
+    <filter id="blur10" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+    <clipPath id="descendant-clip">
+      <rect x="20" y="20" width="100" height="100"/>
+    </clipPath>
+  </defs>
+
+  <!-- Filter applied to group containing clipped descendant -->
+  <g filter="url(#blur10)">
+    <g clip-path="url(#descendant-clip)">
+      <rect x="20" y="20" width="100" height="100" fill="#0000FF"/>
+      <!-- Overflowing green rect extending to x=170, clipped to x=120 -->
+      <rect x="70" y="20" width="100" height="100" fill="#008000"/>
+    </g>
+  </g>
+</svg>

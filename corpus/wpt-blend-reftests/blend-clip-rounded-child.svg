@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="200" height="200" viewBox="0 0 200 200">
+  <!--
+    WPT Test: css/compositing/mix-blend-mode/mix-blend-mode-blended-element-overflow-hidden-and-border-radius.html
+    Spec: https://drafts.fxtf.org/compositing-1/#mix-blend-mode
+    Invariant: An element having mix-blend-mode (multiply) and a rounded clipPath blends correctly
+               with its parent element (aqua). Multiply of aqua (0, 255, 255) and yellow (255, 255, 0)
+               is lime (0, 255, 0). Outside the rounded clip, the parent aqua background remains intact.
+  -->
+  <html:link rel="match" href="blend-clip-rounded-child-ref.svg"/>
+  <defs>
+    <clipPath id="rounded-child-clip">
+      <rect x="0" y="0" width="150" height="150" rx="32" ry="32"/>
+    </clipPath>
+  </defs>
+
+  <!-- Parent backdrop: aqua -->
+  <rect x="0" y="0" width="150" height="150" fill="#00FFFF"/>
+
+  <!-- Blended child clipped by rounded clipPath -->
+  <g clip-path="url(#rounded-child-clip)" style="mix-blend-mode: multiply;">
+    <rect x="0" y="0" width="150" height="150" fill="#FFFF00"/>
+  </g>
+</svg>

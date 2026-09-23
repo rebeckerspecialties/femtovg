@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="220" height="220" viewBox="0 0 220 220">
+  <!--
+    WPT Test: css/compositing/mix-blend-mode/mix-blend-mode-parent-element-overflow-hidden-and-border-radius.html
+    Regression: https://crbug.com/328339028 (mix-blend-mode inside border-radius overflow clip)
+    Spec: https://drafts.fxtf.org/compositing-1/#mix-blend-mode
+    Invariant: An element having mix-blend-mode (difference) blends with its parent element
+               having an asymmetrical rounded clip (rx=16, ry=80). Difference of red (#FF0000)
+               and yellow (#FFFF00) produces lime (#00FF00). The oversized child (200x200)
+               must not bleed beyond the parent's rounded clip boundary.
+  -->
+  <html:link rel="match" href="blend-clip-rounded-parent-ref.svg"/>
+  <defs>
+    <clipPath id="parent-rounded-clip">
+      <rect x="0" y="0" width="140" height="140" rx="16" ry="80"/>
+    </clipPath>
+  </defs>
+
+  <!-- Parent group establishing clipped bounding container -->
+  <g clip-path="url(#parent-rounded-clip)">
+    <rect x="0" y="0" width="140" height="140" fill="#FF0000"/>
+    <!-- Oversized blended child extending to 200x200 -->
+    <rect x="0" y="0" width="200" height="200" fill="#FFFF00" style="mix-blend-mode: difference;"/>
+  </g>
+</svg>

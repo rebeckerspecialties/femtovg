@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="200" height="200" viewBox="0 0 200 200">
+  <!--
+    WPT Test: css/compositing/Blending_in_a_group_with_opacity.html
+    Spec: https://drafts.fxtf.org/compositing-1/#mix-blend-mode
+    Invariant: An SVG group with opacity < 1.0 establishes an isolated stacking context.
+               Inner red square has mix-blend-mode: lighten.
+               Because the group is isolated, the red square lightens against the group's
+               initial transparent black backdrop, retaining its pure red color.
+               It does NOT lighten against the outer blue backdrop (which would turn magenta #FF00FF).
+               The red square is then composited onto the blue backdrop with opacity=0.6.
+  -->
+  <html:link rel="match" href="blend-isolation-group-opacity-ref.svg"/>
+
+  <!-- Outer backdrop: blue -->
+  <rect width="200" height="200" fill="#0000FF"/>
+
+  <!-- Group with opacity establishing isolated stacking context -->
+  <g opacity="0.6">
+    <rect width="100" height="100" fill="#FF0000" style="mix-blend-mode: lighten;"/>
+  </g>
+</svg>

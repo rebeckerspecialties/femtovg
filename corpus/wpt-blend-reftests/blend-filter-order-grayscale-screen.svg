@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="200" height="200" viewBox="0 0 200 200">
+  <!--
+    WPT Test: css/filter-effects/filter-with-mix-blend-mode.html
+    Spec: https://drafts.fxtf.org/filter-effects-1/#FilterProperty & https://drafts.fxtf.org/compositing-1/#mix-blend-mode
+    Invariant: Filter effect is applied to an element BEFORE mix-blend-mode blends with backdrop.
+               Source is red (#FF0000). Filter is grayscale (feColorMatrix), converting red to luminance
+               gray rgb(54, 54, 54). Result is then blended with green backdrop rgb(0, 128, 0)
+               using screen blend mode, yielding rgb(54, 155, 54).
+               If blending occurred before filtering, the entire backdrop would be grayscaled.
+  -->
+  <html:link rel="match" href="blend-filter-order-grayscale-screen-ref.svg"/>
+  <defs>
+    <filter id="grayscale-filter" color-interpolation-filters="sRGB">
+      <feColorMatrix type="matrix" values="
+        0.2126 0.7152 0.0722 0 0
+        0.2126 0.7152 0.0722 0 0
+        0.2126 0.7152 0.0722 0 0
+        0      0      0      1 0"/>
+    </filter>
+  </defs>
+
+  <!-- Green backdrop -->
+  <rect width="200" height="200" fill="#008000"/>
+
+  <!-- Element with BOTH filter and mix-blend-mode -->
+  <rect width="200" height="200" fill="#FF0000" filter="url(#grayscale-filter)" style="mix-blend-mode: screen;"/>
+</svg>

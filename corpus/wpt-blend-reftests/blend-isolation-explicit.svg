@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="200" height="200" viewBox="0 0 200 200">
+  <!--
+    WPT Test: css/compositing/isolation/blend-isolation.html
+    Spec: https://drafts.fxtf.org/compositing-1/#isolation
+    Invariant: An isolated group (isolation: isolate) prevents elements inside the group
+               from blending with backdrops outside the group.
+               Outer container is green (#00FF00).
+               Inside, an isolated group contains a 100x100 green (#00FF00) rect with mix-blend-mode: difference.
+               Because the group is isolated, the inner rect blends with the group's transparent backdrop,
+               remaining green. If isolation is violated, it blends with outer green: green diff green = black.
+               Test passes if you see a solid green rectangle.
+  -->
+  <html:link rel="match" href="blend-isolation-explicit-ref.svg"/>
+
+  <!-- Outer container: green -->
+  <rect width="200" height="200" fill="#00FF00"/>
+
+  <!-- Isolated group -->
+  <g style="isolation: isolate;">
+    <rect width="100" height="100" fill="#00FF00" style="mix-blend-mode: difference;"/>
+  </g>
+</svg>

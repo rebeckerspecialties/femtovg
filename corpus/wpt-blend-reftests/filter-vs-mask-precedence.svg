@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="100" height="100" viewBox="0 0 100 100">
+  <!--
+    WPT Test: css/filter-effects/svg-filter-vs-mask.html
+    Spec: https://drafts.fxtf.org/filter-effects-1/#FilterProperty & https://drafts.fxtf.org/filter-effects-1/#placement
+    Invariant: Filter effects apply before mask on SVG elements.
+               The red square is blurred with feGaussianBlur (stdDeviation=20), then masked to 100x100.
+               Because the mask applies to the filtered output, no blurred red fringes extend beyond 100x100.
+               The subsequent 100x100 green rectangle completely occludes the masked red element.
+               Test passes if you see only a solid green square.
+  -->
+  <html:link rel="match" href="filter-vs-mask-precedence-ref.svg"/>
+  <defs>
+    <filter id="blur20" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="20"/>
+    </filter>
+    <mask id="rect-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100">
+      <rect width="100" height="100" fill="#FFFFFF"/>
+    </mask>
+  </defs>
+
+  <!-- Blurred element with mask -->
+  <rect width="100" height="100" fill="#FF0000" filter="url(#blur20)" mask="url(#rect-mask)"/>
+
+  <!-- Covering green rect -->
+  <rect width="100" height="100" fill="#00FF00"/>
+</svg>

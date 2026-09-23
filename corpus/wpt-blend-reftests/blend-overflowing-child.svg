@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="200" height="200" viewBox="0 0 200 200">
+  <!--
+    WPT Test: css/compositing/mix-blend-mode/mix-blend-mode-overflowing-child.html
+    Spec: https://drafts.fxtf.org/compositing-1/#mix-blend-mode
+    Invariant: An overflowing child with mix-blend-mode (difference) blends with its parent
+               stacking context, but not with the underlying page canvas behind the parent.
+               Parent creates a stacking context with green square (#00FF00, 100x100).
+               Blender is a green square (#00FF00, 100x100 at 50,50) with mix-blend-mode: difference.
+               - Intersection (50x50 at 50,50): green diff green = black (#000000).
+               - Overflowing portion: does NOT blend with lightgray canvas background; remains green.
+  -->
+  <html:link rel="match" href="blend-overflowing-child-ref.svg"/>
+
+  <!-- Canvas background: lightgray -->
+  <rect width="200" height="200" fill="#D3D3D3"/>
+
+  <!-- Stacking context group -->
+  <g style="isolation: isolate;">
+    <!-- Parent square: green -->
+    <rect x="0" y="0" width="100" height="100" fill="#00FF00"/>
+    <!-- Overflowing blender child: green with difference -->
+    <rect x="50" y="50" width="100" height="100" fill="#00FF00" style="mix-blend-mode: difference;"/>
+  </g>
+</svg>

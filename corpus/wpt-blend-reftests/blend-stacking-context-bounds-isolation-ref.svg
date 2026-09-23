@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="130" height="130" viewBox="0 0 130 130">
+  <!-- Reference for blend-stacking-context-bounds-isolation.svg -->
+  <!-- Container: yellow -->
+  <rect width="130" height="130" fill="#FFFF00"/>
+
+  <!-- Base lime square -->
+  <rect x="0" y="0" width="100" height="100" fill="#00FF00"/>
+
+  <!-- Red square (100x100 at 20,20) -->
+  <rect x="20" y="20" width="100" height="100" fill="#FF0000"/>
+
+  <!-- Pre-computed black intersection (80x80 at 20,20) -->
+  <rect x="20" y="20" width="80" height="80" fill="#000000"/>
+</svg>

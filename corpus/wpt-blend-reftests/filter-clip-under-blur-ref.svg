@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140" viewBox="0 0 140 140">
+  <!-- Reference for filter-clip-under-blur.svg -->
+  <defs>
+    <filter id="blur10" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+  </defs>
+
+  <!-- Pre-clipped geometry blurred with identical filter parameters -->
+  <g filter="url(#blur10)">
+    <rect x="20" y="20" width="100" height="100" fill="#0000FF"/>
+    <rect x="70" y="20" width="50" height="100" fill="#008000"/>
+  </g>
+</svg>

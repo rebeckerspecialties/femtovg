@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="140" height="140" viewBox="0 0 140 140">
+  <!--
+    WPT Test: css/compositing/mix-blend-mode/mix-blend-mode-blended-element-with-transparent-pixels.html
+    Spec: https://drafts.fxtf.org/compositing-1/#mix-blend-mode
+    Invariant: Tests that blending is performed within the parent stacking context and does NOT
+               bleed through to underlying content behind the stacking context.
+               Parent creates a stacking context containing a 100x100 blue rect (#0000FF) at (10,10).
+               Blended child is a 120x120 aqua rect (#00FFFF) at (0,0) with mix-blend-mode: difference.
+               - Inside 100x100: blue diff aqua = lime (#00FF00).
+               - 10px perimeter: backdrop inside stacking context is transparent, so aqua diff transparent = aqua (#00FFFF).
+               If the blender incorrectly blends with the white canvas behind the stacking context,
+               the border turns red (aqua diff white = red).
+               Pass condition: 100x100 lime square with 10px aqua border.
+  -->
+  <html:link rel="match" href="blend-transparent-backdrop-boundary-ref.svg"/>
+
+  <!-- Canvas background: white -->
+  <rect width="140" height="140" fill="#FFFFFF"/>
+
+  <!-- Stacking context group (at 10,10) -->
+  <g transform="translate(10, 10)" style="isolation: isolate;">
+    <!-- Parent element inside stacking context: 100x100 blue -->
+    <rect x="0" y="0" width="100" height="100" fill="#0000FF"/>
+    <!-- Oversized blender child: 120x120 aqua with difference -->
+    <rect x="-10" y="-10" width="120" height="120" fill="#00FFFF" style="mix-blend-mode: difference;"/>
+  </g>
+</svg>

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="100" height="100" viewBox="0 0 100 100">
+  <!--
+    WPT Test: css/compositing/mix-blend-mode/mix-blend-mode-filter.html
+    Spec: https://drafts.fxtf.org/compositing-1/#mix-blend-mode
+    Invariant: An element having both a filter effect and mix-blend-mode (difference) blends
+               correctly with its parent element (yellow).
+               Applying a filter effect must NOT isolate the element from its backdrop or cause
+               it to blend against an empty layer. Difference of red (#FF0000) and yellow (#FFFF00)
+               is lime (#00FF00). If blending fails or backdrop is lost, the square renders red.
+  -->
+  <html:link rel="match" href="blend-filter-identity-isolation-ref.svg"/>
+  <defs>
+    <filter id="identity-filter">
+      <feColorMatrix type="matrix" values="
+        1 0 0 0 0
+        0 1 0 0 0
+        0 0 1 0 0
+        0 0 0 1 0"/>
+    </filter>
+  </defs>
+
+  <!-- Yellow backdrop -->
+  <rect width="100" height="100" fill="#FFFF00"/>
+
+  <!-- Blended element with filter -->
+  <rect width="100" height="100" fill="#FF0000" filter="url(#identity-filter)" style="mix-blend-mode: difference;"/>
+</svg>

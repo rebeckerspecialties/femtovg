@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="140" height="140" viewBox="0 0 140 140">
+  <!-- Reference for blend-clip-parent-non-overflow.svg: Green circle inside yellow square over lightgray -->
+  <!-- Canvas background: lightgray -->
+  <rect width="140" height="140" fill="#D3D3D3"/>
+
+  <!-- Yellow square base -->
+  <rect x="20" y="20" width="100" height="100" fill="#FFFF00"/>
+
+  <!-- Pre-computed lime circle -->
+  <circle cx="70" cy="70" r="50" fill="#00FF00"/>
+</svg>
