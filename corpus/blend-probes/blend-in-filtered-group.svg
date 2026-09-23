@@ -1,0 +1,9 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <title>A blending element inside a filtered group: the filter isolates it from the backdrop</title>
+  <filter id="f" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2"/></filter>
+  <rect x="20" y="20" width="140" height="140" fill="green"/>
+  <g filter="url(#f)">
+    <rect x="40" y="40" width="140" height="140" fill="orange" style="mix-blend-mode:multiply"/>
+  </g>
+  <rect x="1" y="1" width="198" height="198" fill="none" stroke="black"/>
+</svg>

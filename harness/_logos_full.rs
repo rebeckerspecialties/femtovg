@@ -150,18 +150,12 @@ fn capture_mask(
         eprintln!("MASK {canvas_w}x{canvas_h}");
     }
     canvas.save();
-    // Back to the page layer's store, not the screen, when the scene is
-    // drawn in one (`render_target()` arrived with #355).
-    #[cfg(harness_blend)]
-    let previous = canvas.render_target();
-    #[cfg(not(harness_blend))]
-    let previous = RenderTarget::Screen;
-    canvas.set_render_target(RenderTarget::Image(image));
-    canvas.clear_rect(0, 0, canvas_w as u32, canvas_h as u32, Color::rgbaf(0.0, 0.0, 0.0, 0.0));
-    // Mask content lives in the referencing group's user space.
-    canvas.set_transform(&ts_to_t2d(group_transform));
-    draw_nodes(canvas, mask.root().children(), scale, masks);
-    canvas.set_render_target(previous);
+    with_target(canvas, RenderTarget::Image(image), |canvas| {
+        canvas.clear_rect(0, 0, canvas_w as u32, canvas_h as u32, Color::rgbaf(0.0, 0.0, 0.0, 0.0));
+        // Mask content lives in the referencing group's user space.
+        canvas.set_transform(&ts_to_t2d(group_transform));
+        draw_nodes(canvas, mask.root().children(), scale, masks);
+    });
     canvas.restore();
     let kind = match mask.kind() {
         usvg::MaskType::Luminance => MaskKind::Luminance,
@@ -325,11 +319,10 @@ fn precapture_blend_sources(
         };
         track_image(image);
         canvas.save();
-        let previous = canvas.render_target();
-        canvas.set_render_target(RenderTarget::Image(image));
-        canvas.clear_rect(0, 0, canvas_w as u32, canvas_h as u32, Color::rgbaf(0.0, 0.0, 0.0, 0.0));
-        draw_nodes(canvas, group.children(), scale, masks);
-        canvas.set_render_target(previous);
+        with_target(canvas, RenderTarget::Image(image), |canvas| {
+            canvas.clear_rect(0, 0, canvas_w as u32, canvas_h as u32, Color::rgbaf(0.0, 0.0, 0.0, 0.0));
+            draw_nodes(canvas, group.children(), scale, masks);
+        });
         canvas.restore();
         // SourceAlpha is the silhouette (rgb zeroed, alpha kept; black is the
         // same in either color space); a linearRGB blend reads the source
@@ -730,6 +723,20 @@ fn blend_commutes(mode: usvg::BlendMode) -> bool {
     )
 }
 
+/// Draws `f` on `target`, then goes back to the target that was current: a
+/// layer's store, which only `with_render_target` (#355) can restore.
+#[cfg(harness_blend)]
+fn with_target(canvas: &mut Canvas<WGPURenderer>, target: RenderTarget, f: impl FnOnce(&mut Canvas<WGPURenderer>)) {
+    canvas.with_render_target(target, f);
+}
+
+#[cfg(not(harness_blend))]
+fn with_target(canvas: &mut Canvas<WGPURenderer>, target: RenderTarget, f: impl FnOnce(&mut Canvas<WGPURenderer>)) {
+    canvas.set_render_target(target);
+    f(canvas);
+    canvas.set_render_target(RenderTarget::Screen);
+}
+
 /// Without `--cfg harness_turbulence` (a tree without #338) no chain can be
 /// run: the group is left to the SKIP_UNSUPPORTED_FILTERS rule, exactly as a
 /// chain this backend does not recognise, and counted so LAYER_STATS shows
@@ -773,10 +780,9 @@ fn draw_filtered(
     track_image(noise);
     #[cfg(harness_blend)]
     if let Some(color) = plan.flood {
-        let previous = canvas.render_target();
-        canvas.set_render_target(RenderTarget::Image(noise));
-        canvas.clear_rect(0, 0, w as u32, h as u32, color);
-        canvas.set_render_target(previous);
+        with_target(canvas, RenderTarget::Image(noise), |canvas| {
+            canvas.clear_rect(0, 0, w as u32, h as u32, color);
+        });
     }
     #[cfg(not(harness_blend))]
     let _ = plan.flood;
@@ -792,20 +798,19 @@ fn draw_filtered(
         // composite spans the whole noise image and multiplies every pixel
         // by the source's coverage there.
         if blend.stencilled {
-            let previous = canvas.render_target();
             canvas.save();
-            canvas.set_render_target(RenderTarget::Image(noise));
-            canvas.reset_transform();
-            // The root viewport scissor is in canvas pixels, not the noise
-            // image's.
-            canvas.reset_scissor();
-            canvas.set_transform(&plan.stencil_transform);
-            canvas.global_composite_operation(CompositeOperation::DestinationIn);
-            let _ = canvas.begin_layer(&LayerEffects::new());
-            draw_nodes(canvas, group.children(), scale, masks);
-            canvas.end_layer();
+            with_target(canvas, RenderTarget::Image(noise), |canvas| {
+                canvas.reset_transform();
+                // The root viewport scissor is in canvas pixels, not the noise
+                // image's.
+                canvas.reset_scissor();
+                canvas.set_transform(&plan.stencil_transform);
+                canvas.global_composite_operation(CompositeOperation::DestinationIn);
+                let _ = canvas.begin_layer(&LayerEffects::new());
+                draw_nodes(canvas, group.children(), scale, masks);
+                canvas.end_layer();
+            });
             canvas.restore();
-            canvas.set_render_target(previous);
         }
         if std::env::var("BLEND_NOISE_ONLY").is_ok() {
             // Debug: the (stencilled) noise alone, in place.
