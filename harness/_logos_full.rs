@@ -14,7 +14,7 @@
 #![cfg(feature = "wgpu")]
 #![allow(unexpected_cfgs)]
 
-#[cfg(harness_blend)]
+#[cfg(any(harness_blend, harness_mix_blend))]
 use femtovg::BlendMode;
 #[cfg(harness_turbulence)]
 use femtovg::TurbulenceKind;
@@ -150,12 +150,15 @@ fn capture_mask(
         eprintln!("MASK {canvas_w}x{canvas_h}");
     }
     canvas.save();
+    // The target to go back to: the page layer's store when the scene is
+    // drawn in one, not the screen.
+    let previous = canvas.render_target();
     canvas.set_render_target(RenderTarget::Image(image));
     canvas.clear_rect(0, 0, canvas_w as u32, canvas_h as u32, Color::rgbaf(0.0, 0.0, 0.0, 0.0));
     // Mask content lives in the referencing group's user space.
     canvas.set_transform(&ts_to_t2d(group_transform));
     draw_nodes(canvas, mask.root().children(), scale, masks);
-    canvas.set_render_target(RenderTarget::Screen);
+    canvas.set_render_target(previous);
     canvas.restore();
     let kind = match mask.kind() {
         usvg::MaskType::Luminance => MaskKind::Luminance,
@@ -218,14 +221,40 @@ fn group_effects(
     }
     let _ = canvas;
     let mask = masks.get(&(group as *const usvg::Group as usize)).copied();
-    if opacity >= 1.0 && blurs.is_empty() && mask.is_none() && !force_layer {
+    // `mix-blend-mode` composites the group's layer with its backdrop; an
+    // `isolation: isolate` group gets a plain layer so the blends inside it
+    // see only its own content.
+    #[cfg(harness_mix_blend)]
+    let blend = if std::env::var("NO_MIX_BLEND").is_err() {
+        group.blend_mode()
+    } else {
+        usvg::BlendMode::Normal
+    };
+    #[cfg(not(harness_mix_blend))]
+    let blend = usvg::BlendMode::Normal;
+    #[cfg(harness_mix_blend)]
+    let force_layer = force_layer || (group.isolate() && std::env::var("NO_MIX_BLEND").is_err());
+    if opacity >= 1.0 && blurs.is_empty() && mask.is_none() && !force_layer && blend == usvg::BlendMode::Normal {
         return None;
     }
     let mut fx = LayerEffects::new().with_opacity(opacity).with_filters(&blurs);
     if let Some((image, kind)) = mask {
         fx = fx.with_mask(image, kind, 0.0, 0.0, canvas_w as f32, canvas_h as f32);
     }
+    #[cfg(harness_mix_blend)]
+    if blend != usvg::BlendMode::Normal {
+        fx = fx.with_blend(blend_mode(blend));
+    }
     Some(fx)
+}
+
+/// Whether any group in the subtree composites with a blend mode.
+#[cfg(harness_mix_blend)]
+fn has_blend_group(group: &usvg::Group) -> bool {
+    group.children().iter().any(|node| match node {
+        usvg::Node::Group(g) => g.blend_mode() != usvg::BlendMode::Normal || has_blend_group(g),
+        _ => false,
+    })
 }
 
 /// The group's `feDropShadow`, when its filter is one that shadows the source
@@ -522,7 +551,7 @@ fn turbulence_plan(canvas: &Canvas<WGPURenderer>, group: &usvg::Group) -> Option
     })
 }
 
-#[cfg(harness_blend)]
+#[cfg(any(harness_blend, harness_mix_blend))]
 fn blend_mode(mode: usvg::BlendMode) -> BlendMode {
     use usvg::BlendMode as M;
     match mode {
@@ -1120,6 +1149,24 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
 /// Both the frame loop and the soak drive it; flushing is the caller's.
 fn render_scene(canvas: &mut Canvas<WGPURenderer>, tree: &usvg::Tree, scale: f32, bg: Color) {
     canvas.clear_rect(0, 0, frame_w(), frame_h(), bg);
+    // A blend mode reads the backdrop under its group, the page background
+    // included (Chromium blends a top-level child with the page: a gray
+    // `screen` over white is white), and the screen cannot be read back, so
+    // a scene with one is drawn in a layer that holds the background.
+    #[cfg(harness_mix_blend)]
+    let page_layer = has_blend_group(tree.root()) && std::env::var("NO_MIX_BLEND").is_err();
+    #[cfg(not(harness_mix_blend))]
+    let page_layer = false;
+    if page_layer {
+        if !canvas.begin_layer(&LayerEffects::new()) {
+            PASS_THROUGH.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        }
+        let mut page = Path::new();
+        page.rect(0.0, 0.0, frame_w() as f32, frame_h() as f32);
+        let mut paint = Paint::color(bg);
+        paint.set_anti_alias(false);
+        canvas.fill_path(&page, &paint);
+    }
     canvas.save();
         let (px, py) = std::env::var("PIVOT")
             .ok()
@@ -1153,6 +1200,9 @@ fn render_scene(canvas: &mut Canvas<WGPURenderer>, tree: &usvg::Tree, scale: f32
         draw_nodes(canvas, tree.root().children(), scale * fit, &masks);
 
     canvas.restore();
+    if page_layer {
+        canvas.end_layer();
+    }
     for image in FRAME_IMAGES.lock().unwrap().drain(..) {
         canvas.delete_image(image);
     }
