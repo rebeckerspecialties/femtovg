@@ -69,3 +69,18 @@ meet under the blur (`filter-clip-under-blur`: 8.30 % -> 1.35 % against
 Chromium, Chromium's own test-vs-ref 0.24 %; the rest is the blur
 kernel). Single-color blurs are unchanged by the color space, which is
 why the earlier corpus experiment measured nothing.
+
+## The harness change across the corpus (`harness/ab.py`, master's library, old harness vs new)
+
+102 of 564 frames change (BuseyBench groups with blur, color-matrix or
+manual drop-shadow chains; google-workspace-48px is unchanged once the
+transparent-flood blend counts as the identity), SVGenius none. The 30
+changed frames with Chromium references: mean pixels beyond 8/255
+7.81 % -> 5.78 %, structural 2.90 % -> 1.42 %; 10 better, 12 unchanged,
+8 worse by at most 0.36 points (gemini-3-1-pro-preview 4x 8.03 -> 8.39,
+gemini-3-7-flash 2x 6.57 -> 6.77: multi-color blurs now in linearRGB, the
+rest of their residue is the blur kernel). The large gains are the manual
+drop-shadow chains no longer blurring the whole group (gpt-5-2-pro 4x
+48.34 -> 21.52, gpt-5-6-sol-pro 4x 31.81 -> 19.05); mapping that chain to
+the shadow state is the next harness step.
+(`harness/wpt-blend-reftests-harness-ab-2026-09-23.txt`)
