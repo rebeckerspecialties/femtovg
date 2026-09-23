@@ -108,6 +108,16 @@ fn to_paint(p: &usvg::Paint) -> Option<Paint> {
 /// with the mask kind; the caller hands it to LayerEffects::with_mask.
 type MaskMap = std::collections::HashMap<usize, (femtovg::ImageId, MaskKind)>;
 
+/// Images this harness creates while drawing one frame - mask captures and
+/// turbulence noise quads - deleted at the end of `render_scene`; femtovg
+/// defers the deletion past the flush that consumes them. A persistent
+/// canvas (the soak) would otherwise hold every frame's images forever.
+static FRAME_IMAGES: std::sync::Mutex<Vec<femtovg::ImageId>> = std::sync::Mutex::new(Vec::new());
+fn track_image(id: femtovg::ImageId) -> femtovg::ImageId {
+    FRAME_IMAGES.lock().unwrap().push(id);
+    id
+}
+
 fn capture_mask(
     canvas: &mut Canvas<WGPURenderer>,
     mask: &usvg::Mask,
@@ -117,14 +127,16 @@ fn capture_mask(
     scale: f32,
     masks: &MaskMap,
 ) -> Option<(femtovg::ImageId, MaskKind)> {
-    let image = canvas
-        .create_image_empty(
-            canvas_w,
-            canvas_h,
-            femtovg::PixelFormat::Rgba8,
-            femtovg::ImageFlags::PREMULTIPLIED | femtovg::ImageFlags::FLIP_Y,
-        )
-        .ok()?;
+    let image = track_image(
+        canvas
+            .create_image_empty(
+                canvas_w,
+                canvas_h,
+                femtovg::PixelFormat::Rgba8,
+                femtovg::ImageFlags::PREMULTIPLIED | femtovg::ImageFlags::FLIP_Y,
+            )
+            .ok()?,
+    );
     if std::env::var("LAYER_LOG").is_ok() {
         eprintln!("MASK {canvas_w}x{canvas_h}");
     }
@@ -410,6 +422,7 @@ fn draw_filtered(
     ) else {
         return;
     };
+    track_image(noise);
     // Turbulence reads nothing from its source; it only sizes the quad.
     let _ = canvas.filter_image_chain(noise, &plan.chain, noise);
     if plan.stencil {
@@ -856,8 +869,168 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
     }
 }
 
+/// Draws the whole scene once into the canvas under the pivot zoom: the
+/// clear, the framing transform, the mask pre-capture and the node walk.
+/// Both the frame loop and the soak drive it; flushing is the caller's.
+fn render_scene(canvas: &mut Canvas<WGPURenderer>, tree: &usvg::Tree, scale: f32, bg: Color) {
+    canvas.clear_rect(0, 0, frame_w(), frame_h(), bg);
+    canvas.save();
+        let (px, py) = std::env::var("PIVOT")
+            .ok()
+            .and_then(|s| s.split_once(',').map(|(a, b)| (a.parse().unwrap(), b.parse().unwrap())))
+            .unwrap_or((frame_w() as f32 / 2.0, frame_h() as f32 / 2.0));
+        canvas.translate(px, py);
+        canvas.scale(scale, scale);
+        canvas.translate(-px, -py);
+
+        let size = tree.size();
+        let fit = box_size() / size.width().max(size.height());
+        let (box_x, box_y) = box_at();
+        canvas.translate(box_x, box_y);
+        // An SVG viewport clips its content (overflow is hidden by default). Skip
+        // this and anything the artwork pushes past its own edge - most visibly a
+        // heavily blurred shape larger than the viewBox - spills into the page.
+        if std::env::var("VIEWPORT_CLIP").is_ok() {
+            canvas.scissor(0.0, 0.0, box_size(), box_size());
+        }
+        canvas.scale(fit, fit);
+        let mut masks = MaskMap::new();
+        precapture_masks(
+            canvas,
+            tree.root().children(),
+            frame_w() as usize,
+            frame_h() as usize,
+            scale * fit,
+            &mut masks,
+        );
+        draw_nodes(canvas, tree.root().children(), scale * fit, &masks);
+
+    canvas.restore();
+    for image in FRAME_IMAGES.lock().unwrap().drain(..) {
+        canvas.delete_image(image);
+    }
+}
+
+/// SOAK mode: `_logos_full soak <out.csv> <list.txt>` renders every SVG in
+/// the list at SOAK_ZOOMS (default 1,2,4) for SOAK_PASSES (default 3) passes
+/// on ONE canvas, never recreated, and records per frame the wall and CPU
+/// milliseconds of the femtovg part (record + flush + GPU wait, parsing
+/// excluded), the transient bytes held at the flush, the images the canvas
+/// holds, and the process RSS high-water (ru_maxrss). Growth across passes
+/// is what to look for.
+#[repr(C)]
+struct Timeval {
+    tv_sec: i64,
+    tv_usec: i32,
+}
+#[repr(C)]
+struct Rusage {
+    ru_utime: Timeval,
+    ru_stime: Timeval,
+    ru_maxrss: i64,
+    rest: [i64; 13],
+}
+extern "C" {
+    fn getrusage(who: i32, usage: *mut Rusage) -> i32;
+}
+fn rusage() -> (f64, u64) {
+    let mut r = Rusage {
+        ru_utime: Timeval { tv_sec: 0, tv_usec: 0 },
+        ru_stime: Timeval { tv_sec: 0, tv_usec: 0 },
+        ru_maxrss: 0,
+        rest: [0; 13],
+    };
+    unsafe { getrusage(0, &mut r) };
+    let cpu_ms = (r.ru_utime.tv_sec as f64 + r.ru_stime.tv_sec as f64) * 1000.0
+        + (r.ru_utime.tv_usec as f64 + r.ru_stime.tv_usec as f64) / 1000.0;
+    (cpu_ms, r.ru_maxrss as u64)
+}
+
+fn soak(device: &wgpu::Device, queue: &wgpu::Queue, out_csv: &str, list: &str) {
+    let renderer = WGPURenderer::new(device.clone(), queue.clone());
+    let mut canvas = Canvas::new(renderer).unwrap();
+    canvas.set_size(frame_w(), frame_h(), 1.0);
+    let zooms: Vec<f32> = std::env::var("SOAK_ZOOMS")
+        .unwrap_or_else(|_| "1,2,4".into())
+        .split(',')
+        .map(|z| z.parse().unwrap())
+        .collect();
+    let passes: usize = std::env::var("SOAK_PASSES").ok().and_then(|v| v.parse().ok()).unwrap_or(3);
+    let files: Vec<String> = std::fs::read_to_string(list)
+        .unwrap()
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty())
+        .map(String::from)
+        .collect();
+    let mut opt = usvg::Options::default();
+    opt.fontdb_mut().load_system_fonts();
+    let trees: Vec<(String, usvg::Tree)> = files
+        .iter()
+        .filter_map(|f| {
+            let text = std::fs::read_to_string(f).ok()?;
+            let text = drop_invalid_filter_references(&text);
+            let tree = usvg::Tree::from_str(&text, &opt).ok()?;
+            Some((f.clone(), tree))
+        })
+        .collect();
+    let target = device.create_texture(&wgpu::TextureDescriptor {
+        label: None,
+        size: wgpu::Extent3d {
+            width: frame_w(),
+            height: frame_h(),
+            depth_or_array_layers: 1,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D2,
+        format: wgpu::TextureFormat::Rgba8Unorm,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+        view_formats: &[],
+    });
+    let mut csv = String::from("pass,file,zoom,wall_ms,cpu_ms,transient_bytes,images,maxrss_bytes\n");
+    for pass in 0..passes {
+        for (name, tree) in &trees {
+            for &zoom in &zooms {
+                let (cpu0, _) = rusage();
+                let t0 = std::time::Instant::now();
+                render_scene(&mut canvas, tree, zoom, Color::white());
+                let transient = canvas.transient_image_bytes();
+                let commands = canvas.flush_to_output(&target);
+                queue.submit(commands);
+                device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
+                let wall = t0.elapsed().as_secs_f64() * 1000.0;
+                let (cpu1, maxrss) = rusage();
+                let images = canvas.debug_image_count();
+                let short = std::path::Path::new(name).file_stem().unwrap().to_string_lossy();
+                csv.push_str(&format!(
+                    "{pass},{short},{zoom},{wall:.3},{:.3},{transient},{images},{maxrss}\n",
+                    cpu1 - cpu0
+                ));
+            }
+        }
+        eprintln!("pass {pass} done: {} frames so far", (pass + 1) * trees.len() * zooms.len());
+    }
+    std::fs::write(out_csv, csv).unwrap();
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
+    if args.get(1).map(String::as_str) == Some("soak") {
+        let instance = wgpu::Instance::default();
+        let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions::default())).unwrap();
+        let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
+            label: None,
+            required_features: wgpu::Features::empty(),
+            required_limits: wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits()),
+            experimental_features: wgpu::ExperimentalFeatures::disabled(),
+            memory_hints: wgpu::MemoryHints::MemoryUsage,
+            trace: wgpu::Trace::default(),
+        }))
+        .unwrap();
+        soak(&device, &queue, &args[2], &args[3]);
+        return;
+    }
     let scale: f32 = args[1].parse().expect("scale");
     let out = &args[2];
     let svg_path = &args[3];
@@ -921,40 +1094,7 @@ fn main() {
     // state that leaks across frames shows up in the last one.
     let frames: usize = std::env::var("FRAMES").ok().and_then(|v| v.parse().ok()).unwrap_or(1);
     for _frame in 0..frames {
-        canvas.clear_rect(0, 0, frame_w(), frame_h(), bg);
-        canvas.save();
-        let (px, py) = std::env::var("PIVOT")
-            .ok()
-            .and_then(|s| s.split_once(',').map(|(a, b)| (a.parse().unwrap(), b.parse().unwrap())))
-            .unwrap_or((frame_w() as f32 / 2.0, frame_h() as f32 / 2.0));
-        canvas.translate(px, py);
-        canvas.scale(scale, scale);
-        canvas.translate(-px, -py);
-
-        let size = tree.size();
-        let fit = box_size() / size.width().max(size.height());
-        let (box_x, box_y) = box_at();
-        canvas.translate(box_x, box_y);
-        // An SVG viewport clips its content (overflow is hidden by default). Skip
-        // this and anything the artwork pushes past its own edge - most visibly a
-        // heavily blurred shape larger than the viewBox - spills into the page.
-        if std::env::var("VIEWPORT_CLIP").is_ok() {
-            canvas.scissor(0.0, 0.0, box_size(), box_size());
-        }
-        canvas.scale(fit, fit);
-        let mut masks = MaskMap::new();
-        precapture_masks(
-            &mut canvas,
-            tree.root().children(),
-            frame_w() as usize,
-            frame_h() as usize,
-            scale * fit,
-            &mut masks,
-        );
-        draw_nodes(&mut canvas, tree.root().children(), scale * fit, &masks);
-
-        canvas.restore();
-
+        render_scene(&mut canvas, &tree, scale, bg);
         TRANSIENT_AT_FLUSH.store(canvas.transient_image_bytes(), std::sync::atomic::Ordering::Relaxed);
         let commands = canvas.flush_to_output(&target);
         queue.submit(commands);
