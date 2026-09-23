@@ -203,33 +203,45 @@ fn group_effects(
     } else {
         group.opacity().get()
     };
-    let mut blurs = blur_filters(group, scale);
+    let LayerChain {
+        passes: mut blurs,
+        mut linear,
+        ..
+    } = layer_chain(group, scale);
     let _ = canvas;
     #[cfg(harness_blend)]
-    if let Some(BlurBlend { mode, linear, .. }) = blur_blend(group) {
+    if let Some(BlurBlend {
+        mode,
+        linear: blend_linear,
+        ..
+    }) = blur_blend(group)
+    {
         let source = BLEND_SOURCES
             .lock()
             .unwrap()
             .as_ref()
             .and_then(|m| m.get(&(group as *const usvg::Group as usize)).copied());
         if let Some(backdrop) = source {
-            let blend = ImageFilter::Blend {
+            if blend_linear != linear {
+                blurs.push(if blend_linear {
+                    ImageFilter::SrgbToLinearRgb
+                } else {
+                    ImageFilter::LinearRgbToSrgb
+                });
+                linear = blend_linear;
+            }
+            blurs.push(ImageFilter::Blend {
                 mode: blend_mode(mode),
                 backdrop,
                 x: 0.0,
                 y: 0.0,
                 width: canvas_w as f32,
                 height: canvas_h as f32,
-            };
-            // The whole chain runs in the blend's color space.
-            if linear {
-                blurs.insert(0, ImageFilter::SrgbToLinearRgb);
-                blurs.push(blend);
-                blurs.push(ImageFilter::LinearRgbToSrgb);
-            } else {
-                blurs.push(blend);
-            }
+            });
         }
+    }
+    if linear {
+        blurs.push(ImageFilter::LinearRgbToSrgb);
     }
     let mask = masks.get(&(group as *const usvg::Group as usize)).copied();
     // `mix-blend-mode` composites the group's layer with its backdrop. A
@@ -351,6 +363,83 @@ fn precapture_blend_sources(
             .get_or_insert_with(Default::default)
             .insert(&**group as *const usvg::Group as usize, source);
     }
+}
+
+/// The group's filter as layer passes, each in the color space its
+/// primitive asks for: blurs, color matrices and alpha transfers chained
+/// from the source graphic. Stops at a primitive it cannot map and before a
+/// final `feBlend`, which `blur_blend` maps; `complete` says nothing was
+/// left out. The passes may end in linearRGB (`linear`).
+struct LayerChain {
+    passes: Vec<ImageFilter>,
+    linear: bool,
+    complete: bool,
+}
+
+fn layer_chain(group: &usvg::Group, scale: f32) -> LayerChain {
+    use usvg::filter::{ColorInterpolation, Input, Kind};
+    let mut chain = LayerChain {
+        passes: Vec::new(),
+        linear: false,
+        complete: true,
+    };
+    let [f] = group.filters() else {
+        chain.complete = group.filters().is_empty();
+        return chain;
+    };
+    let mut previous: Option<&str> = None;
+    // Results that are fully transparent (`feFlood` at opacity 0): blending
+    // the chain with one is the identity, the export idiom
+    // `feFlood -> feBlend in=SourceGraphic in2=flood -> feGaussianBlur`.
+    let mut transparent: Vec<&str> = Vec::new();
+    for prim in f.primitives() {
+        let from_previous = |input: &Input| match (input, previous) {
+            (Input::SourceGraphic, None) => true,
+            (Input::Reference(r), Some(p)) => r == p,
+            _ => false,
+        };
+        let is_transparent = |input: &Input| matches!(input, Input::Reference(r) if transparent.contains(&r.as_str()));
+        let pass = match prim.kind() {
+            Kind::Flood(fl) if fl.opacity().get() <= 0.0 => {
+                transparent.push(prim.result());
+                continue;
+            }
+            Kind::Blend(b)
+                if (from_previous(b.input1()) && is_transparent(b.input2()))
+                    || (from_previous(b.input2()) && is_transparent(b.input1())) =>
+            {
+                previous = Some(prim.result());
+                continue;
+            }
+            Kind::GaussianBlur(b) if from_previous(b.input()) => {
+                let sigma = b.std_dev_x().get().max(b.std_dev_y().get()) * scale;
+                if sigma <= 0.0 {
+                    previous = Some(prim.result());
+                    continue;
+                }
+                Some(ImageFilter::GaussianBlur { sigma })
+            }
+            Kind::ColorMatrix(cm) if from_previous(cm.input()) => color_matrix(cm.kind()),
+            Kind::ComponentTransfer(ct) if from_previous(ct.input()) => alpha_transfer_matrix(ct),
+            _ => None,
+        };
+        let Some(pass) = pass else {
+            chain.complete = matches!(prim.kind(), Kind::Blend(_));
+            break;
+        };
+        let linear = prim.color_interpolation() == ColorInterpolation::LinearRGB;
+        if linear != chain.linear {
+            chain.passes.push(if linear {
+                ImageFilter::SrgbToLinearRgb
+            } else {
+                ImageFilter::LinearRgbToSrgb
+            });
+            chain.linear = linear;
+        }
+        chain.passes.push(pass);
+        previous = Some(prim.result());
+    }
+    chain
 }
 
 /// The group's `feGaussianBlur` primitives as layer filters, in device pixels.
@@ -1156,9 +1245,9 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                 // worse than drawing nothing.
                 let plan = turbulence_plan(canvas, group);
                 #[cfg(harness_blend)]
-                let mapped = plan.is_some() || blur_blend(group).is_some();
+                let mapped = plan.is_some() || blur_blend(group).is_some() || layer_chain(group, scale).complete;
                 #[cfg(not(harness_blend))]
-                let mapped = plan.is_some();
+                let mapped = plan.is_some() || layer_chain(group, scale).complete;
                 if std::env::var("SKIP_UNSUPPORTED_FILTERS").is_ok()
                     && !mapped
                     && group.filters().iter().any(|f| replaces_source(f))
