@@ -37,6 +37,8 @@ jobs:
       - run: cargo build --all-features --features glutin/wayland,glutin/egl --verbose
       - run: cargo build --no-default-features --verbose
       - run: cargo build --verbose --target wasm32-unknown-unknown
+      # Non-browser wasm32 (no wasm-bindgen / web-sys linked).
+      - run: cargo build --verbose --target wasm32-unknown-unknown --no-default-features --features wire
       - run: cargo build --verbose --examples
       - run: cargo build --verbose --examples --features wgpu
       - run: cargo build --target=wasm32-unknown-unknown --example demo

@@ -8,7 +8,9 @@ use crate::{
     ImageInfo, ImageSource, ImageStore,
 };
 
+#[cfg(feature = "opengl")]
 mod opengl;
+#[cfg(feature = "opengl")]
 pub use opengl::OpenGl;
 
 #[cfg(feature = "wgpu")]

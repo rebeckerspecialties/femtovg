@@ -96,7 +96,7 @@ impl OpenGl {
     }
 
     /// Creates a new OpenGL renderer from an HTML canvas element in a WASM32 target.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(all(target_arch = "wasm32", feature = "web"))]
     pub fn new_from_html_canvas(canvas: &web_sys::HtmlCanvasElement) -> Result<Self, ErrorKind> {
         let attrs = web_sys::WebGlContextAttributes::new();
         attrs.set_stencil(true);
