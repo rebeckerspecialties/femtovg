@@ -6,13 +6,16 @@
 //! has only the #322/#323 APIs (layers, effects, masks): clip paths are then
 //! drawn unclipped and feTurbulence chains are left to the
 //! SKIP_UNSUPPORTED_FILTERS rule, and both are counted under LAYER_STATS.
-//! `--cfg harness_clip` enables `Canvas::clip_path` (#324) and
-//! `--cfg harness_turbulence` enables `ImageFilter::Turbulence` (#338):
-//! `cargo rustc --example _logos_full --features wgpu -- --cfg harness_clip --cfg harness_turbulence`
-//! (or the same two cfgs in RUSTFLAGS, which also rebuilds every dependency).
+//! `--cfg harness_clip` enables `Canvas::clip_path` (#324),
+//! `--cfg harness_turbulence` enables `ImageFilter::Turbulence` (#338) and
+//! `--cfg harness_blend` enables `ImageFilter::Blend` (feBlend):
+//! `cargo rustc --example _logos_full --features wgpu -- --cfg harness_clip --cfg harness_turbulence --cfg harness_blend`
+//! (or the same cfgs in RUSTFLAGS, which also rebuilds every dependency).
 #![cfg(feature = "wgpu")]
 #![allow(unexpected_cfgs)]
 
+#[cfg(harness_blend)]
+use femtovg::BlendMode;
 #[cfg(harness_turbulence)]
 use femtovg::TurbulenceKind;
 use femtovg::{
@@ -107,6 +110,12 @@ fn to_paint(p: &usvg::Paint) -> Option<Paint> {
 /// Renders `group`'s mask content into a canvas-sized image and returns it
 /// with the mask kind; the caller hands it to LayerEffects::with_mask.
 type MaskMap = std::collections::HashMap<usize, (femtovg::ImageId, MaskKind)>;
+
+/// The canvas transform at the root of the scene walk (pivot zoom and box
+/// fit applied), so a rect a filter needs in root device space can be
+/// computed from a group's absolute transform even inside a layer, where
+/// the canvas transform carries the layer store's own shift.
+static ROOT_DEVICE: std::sync::Mutex<Transform2D> = std::sync::Mutex::new(Transform2D([1.0, 0.0, 0.0, 1.0, 0.0, 0.0]));
 
 /// Images this harness creates while drawing one frame - mask captures and
 /// turbulence noise quads - deleted at the end of `render_scene`; femtovg
@@ -246,7 +255,30 @@ struct NoisePlan {
     /// device space to its own origin, so device coordinates are not stable.
     user_rect: (f32, f32, f32, f32),
     abs_transform: Transform2D,
+    /// The canvas transform to draw the source's nodes under so they land
+    /// on the noise image's pixels: the transform the noise was planned in,
+    /// shifted to the image's origin, without the group's own absolute
+    /// transform, which the node walk applies itself.
+    #[cfg_attr(not(harness_blend), allow(dead_code))]
+    stencil_transform: Transform2D,
     stencil: bool,
+    /// The chain ends in `feBlend` between the noise and the source graphic:
+    /// the mode, whether the blend runs in linearRGB, and the noise's rect in
+    /// root device space for the layer's blend pass.
+    #[cfg_attr(not(harness_blend), allow(dead_code))]
+    blend: Option<BlendPlan>,
+}
+
+#[cfg_attr(not(harness_turbulence), allow(dead_code))]
+#[derive(Clone, Copy)]
+struct BlendPlan {
+    #[cfg(harness_blend)]
+    mode: BlendMode,
+    linear: bool,
+    root_rect: (f32, f32, f32, f32),
+    /// `feComposite operator="in" in2=Source*` stencilled the noise before
+    /// the blend: the source is drawn into the noise image DestinationIn.
+    stencilled: bool,
 }
 
 #[cfg(harness_turbulence)]
@@ -259,6 +291,33 @@ fn color_matrix(kind: &usvg::filter::ColorMatrixKind) -> Option<ImageFilter> {
         ColorMatrixKind::Saturate(s) => Some(ImageFilter::saturate(s.get())),
         ColorMatrixKind::HueRotate(_) | ColorMatrixKind::LuminanceToAlpha => None,
     }
+}
+
+/// A component transfer that leaves color alone and maps alpha affinely -
+/// `feFuncA type="linear"` or a two-entry `table` - as the color matrix
+/// row `a' = slope * a + intercept`. Anything else is not translated.
+#[cfg(harness_turbulence)]
+fn alpha_transfer_matrix(ct: &usvg::filter::ComponentTransfer) -> Option<ImageFilter> {
+    use usvg::filter::TransferFunction;
+    if !matches!(ct.func_r(), TransferFunction::Identity)
+        || !matches!(ct.func_g(), TransferFunction::Identity)
+        || !matches!(ct.func_b(), TransferFunction::Identity)
+    {
+        return None;
+    }
+    let (slope, intercept) = match ct.func_a() {
+        TransferFunction::Identity => (1.0, 0.0),
+        TransferFunction::Linear { slope, intercept } => (*slope, *intercept),
+        TransferFunction::Table(values) if values.len() == 2 => (values[1] - values[0], values[0]),
+        _ => return None,
+    };
+    let mut matrix = [0.0f32; 20];
+    matrix[0] = 1.0;
+    matrix[6] = 1.0;
+    matrix[12] = 1.0;
+    matrix[18] = slope;
+    matrix[19] = intercept;
+    Some(ImageFilter::ColorMatrix { matrix })
 }
 
 /// Translates a group's filter into a NoisePlan when it is
@@ -320,6 +379,8 @@ fn turbulence_plan(canvas: &Canvas<WGPURenderer>, group: &usvg::Group) -> Option
     }
     let mut noise_transform = Transform2D::translation(-x0, -y0);
     noise_transform.premultiply(&device);
+    let mut stencil_transform = Transform2D::translation(-x0, -y0);
+    stencil_transform.premultiply(&canvas.transform());
     // The pixel rect back in user space, so the image lands 1:1 on the pixels it was made for.
     let inverse = device.inverse();
     let (ux0, uy0) = inverse.transform_point(x0, y0);
@@ -344,6 +405,7 @@ fn turbulence_plan(canvas: &Canvas<WGPURenderer>, group: &usvg::Group) -> Option
     }];
     let mut interpolation = prims[0].color_interpolation();
     let mut stencil = false;
+    let mut blend: Option<BlendPlan> = None;
     for (i, p) in prims.iter().enumerate().skip(1) {
         let previous = prims[i - 1].result();
         let from_previous = |input: &Input| matches!(input, Input::Reference(name) if name == previous);
@@ -352,25 +414,64 @@ fn turbulence_plan(canvas: &Canvas<WGPURenderer>, group: &usvg::Group) -> Option
                 chain.push(color_matrix(cm.kind())?);
                 interpolation = p.color_interpolation();
             }
+            // `feComposite in` against the source stencils the noise by the
+            // source's alpha: last, the plan draws the noise SourceIn; before
+            // a blend, the source is drawn into the noise DestinationIn first.
             Kind::Composite(c)
-                if i == prims.len() - 1
+                if (i == prims.len() - 1 || matches!(prims[i + 1].kind(), Kind::Blend(_)))
                     && matches!(c.operator(), CompositeOperator::In)
                     && from_previous(c.input1())
                     && matches!(c.input2(), Input::SourceGraphic | Input::SourceAlpha) =>
             {
                 stencil = true;
             }
+            // `feComponentTransfer` that only rescales alpha, the corpus's
+            // "faint" step: a linear or two-entry table function is an affine
+            // map of alpha, one color-matrix row.
+            Kind::ComponentTransfer(ct) if from_previous(ct.input()) => {
+                chain.push(alpha_transfer_matrix(ct)?);
+                interpolation = p.color_interpolation();
+            }
+            // `feBlend` of the noise with the source graphic as the last
+            // primitive, in either input order for a mode where the order
+            // does not matter (the source graphic is always the image the
+            // layer's blend pass filters, the noise its backdrop).
+            #[cfg(harness_blend)]
+            Kind::Blend(b)
+                if i == prims.len() - 1
+                    && ((from_previous(b.input1()) && matches!(b.input2(), Input::SourceGraphic))
+                        || (matches!(b.input1(), Input::SourceGraphic) && from_previous(b.input2())))
+                    && (matches!(b.input1(), Input::SourceGraphic) || blend_commutes(b.mode())) =>
+            {
+                if std::env::var("PLAN_DUMP").is_ok() {
+                    eprintln!("blend: mode={:?} in={:?} in2={:?}", b.mode(), b.input1(), b.input2());
+                }
+                let mut root = *ROOT_DEVICE.lock().unwrap();
+                root.premultiply(&ts_to_t2d(group.abs_transform()));
+                let (rx0, ry0) = root.transform_point(ux0.min(ux1), uy0.min(uy1));
+                let (rx1, ry1) = root.transform_point(ux0.max(ux1), uy0.max(uy1));
+                blend = Some(BlendPlan {
+                    mode: blend_mode(b.mode()),
+                    linear: p.color_interpolation() == ColorInterpolation::LinearRGB,
+                    root_rect: (rx0.min(rx1), ry0.min(ry1), (rx1 - rx0).abs(), (ry1 - ry0).abs()),
+                    stencilled: stencil,
+                });
+                stencil = false;
+            }
             _ => return None,
         }
     }
-    if interpolation == ColorInterpolation::LinearRGB {
+    // The noise stays in the blend's space when a blend follows; the
+    // layer's chain converts the source into that space and back.
+    if interpolation == ColorInterpolation::LinearRGB && !blend.is_some_and(|b| b.linear) {
         chain.push(ImageFilter::LinearRgbToSrgb);
     }
     if std::env::var("PLAN_DUMP").is_ok() {
         eprintln!(
-            "noise plan: rect=({x0},{y0} {}x{}) stencil={stencil} chain={chain:?}",
+            "noise plan: rect=({x0},{y0} {}x{}) stencil={stencil} blend={} chain={chain:?}",
             x1 - x0,
-            y1 - y0
+            y1 - y0,
+            blend.map_or("none".to_string(), |b| format!("{:?} linear={}", b.root_rect, b.linear))
         );
     }
     Some(NoisePlan {
@@ -378,8 +479,43 @@ fn turbulence_plan(canvas: &Canvas<WGPURenderer>, group: &usvg::Group) -> Option
         size: (x1 - x0, y1 - y0),
         user_rect,
         abs_transform: ts_to_t2d(group.abs_transform()),
+        stencil_transform,
         stencil,
+        blend,
     })
+}
+
+#[cfg(harness_blend)]
+fn blend_mode(mode: usvg::BlendMode) -> BlendMode {
+    use usvg::BlendMode as M;
+    match mode {
+        M::Normal => BlendMode::Normal,
+        M::Multiply => BlendMode::Multiply,
+        M::Screen => BlendMode::Screen,
+        M::Overlay => BlendMode::Overlay,
+        M::Darken => BlendMode::Darken,
+        M::Lighten => BlendMode::Lighten,
+        M::ColorDodge => BlendMode::ColorDodge,
+        M::ColorBurn => BlendMode::ColorBurn,
+        M::HardLight => BlendMode::HardLight,
+        M::SoftLight => BlendMode::SoftLight,
+        M::Difference => BlendMode::Difference,
+        M::Exclusion => BlendMode::Exclusion,
+        M::Hue => BlendMode::Hue,
+        M::Saturation => BlendMode::Saturation,
+        M::Color => BlendMode::Color,
+        M::Luminosity => BlendMode::Luminosity,
+    }
+}
+
+/// The separable modes whose blend function is symmetric in its inputs.
+#[cfg(harness_blend)]
+fn blend_commutes(mode: usvg::BlendMode) -> bool {
+    use usvg::BlendMode as M;
+    matches!(
+        mode,
+        M::Normal | M::Multiply | M::Screen | M::Darken | M::Lighten | M::Difference | M::Exclusion
+    )
 }
 
 /// Without `--cfg harness_turbulence` (a tree without #338) no chain can be
@@ -425,6 +561,68 @@ fn draw_filtered(
     track_image(noise);
     // Turbulence reads nothing from its source; it only sizes the quad.
     let _ = canvas.filter_image_chain(noise, &plan.chain, noise);
+    #[cfg(harness_blend)]
+    if let Some(blend) = plan.blend {
+        // `feComposite in` before the blend: keep the noise only where the
+        // source has coverage. A DestinationIn draw touches only the pixels
+        // it covers, so the source goes through a plain layer whose
+        // composite spans the whole noise image and multiplies every pixel
+        // by the source's coverage there.
+        if blend.stencilled {
+            let previous = canvas.render_target();
+            canvas.save();
+            canvas.set_render_target(RenderTarget::Image(noise));
+            canvas.reset_transform();
+            // The root viewport scissor is in canvas pixels, not the noise
+            // image's.
+            canvas.reset_scissor();
+            canvas.set_transform(&plan.stencil_transform);
+            canvas.global_composite_operation(CompositeOperation::DestinationIn);
+            let _ = canvas.begin_layer(&LayerEffects::new());
+            draw_nodes(canvas, group.children(), scale, masks);
+            canvas.end_layer();
+            canvas.restore();
+            canvas.set_render_target(previous);
+        }
+        if std::env::var("BLEND_NOISE_ONLY").is_ok() {
+            // Debug: the (stencilled) noise alone, in place.
+            canvas.save();
+            canvas.set_transform(&plan.abs_transform);
+            let (x, y, uw, uh) = plan.user_rect;
+            let mut rect = Path::new();
+            rect.rect(x, y, uw, uh);
+            canvas.fill_path(&rect, &Paint::image(noise, x, y, uw, uh, 0.0, 1.0));
+            canvas.restore();
+            return;
+        }
+        // The group's content is the blend's image, the noise its backdrop,
+        // placed where the filter region lies in root device space; a
+        // linearRGB blend converts the content into that space and back.
+        let (x, y, width, height) = blend.root_rect;
+        let pass = ImageFilter::Blend {
+            mode: blend.mode,
+            backdrop: noise,
+            x,
+            y,
+            width,
+            height,
+        };
+        let chain: Vec<ImageFilter> = if blend.linear {
+            vec![ImageFilter::SrgbToLinearRgb, pass, ImageFilter::LinearRgbToSrgb]
+        } else {
+            vec![pass]
+        };
+        LAYERS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        if std::env::var("PLAN_DUMP").is_ok() {
+            eprintln!("blend layer: stencilled={} {chain:?}", blend.stencilled);
+        }
+        if !canvas.begin_layer(&LayerEffects::new().with_filters(&chain)) {
+            PASS_THROUGH.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        }
+        draw_nodes(canvas, group.children(), scale, masks);
+        canvas.end_layer();
+        return;
+    }
     if plan.stencil {
         draw_nodes(canvas, group.children(), scale, masks);
         canvas.global_composite_operation(CompositeOperation::SourceIn);
@@ -894,6 +1092,7 @@ fn render_scene(canvas: &mut Canvas<WGPURenderer>, tree: &usvg::Tree, scale: f32
             canvas.scissor(0.0, 0.0, box_size(), box_size());
         }
         canvas.scale(fit, fit);
+        *ROOT_DEVICE.lock().unwrap() = canvas.transform();
         let mut masks = MaskMap::new();
         precapture_masks(
             canvas,
@@ -1001,7 +1200,13 @@ fn soak(device: &wgpu::Device, queue: &wgpu::Queue, out_csv: &str, list: &str) {
                 device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
                 let wall = t0.elapsed().as_secs_f64() * 1000.0;
                 let (cpu1, maxrss) = rusage();
+                // Images the canvas holds: needs a measurement-only
+                // `Canvas::debug_image_count` on the tree, enabled with
+                // `--cfg harness_image_count`; 0 otherwise.
+                #[cfg(harness_image_count)]
                 let images = canvas.debug_image_count();
+                #[cfg(not(harness_image_count))]
+                let images = 0usize;
                 let short = std::path::Path::new(name).file_stem().unwrap().to_string_lossy();
                 csv.push_str(&format!(
                     "{pass},{short},{zoom},{wall:.3},{:.3},{transient},{images},{maxrss}\n",
