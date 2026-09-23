@@ -19,6 +19,11 @@ pub use wgpu::{WGPURenderOutput, WGPURenderer};
 mod void;
 pub use void::Void;
 
+#[cfg(feature = "wire")]
+mod wire;
+#[cfg(feature = "wire")]
+pub use wire::{WireImage, WireRenderer, WireReplayer, WireSink, WIRE_VERSION};
+
 mod params;
 pub(crate) use params::Params;
 

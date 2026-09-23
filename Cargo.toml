@@ -56,6 +56,9 @@ default = ["image-loading", "textlayout"]
 image-loading = ["image"]
 debug_inspector = []
 wgpu = ["dep:wgpu"]
+# `renderer::{WireRenderer, WireReplayer}`: encode a canvas's flushes into a
+# flat word stream on one side, replay them onto any renderer on the other.
+wire = []
 textlayout = ["dep:rustybuzz", "dep:unicode-bidi", "dep:unicode-segmentation", "dep:lru", "dep:ttf-parser"]
 swash = ["dep:swash"]
 
