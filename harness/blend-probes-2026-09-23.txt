@@ -1,0 +1,16 @@
+blend-in-clip | 1 | 0.24% 0.000% | 0.24% 0.000% 
+blend-in-clip | 2 | 0.40% 0.000% | 0.40% 0.000% 
+blend-in-mask | 1 | 0.17% 0.000% | 0.17% 0.000% 
+blend-in-mask | 2 | 0.26% 0.000% | 0.26% 0.000% 
+blend-in-opacity-and-clip | 1 | 0.01% 0.000% | 0.01% 0.000% 
+blend-in-opacity-and-clip | 2 | 0.00% 0.000% | 0.00% 0.000% 
+blend-nested | 1 | 12.05% 11.251% | 0.01% 0.000% 
+blend-nested | 2 | 48.16% 46.569% | 0.00% 0.000% 
+blend-with-clip-on-group | 1 | 12.11% 11.445% | 0.12% 0.000% 
+blend-with-clip-on-group | 2 | 47.73% 46.408% | 0.24% 0.000% 
+blend-with-filter | 1 | 12.18% 11.390% | 0.01% 0.000% 
+blend-with-filter | 2 | 48.67% 47.100% | 0.00% 0.000% 
+feblend-after-blur | 1 | 0.01% 0.000% | 0.01% 0.000% 
+feblend-after-blur | 2 | 0.00% 0.000% | 0.00% 0.000% 
+feblend-in-clipped-layer | 1 | 0.28% 0.000% | 0.28% 0.000% 
+feblend-in-clipped-layer | 2 | 0.57% 0.000% | 0.57% 0.000% 

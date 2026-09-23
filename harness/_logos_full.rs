@@ -150,9 +150,12 @@ fn capture_mask(
         eprintln!("MASK {canvas_w}x{canvas_h}");
     }
     canvas.save();
-    // The target to go back to: the page layer's store when the scene is
-    // drawn in one, not the screen.
+    // Back to the page layer's store, not the screen, when the scene is
+    // drawn in one (`render_target()` arrived with #355).
+    #[cfg(harness_blend)]
     let previous = canvas.render_target();
+    #[cfg(not(harness_blend))]
+    let previous = RenderTarget::Screen;
     canvas.set_render_target(RenderTarget::Image(image));
     canvas.clear_rect(0, 0, canvas_w as u32, canvas_h as u32, Color::rgbaf(0.0, 0.0, 0.0, 0.0));
     // Mask content lives in the referencing group's user space.
@@ -206,34 +209,49 @@ fn group_effects(
     } else {
         group.opacity().get()
     };
-    let mut blurs: Vec<ImageFilter> = Vec::new();
-    for f in group.filters() {
-        for prim in f.primitives() {
-            if let usvg::filter::Kind::GaussianBlur(b) = prim.kind() {
-                // usvg std-dev is in user units; layer filters run in device
-                // pixels, so scale by the composed canvas scale.
-                let sigma = b.std_dev_x().get().max(b.std_dev_y().get()) * scale;
-                if sigma > 0.0 {
-                    blurs.push(ImageFilter::GaussianBlur { sigma });
-                }
+    let mut blurs = blur_filters(group, scale);
+    let _ = canvas;
+    #[cfg(harness_blend)]
+    if let Some(BlurBlend { mode, linear, .. }) = blur_blend(group) {
+        let source = BLEND_SOURCES
+            .lock()
+            .unwrap()
+            .as_ref()
+            .and_then(|m| m.get(&(group as *const usvg::Group as usize)).copied());
+        if let Some(backdrop) = source {
+            let blend = ImageFilter::Blend {
+                mode: blend_mode(mode),
+                backdrop,
+                x: 0.0,
+                y: 0.0,
+                width: canvas_w as f32,
+                height: canvas_h as f32,
+            };
+            // The whole chain runs in the blend's color space.
+            if linear {
+                blurs.insert(0, ImageFilter::SrgbToLinearRgb);
+                blurs.push(blend);
+                blurs.push(ImageFilter::LinearRgbToSrgb);
+            } else {
+                blurs.push(blend);
             }
         }
     }
-    let _ = canvas;
     let mask = masks.get(&(group as *const usvg::Group as usize)).copied();
-    // `mix-blend-mode` composites the group's layer with its backdrop; an
-    // `isolation: isolate` group gets a plain layer so the blends inside it
-    // see only its own content.
+    // `mix-blend-mode` composites the group's layer with its backdrop. A
+    // group that isolates (clip-path, `isolation: isolate`, ...) gets a plain
+    // layer when a blend inside it would otherwise see through it.
     #[cfg(harness_mix_blend)]
-    let blend = if std::env::var("NO_MIX_BLEND").is_err() {
+    let mix_blend = std::env::var("NO_MIX_BLEND").is_err();
+    #[cfg(not(harness_mix_blend))]
+    let mix_blend = false;
+    let blend = if mix_blend {
         group.blend_mode()
     } else {
         usvg::BlendMode::Normal
     };
-    #[cfg(not(harness_mix_blend))]
-    let blend = usvg::BlendMode::Normal;
     #[cfg(harness_mix_blend)]
-    let force_layer = force_layer || (group.isolate() && std::env::var("NO_MIX_BLEND").is_err());
+    let force_layer = force_layer || (mix_blend && group.should_isolate() && has_blend_group(group));
     if opacity >= 1.0 && blurs.is_empty() && mask.is_none() && !force_layer && blend == usvg::BlendMode::Normal {
         return None;
     }
@@ -246,6 +264,134 @@ fn group_effects(
         fx = fx.with_blend(blend_mode(blend));
     }
     Some(fx)
+}
+
+/// Source-graphic captures for `feBlend` chains (`blur_blend`), by group
+/// address: the group drawn alone at the root transform into a frame-sized
+/// image, as the mask captures are, before the frame draws.
+static BLEND_SOURCES: std::sync::Mutex<Option<std::collections::HashMap<usize, femtovg::ImageId>>> =
+    std::sync::Mutex::new(None);
+
+/// A blur followed by `feBlend in=<the blur> in2=SourceGraphic|SourceAlpha`:
+/// the blurred group blended over itself (or its silhouette).
+#[cfg(harness_blend)]
+struct BlurBlend {
+    mode: usvg::BlendMode,
+    alpha_only: bool,
+    linear: bool,
+}
+
+#[cfg(harness_blend)]
+fn blur_blend(group: &usvg::Group) -> Option<BlurBlend> {
+    use usvg::filter::{Input, Kind};
+    let [f] = group.filters() else { return None };
+    let [blur, blend] = f.primitives() else { return None };
+    let (Kind::GaussianBlur(b), Kind::Blend(k)) = (blur.kind(), blend.kind()) else {
+        return None;
+    };
+    if !matches!(b.input(), Input::SourceGraphic) || !matches!(k.input1(), Input::Reference(r) if r == blur.result()) {
+        return None;
+    }
+    let alpha_only = match k.input2() {
+        Input::SourceGraphic => false,
+        Input::SourceAlpha => true,
+        Input::Reference(_) => return None,
+    };
+    Some(BlurBlend {
+        mode: k.mode(),
+        alpha_only,
+        linear: blend.color_interpolation() == usvg::filter::ColorInterpolation::LinearRGB,
+    })
+}
+
+#[cfg(harness_blend)]
+fn precapture_blend_sources(
+    canvas: &mut Canvas<WGPURenderer>,
+    children: &[usvg::Node],
+    canvas_w: usize,
+    canvas_h: usize,
+    scale: f32,
+    masks: &MaskMap,
+) {
+    for node in children {
+        let usvg::Node::Group(group) = node else { continue };
+        precapture_blend_sources(canvas, group.children(), canvas_w, canvas_h, scale, masks);
+        let Some(BlurBlend { alpha_only, linear, .. }) = blur_blend(group) else {
+            continue;
+        };
+        let flags = femtovg::ImageFlags::PREMULTIPLIED | femtovg::ImageFlags::FLIP_Y;
+        let Ok(image) = canvas.create_image_empty(canvas_w, canvas_h, femtovg::PixelFormat::Rgba8, flags) else {
+            continue;
+        };
+        track_image(image);
+        canvas.save();
+        let previous = canvas.render_target();
+        canvas.set_render_target(RenderTarget::Image(image));
+        canvas.clear_rect(0, 0, canvas_w as u32, canvas_h as u32, Color::rgbaf(0.0, 0.0, 0.0, 0.0));
+        draw_nodes(canvas, group.children(), scale, masks);
+        canvas.set_render_target(previous);
+        canvas.restore();
+        // SourceAlpha is the silhouette (rgb zeroed, alpha kept; black is the
+        // same in either color space); a linearRGB blend reads the source
+        // converted.
+        let mut matrix = [0.0f32; 20];
+        matrix[18] = 1.0;
+        let convert = match (alpha_only, linear) {
+            (true, _) => Some(ImageFilter::ColorMatrix { matrix }),
+            (false, true) => Some(ImageFilter::SrgbToLinearRgb),
+            (false, false) => None,
+        };
+        let mut source = image;
+        if let Some(pass) = convert {
+            if let Ok(converted) =
+                canvas.create_image_empty(canvas_w, canvas_h, femtovg::PixelFormat::Rgba8, femtovg::ImageFlags::PREMULTIPLIED)
+            {
+                track_image(converted);
+                if canvas.filter_image_chain(converted, &[pass], image).is_ok() {
+                    source = converted;
+                }
+            }
+        }
+        BLEND_SOURCES
+            .lock()
+            .unwrap()
+            .get_or_insert_with(Default::default)
+            .insert(&**group as *const usvg::Group as usize, source);
+    }
+}
+
+/// The group's `feGaussianBlur` primitives as layer filters, in device pixels.
+fn blur_filters(group: &usvg::Group, scale: f32) -> Vec<ImageFilter> {
+    let mut blurs = Vec::new();
+    for f in group.filters() {
+        for prim in f.primitives() {
+            if let usvg::filter::Kind::GaussianBlur(b) = prim.kind() {
+                let sigma = b.std_dev_x().get().max(b.std_dev_y().get()) * scale;
+                if sigma > 0.0 {
+                    blurs.push(ImageFilter::GaussianBlur { sigma });
+                }
+            }
+        }
+    }
+    blurs
+}
+
+/// The glow idiom: `feGaussianBlur` then `feComposite operator="over"
+/// in="SourceGraphic" in2=<the blur>`, the group sharp over its own blur.
+fn glow(group: &usvg::Group) -> bool {
+    use usvg::filter::{CompositeOperator, Input, Kind};
+    if std::env::var("NO_GLOW").is_ok() {
+        return false;
+    }
+    let [f] = group.filters() else { return false };
+    let [blur, composite] = f.primitives() else {
+        return false;
+    };
+    matches!(blur.kind(), Kind::GaussianBlur(b) if matches!(b.input(), Input::SourceGraphic))
+        && matches!(composite.kind(), Kind::Composite(c)
+            if c.operator() == CompositeOperator::Over
+                && matches!(c.input1(), Input::SourceGraphic)
+                && matches!(c.input2(), Input::Reference(name) if name == blur.result()))
 }
 
 /// Whether any group in the subtree composites with a blend mode.
@@ -1004,8 +1150,12 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                 // to be replaced by feTurbulence output), so drawing it raw is
                 // worse than drawing nothing.
                 let plan = turbulence_plan(canvas, group);
+                #[cfg(harness_blend)]
+                let mapped = plan.is_some() || blur_blend(group).is_some();
+                #[cfg(not(harness_blend))]
+                let mapped = plan.is_some();
                 if std::env::var("SKIP_UNSUPPORTED_FILTERS").is_ok()
-                    && plan.is_none()
+                    && !mapped
                     && group.filters().iter().any(|f| replaces_source(f))
                 {
                     FILTERS_SKIPPED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
@@ -1050,10 +1200,22 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                         LAYERS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                         log_layer(canvas, group, scale, "layer");
                         DEPTH.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        // A glow blurs in an inner layer and redraws sharp on
+                        // top; the group's other effects wrap both.
+                        let glow = glow(group);
+                        let fx = if glow { fx.with_filters(&[]) } else { fx };
                         if !canvas.begin_layer(&fx) {
                             PASS_THROUGH.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                         }
-                        draw_filtered(canvas, group, plan, scale, masks);
+                        if glow {
+                            let blur = LayerEffects::new().with_filters(&blur_filters(group, scale));
+                            let _ = canvas.begin_layer(&blur);
+                            draw_filtered(canvas, group, plan, scale, masks);
+                            canvas.end_layer();
+                            draw_filtered(canvas, group, None, scale, masks);
+                        } else {
+                            draw_filtered(canvas, group, plan, scale, masks);
+                        }
                         canvas.end_layer();
                         DEPTH.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
                         if std::env::var("LAYER_LOG").is_ok() {
@@ -1197,9 +1359,19 @@ fn render_scene(canvas: &mut Canvas<WGPURenderer>, tree: &usvg::Tree, scale: f32
             scale * fit,
             &mut masks,
         );
+        #[cfg(harness_blend)]
+        precapture_blend_sources(
+            canvas,
+            tree.root().children(),
+            frame_w() as usize,
+            frame_h() as usize,
+            scale * fit,
+            &masks,
+        );
         draw_nodes(canvas, tree.root().children(), scale * fit, &masks);
 
     canvas.restore();
+    *BLEND_SOURCES.lock().unwrap() = None;
     if page_layer {
         canvas.end_layer();
     }
