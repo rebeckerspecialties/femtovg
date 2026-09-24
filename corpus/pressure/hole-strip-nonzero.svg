@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <!-- A square with a hole, plus a third subpath: a 0.001-unit-wide strip
+       running along the hole's first edge. The strip encloses nothing a
+       browser can ink; the hole must render exactly as without it. -->
+  <rect width="200" height="200" fill="#ffffff"/>
+  <path fill="#1a3a8a" fill-rule="nonzero"
+        d="M40 40 H160 V160 H40 Z
+           M70 70 V130 H130 V70 Z
+           M69.9995 70 H70.0005 V130 H69.9995 Z"/>
+</svg>

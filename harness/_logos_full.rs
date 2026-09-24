@@ -1272,6 +1272,16 @@ fn push_clip(_canvas: &mut Canvas<WGPURenderer>, group: &usvg::Group) -> bool {
     false
 }
 
+/// The adapter's limits, with `MAX_TEXTURE_SIZE` lowering the texture
+/// dimension to model a small GPU (2048 on a VideoCore IV).
+fn device_limits(adapter: &wgpu::Adapter) -> wgpu::Limits {
+    let mut limits = wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits());
+    if let Some(max) = std::env::var("MAX_TEXTURE_SIZE").ok().and_then(|v| v.parse().ok()) {
+        limits.max_texture_dimension_2d = max;
+    }
+    limits
+}
+
 fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale: f32, masks: &MaskMap) {
     use usvg::tiny_skia_path::PathSegment;
     for node in children {
@@ -1640,7 +1650,7 @@ fn main() {
         let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
             label: None,
             required_features: wgpu::Features::empty(),
-            required_limits: wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits()),
+            required_limits: device_limits(&adapter),
             experimental_features: wgpu::ExperimentalFeatures::disabled(),
             memory_hints: wgpu::MemoryHints::MemoryUsage,
             trace: wgpu::Trace::default(),
@@ -1659,7 +1669,7 @@ fn main() {
     let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
         label: None,
         required_features: wgpu::Features::empty(),
-        required_limits: wgpu::Limits::downlevel_defaults().using_resolution(adapter.limits()),
+        required_limits: device_limits(&adapter),
         experimental_features: wgpu::ExperimentalFeatures::disabled(),
         memory_hints: wgpu::MemoryHints::MemoryUsage,
         trace: wgpu::Trace::default(),
