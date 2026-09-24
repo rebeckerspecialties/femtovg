@@ -23,9 +23,14 @@ def chromium(svg, out):
     html = out + '.html'
     with open(html, 'w') as f:
         subprocess.run([sys.executable, os.path.join(HERE, 'make_ref.py'), svg, '1'], stdout=f, check=True)
-    subprocess.run([CHR, '--headless', '--disable-gpu', f'--screenshot={out}', '--window-size=460,260',
-                    '--default-background-color=FFFFFFFF', 'file://' + html], capture_output=True)
-    return np.asarray(Image.open(out).convert('RGB'), dtype=np.int16)
+    for attempt in range(3):
+        subprocess.run([CHR, '--headless', '--disable-gpu', f'--screenshot={out}', '--window-size=460,260',
+                        '--default-background-color=FFFFFFFF', 'file://' + html], capture_output=True)
+        px = np.asarray(Image.open(out).convert('RGB'), dtype=np.int16)
+        if px.min() != px.max():
+            return px
+        print(f'chromium returned a blank screenshot for {svg} (attempt {attempt + 1})', file=sys.stderr)
+    sys.exit(f'chromium kept returning blank screenshots for {svg}')
 def pct(a, b): return float((np.abs(a - b).max(axis=2) > args.threshold).mean() * 100)
 tests = sorted(t for t in glob.glob(os.path.join(args.suite, '**', '*.svg'), recursive=True) if not t.endswith('-ref.svg'))
 passed = 0

@@ -464,6 +464,26 @@ fn alpha_transfer_matrix(_ct: &usvg::filter::ComponentTransfer) -> Option<ImageF
     None
 }
 
+/// The rects a browser hard-clips a filtered group to, in root space: the
+/// filter region bounds the source graphic (Blink `FilterEffect::ApplyBounds`
+/// on `SourceGraphic`), the last primitive's subregion within the region
+/// bounds the result. `NO_FILTER_REGION` leaves both open.
+fn filter_region(group: &usvg::Group) -> Option<(usvg::NonZeroRect, usvg::NonZeroRect)> {
+    if std::env::var("NO_FILTER_REGION").is_ok() {
+        return None;
+    }
+    let [f] = group.filters() else { return None };
+    let ts = group.abs_transform();
+    let region = f.rect().transform(ts)?;
+    let last = f.primitives().last()?.rect().transform(ts)?;
+    let result = region.to_rect().intersect(&last.to_rect())?.to_non_zero_rect()?;
+    Some((region, result))
+}
+
+fn scissor_to(canvas: &mut Canvas<WGPURenderer>, r: usvg::NonZeroRect) {
+    canvas.intersect_scissor(r.x(), r.y(), r.width(), r.height());
+}
+
 /// The group's `feGaussianBlur` primitives as layer filters, in device pixels.
 fn blur_filters(group: &usvg::Group, scale: f32) -> Vec<ImageFilter> {
     let mut blurs = Vec::new();
@@ -1283,6 +1303,10 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                 // a group means - so the group gets a layer and the shadow
                 // state around it.
                 canvas.save();
+                let region = filter_region(group);
+                if let Some((_, result)) = region {
+                    scissor_to(canvas, result);
+                }
                 let shadowed = drop_shadow(group).is_some();
                 if let Some(ds) = drop_shadow(group) {
                     let c = ds.color();
@@ -1322,6 +1346,9 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                         let fx = if glow { fx.with_filters(&[]) } else { fx };
                         if !canvas.begin_layer(&fx) {
                             PASS_THROUGH.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                        }
+                        if let Some((source, _)) = region {
+                            scissor_to(canvas, source);
                         }
                         if glow {
                             let blur = LayerEffects::new().with_filters(&blur_filters(group, scale));

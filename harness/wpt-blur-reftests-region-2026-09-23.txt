@@ -1,0 +1,7 @@
+blur-axis-zero-directional | test vs chr: 5.67% (output clip only 5.67%) | ref vs chr: 5.67%
+blur-chained-quadrature-variance | test vs chr: 0.00% (output clip only 0.00%) | ref vs chr: 0.00%
+blur-color-interpolation-linear-vs-srgb | test vs chr: 0.00% (output clip only 0.00%) | ref vs chr: 0.00%
+blur-edge-mode-transparent-fade | test vs chr: 0.00% (output clip only 0.00%) | ref vs chr: 0.00%
+blur-element-expansion-vs-child-clip | test vs chr: 0.00% (output clip only 0.00%) | ref vs chr: 0.00%
+blur-negative-and-zero-stddev | test vs chr: 0.00% (output clip only 0.00%) | ref vs chr: 0.00%
+blur-primitive-subregion-clipping | test vs chr: 0.00% (output clip only 0.00%) | ref vs chr: 0.00%
