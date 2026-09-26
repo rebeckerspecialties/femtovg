@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="200" height="200" viewBox="0 0 200 200">
+  <!--
+    FemtoVG PR #355 & Issue #325 Cross-check Reftest
+    Spec: https://drafts.fxtf.org/filter-effects-1/#feGaussianBlurElement & #feBlendElement
+    Invariant: feGaussianBlur with stdDeviation="0" operates on SourceAlpha.
+               feComposite(in) masks solid blue (#0000FF) to rect alpha.
+               feBlend(screen) with SourceGraphic (red #FF0000) produces solid magenta (#FF00FF).
+  -->
+  <html:link rel="match" href="filter-chain-blur-feblend-sourcealpha-ref.svg"/>
+  <defs>
+    <filter id="fBlurBlend" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="0" result="blurAlpha"/>
+      <feFlood flood-color="#0000FF" result="blue"/>
+      <feComposite in="blue" in2="blurAlpha" operator="in" result="blueAlpha"/>
+      <feBlend mode="screen" in="SourceGraphic" in2="blueAlpha"/>
+    </filter>
+  </defs>
+  <rect x="20" y="20" width="160" height="160" fill="#FF0000" filter="url(#fBlurBlend)"/>
+</svg>

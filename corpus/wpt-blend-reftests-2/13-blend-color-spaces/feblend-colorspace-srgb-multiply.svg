@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="200" height="200" viewBox="0 0 200 200">
+  <!--
+    FemtoVG PR #355 Color Space Reftest: Explicit sRGB feBlend
+    Spec: https://drafts.fxtf.org/filter-effects-1/#ColorInterpolationFiltersProperty
+    Invariant: color-interpolation-filters="sRGB" forces unlinearized gamma blending.
+               Seagreen (#2E8B57, [46, 139, 87]) * lightblue (#ADD8E6, [173, 216, 230]) in sRGB = [31, 118, 78] (#1F764E).
+  -->
+  <html:link rel="match" href="feblend-colorspace-srgb-multiply-ref.svg"/>
+  <defs>
+    <filter id="fSrgb" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feFlood flood-color="#ADD8E6" result="flood"/>
+      <feBlend mode="multiply" in="flood" in2="SourceGraphic"/>
+    </filter>
+  </defs>
+  <rect x="20" y="20" width="160" height="160" fill="#2E8B57" filter="url(#fSrgb)"/>
+</svg>

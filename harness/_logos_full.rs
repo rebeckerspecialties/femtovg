@@ -203,6 +203,7 @@ fn group_effects(
     } else {
         group.opacity().get()
     };
+    #[cfg_attr(not(harness_blend), allow(unused_mut))]
     let LayerChain {
         passes: mut blurs,
         mut linear,
@@ -320,8 +321,12 @@ fn precapture_blend_sources(
     for node in children {
         let usvg::Node::Group(group) = node else { continue };
         precapture_blend_sources(canvas, group.children(), canvas_w, canvas_h, scale, masks);
-        let Some(BlurBlend { alpha_only, linear, .. }) = blur_blend(group) else {
-            continue;
+        let (alpha_only, linear) = match blur_blend(group) {
+            Some(BlurBlend { alpha_only, linear, .. }) => (alpha_only, linear),
+            None => match turbulence_plan(canvas, group).and_then(|p| p.blend).filter(|b| b.swapped) {
+                Some(b) => (false, b.linear),
+                None => continue,
+            },
         };
         let flags = femtovg::ImageFlags::PREMULTIPLIED | femtovg::ImageFlags::FLIP_Y;
         let Ok(image) = canvas.create_image_empty(canvas_w, canvas_h, femtovg::PixelFormat::Rgba8, flags) else {
@@ -480,8 +485,20 @@ fn filter_region(group: &usvg::Group) -> Option<(usvg::NonZeroRect, usvg::NonZer
     Some((region, result))
 }
 
+/// Scissors to `r`, snapped outward to whole device pixels: Blink sizes a
+/// filter's raster to the enclosing pixel rect of the region, so an edge
+/// pixel the region only partly covers is still filled in full.
 fn scissor_to(canvas: &mut Canvas<WGPURenderer>, r: usvg::NonZeroRect) {
-    canvas.intersect_scissor(r.x(), r.y(), r.width(), r.height());
+    let t = canvas.transform();
+    let corners = [(r.x(), r.y()), (r.right(), r.y()), (r.x(), r.bottom()), (r.right(), r.bottom())]
+        .map(|(x, y)| t.transform_point(x, y));
+    let x0 = corners.iter().map(|c| c.0).fold(f32::INFINITY, f32::min).floor();
+    let y0 = corners.iter().map(|c| c.1).fold(f32::INFINITY, f32::min).floor();
+    let x1 = corners.iter().map(|c| c.0).fold(f32::NEG_INFINITY, f32::max).ceil();
+    let y1 = corners.iter().map(|c| c.1).fold(f32::NEG_INFINITY, f32::max).ceil();
+    canvas.reset_transform();
+    canvas.intersect_scissor(x0, y0, x1 - x0, y1 - y0);
+    canvas.set_transform(&t);
 }
 
 /// The group's `feGaussianBlur` primitives as layer filters, in device pixels.
@@ -582,7 +599,13 @@ struct BlendPlan {
     root_rect: (f32, f32, f32, f32),
     /// `feComposite operator="in" in2=Source*` stencilled the noise before
     /// the blend: the source is drawn into the noise image DestinationIn.
+    #[cfg_attr(not(harness_blend), allow(dead_code))]
     stencilled: bool,
+    /// The noise is `in` and the source graphic `in2` of a mode where the
+    /// order matters: the noise is the layer's content and the group's
+    /// root precapture its backdrop.
+    #[cfg_attr(not(harness_blend), allow(dead_code))]
+    swapped: bool,
 }
 
 #[cfg(harness_turbulence)]
@@ -716,6 +739,7 @@ fn turbulence_plan(canvas: &Canvas<WGPURenderer>, group: &usvg::Group) -> Option
     };
     let mut interpolation = prims[0].color_interpolation();
     let mut stencil = false;
+    #[cfg_attr(not(harness_blend), allow(unused_mut))]
     let mut blend: Option<BlendPlan> = None;
     for (i, p) in prims.iter().enumerate().skip(1) {
         let previous = prims[i - 1].result();
@@ -751,8 +775,7 @@ fn turbulence_plan(canvas: &Canvas<WGPURenderer>, group: &usvg::Group) -> Option
             Kind::Blend(b)
                 if i == prims.len() - 1
                     && ((from_previous(b.input1()) && matches!(b.input2(), Input::SourceGraphic))
-                        || (matches!(b.input1(), Input::SourceGraphic) && from_previous(b.input2())))
-                    && (matches!(b.input1(), Input::SourceGraphic) || blend_commutes(b.mode())) =>
+                        || (matches!(b.input1(), Input::SourceGraphic) && from_previous(b.input2()))) =>
             {
                 if std::env::var("PLAN_DUMP").is_ok() {
                     eprintln!("blend: mode={:?} in={:?} in2={:?}", b.mode(), b.input1(), b.input2());
@@ -766,6 +789,7 @@ fn turbulence_plan(canvas: &Canvas<WGPURenderer>, group: &usvg::Group) -> Option
                     linear: p.color_interpolation() == ColorInterpolation::LinearRGB,
                     root_rect: (rx0.min(rx1), ry0.min(ry1), (rx1 - rx0).abs(), (ry1 - ry0).abs()),
                     stencilled: stencil,
+                    swapped: from_previous(b.input1()) && !blend_commutes(b.mode()),
                 });
                 stencil = false;
             }
@@ -774,18 +798,18 @@ fn turbulence_plan(canvas: &Canvas<WGPURenderer>, group: &usvg::Group) -> Option
     }
     // The noise stays in the blend's space when a blend follows; the
     // layer's chain converts the source into that space and back.
-    if interpolation == ColorInterpolation::LinearRGB && !blend.is_some_and(|b| b.linear) {
+    if turbulence.is_some() && interpolation == ColorInterpolation::LinearRGB && !blend.is_some_and(|b| b.linear) {
         chain.push(ImageFilter::LinearRgbToSrgb);
     }
     let flood = match flood {
         Some(fl) => {
-            // A flood alone replaces the source; only its blend with the
-            // source graphic is mapped.
-            let blend = blend?;
+            // A flood alone replaces the source; blended, it is authored in
+            // sRGB and read in the blend's space.
+            let linear = blend.is_some_and(|b| b.linear);
             let c = fl.color();
             let to_channel = |v: u8| {
                 let x = f32::from(v) / 255.0;
-                if blend.linear {
+                if linear {
                     if x <= 0.04045 {
                         x / 12.92
                     } else {
@@ -957,19 +981,27 @@ fn draw_filtered(
         // The group's content is the blend's image, the noise its backdrop,
         // placed where the filter region lies in root device space; a
         // linearRGB blend converts the content into that space and back.
+        // Swapped, the noise (already in the blend's space) is the content
+        // and the group's root precapture the backdrop.
+        let source = BLEND_SOURCES
+            .lock()
+            .unwrap()
+            .as_ref()
+            .and_then(|m| m.get(&(group as *const usvg::Group as usize)).copied());
+        let swapped = blend.swapped && source.is_some();
         let (x, y, width, height) = blend.root_rect;
         let pass = ImageFilter::Blend {
             mode: blend.mode,
-            backdrop: noise,
-            x,
-            y,
-            width,
-            height,
+            backdrop: if swapped { source.unwrap() } else { noise },
+            x: if swapped { 0.0 } else { x },
+            y: if swapped { 0.0 } else { y },
+            width: if swapped { frame_w() as f32 } else { width },
+            height: if swapped { frame_h() as f32 } else { height },
         };
-        let chain: Vec<ImageFilter> = if blend.linear {
-            vec![ImageFilter::SrgbToLinearRgb, pass, ImageFilter::LinearRgbToSrgb]
-        } else {
-            vec![pass]
+        let chain: Vec<ImageFilter> = match (blend.linear, swapped) {
+            (true, false) => vec![ImageFilter::SrgbToLinearRgb, pass, ImageFilter::LinearRgbToSrgb],
+            (true, true) => vec![pass, ImageFilter::LinearRgbToSrgb],
+            (false, _) => vec![pass],
         };
         LAYERS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         if std::env::var("PLAN_DUMP").is_ok() {
@@ -978,7 +1010,17 @@ fn draw_filtered(
         if !canvas.begin_layer(&LayerEffects::new().with_filters(&chain)) {
             PASS_THROUGH.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         }
-        draw_nodes(canvas, group.children(), scale, masks);
+        if swapped {
+            canvas.save();
+            canvas.set_transform(&plan.abs_transform);
+            let (x, y, uw, uh) = plan.user_rect;
+            let mut rect = Path::new();
+            rect.rect(x, y, uw, uh);
+            canvas.fill_path(&rect, &Paint::image(noise, x, y, uw, uh, 0.0, 1.0));
+            canvas.restore();
+        } else {
+            draw_nodes(canvas, group.children(), scale, masks);
+        }
         canvas.end_layer();
         return;
     }

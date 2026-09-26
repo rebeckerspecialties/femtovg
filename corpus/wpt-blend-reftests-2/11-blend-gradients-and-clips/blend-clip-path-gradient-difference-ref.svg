@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <!-- Reference for blend-clip-path-gradient-difference.svg -->
+  <defs>
+    <linearGradient id="starGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FF0080"/>
+      <stop offset="100%" stop-color="#00FFFF"/>
+    </linearGradient>
+    <clipPath id="starClip">
+      <polygon points="100,15 125,75 190,75 137,112 158,175 100,135 42,175 63,112 10,75 75,75"/>
+    </clipPath>
+  </defs>
+  <rect x="0" y="0" width="200" height="200" fill="#000000"/>
+  <rect x="0" y="0" width="200" height="200" fill="url(#starGrad)" clip-path="url(#starClip)"/>
+</svg>

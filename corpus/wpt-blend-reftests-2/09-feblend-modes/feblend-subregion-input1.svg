@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="200" height="200" viewBox="0 0 200 200">
+  <!--
+    FemtoVG PR #355 / resvg feBlend Subregion Reftest (Input 1)
+    Spec: https://drafts.fxtf.org/filter-effects-1/#FilterPrimitiveSubRegion
+    Invariant: feFlood primitive has explicit subregion (x="50" y="50" width="100" height="100") with blue opacity 0.5.
+               Outside the subregion, the flood buffer is transparent, leaving SourceGraphic (seagreen #2E8B57) untouched.
+               Inside the subregion, multiply blend produces #174657.
+  -->
+  <html:link rel="match" href="feblend-subregion-input1-ref.svg"/>
+  <defs>
+    <filter id="f1" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feFlood flood-color="#0000FF" flood-opacity="0.5" x="50" y="50" width="100" height="100"/>
+      <feBlend mode="multiply" in2="SourceGraphic"/>
+    </filter>
+  </defs>
+  <rect x="20" y="20" width="160" height="160" fill="#2E8B57" filter="url(#f1)"/>
+</svg>

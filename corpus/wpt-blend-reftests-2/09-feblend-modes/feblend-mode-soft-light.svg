@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="200" height="200" viewBox="0 0 200 200">
+  <!--
+    FemtoVG PR #355 / WPT SVG Filter Effects Reftest
+    Spec: https://drafts.fxtf.org/filter-effects-1/#feBlendElement & https://drafts.fxtf.org/compositing-1/#blending
+    Invariant: feBlend mode="soft-light" compositing SourceGraphic (seagreen #2E8B57) with feFlood (lightblue #ADD8E6) in sRGB.
+               Darkens or lightens depending on source.
+               Expected blended rect color: #44AD89.
+  -->
+  <html:link rel="match" href="feblend-mode-soft-light-ref.svg"/>
+  <defs>
+    <filter id="f" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
+      <feFlood flood-color="#ADD8E6" result="flood"/>
+      <feBlend mode="soft-light" in="flood" in2="SourceGraphic"/>
+    </filter>
+  </defs>
+  <rect x="20" y="20" width="160" height="160" fill="#2E8B57" filter="url(#f)"/>
+</svg>

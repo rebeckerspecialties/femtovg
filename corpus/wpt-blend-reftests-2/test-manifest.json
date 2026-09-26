@@ -1,0 +1,1571 @@
+{
+  "suite_name": "WPT SVG Mix-Blend-Mode, Compositing, and Filter Reftests",
+  "description": "Comprehensive self-contained SVG test and reference pairs extracted from Web Platform Tests and resvg-test-suite covering mix-blend-mode, feBlend (all 16 blend modes), subregions, gradients, nested clip paths, multi-stage filter chains, zero-area path fills (PR #360), Gaussian blur kernels (Issue #325), and non-default color spaces (linearRGB vs sRGB) for FemtoVG.",
+  "target_engine": "femtovg",
+  "total_test_pairs": 90,
+  "categories": [
+    "01-clip-and-blend",
+    "02-filter-and-blend",
+    "03-mask-and-blend",
+    "04-stacking-context-and-isolation",
+    "05-filter-clip-regressions",
+    "06-svg-compositing-primitives",
+    "07-zero-area-collinear-fills",
+    "08-gaussian-blur-edge-and-kernel",
+    "09-feblend-modes",
+    "10-mix-blend-modes-all",
+    "11-blend-gradients-and-clips",
+    "12-blend-filter-chains",
+    "13-blend-color-spaces"
+  ],
+  "tests": [
+    {
+      "id": "blend-clip-rounded-child",
+      "category": "01-clip-and-blend",
+      "test_file": "01-clip-and-blend/blend-clip-rounded-child.svg",
+      "ref_file": "01-clip-and-blend/blend-clip-rounded-child-ref.svg",
+      "wpt_source": "css/compositing/mix-blend-mode/mix-blend-mode-blended-element-overflow-hidden-and-border-radius.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [],
+      "femtovg_features": [
+        "separable_blend_modes",
+        "multiply",
+        "clip_path",
+        "rounded_rect_clipping"
+      ],
+      "description": "Blended element having mix-blend-mode: multiply and rounded clip-path blends with parent aqua backdrop, producing lime inside clip while preserving aqua outside."
+    },
+    {
+      "id": "blend-clip-rounded-parent",
+      "category": "01-clip-and-blend",
+      "test_file": "01-clip-and-blend/blend-clip-rounded-parent.svg",
+      "ref_file": "01-clip-and-blend/blend-clip-rounded-parent-ref.svg",
+      "wpt_source": "css/compositing/mix-blend-mode/mix-blend-mode-parent-element-overflow-hidden-and-border-radius.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [
+        "https://crbug.com/328339028"
+      ],
+      "femtovg_features": [
+        "separable_blend_modes",
+        "difference",
+        "parent_clip_path",
+        "elliptical_rounded_clip"
+      ],
+      "description": "Parent has asymmetrical rounded clip (rx=16, ry=80) and red backdrop. Oversized child (200x200 yellow) blends with difference, producing lime strictly within parent clip without bleed."
+    },
+    {
+      "id": "blend-clip-sibling-overlap",
+      "category": "01-clip-and-blend",
+      "test_file": "01-clip-and-blend/blend-clip-sibling-overlap.svg",
+      "ref_file": "01-clip-and-blend/blend-clip-sibling-overlap-ref.svg",
+      "wpt_source": "css/compositing/mix-blend-mode/mix-blend-mode-intermediate-element-overflow-hidden-and-border-radius.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [],
+      "femtovg_features": [
+        "separable_blend_modes",
+        "difference",
+        "sibling_compositing",
+        "clip_path"
+      ],
+      "description": "Tests backdrop evaluation across clipped sibling boundaries. Blended sibling overlaps both a clipped rounded sibling and the parent container backdrop."
+    },
+    {
+      "id": "blend-clip-rotated",
+      "category": "01-clip-and-blend",
+      "test_file": "01-clip-and-blend/blend-clip-rotated.svg",
+      "ref_file": "01-clip-and-blend/blend-clip-rotated-ref.svg",
+      "wpt_source": "css/compositing/mix-blend-mode/mix-blend-mode-rotated-clip.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [],
+      "femtovg_features": [
+        "separable_blend_modes",
+        "overlay",
+        "rotated_clip_path",
+        "transform_coordinate_mapping"
+      ],
+      "description": "Blended element under rotated clip path. Red rect rotated -45 deg with overlay blend mode over lime yields lime; tests transformed clip stencil mapping in offscreen blend resolve."
+    },
+    {
+      "id": "blend-clip-parent-non-overflow",
+      "category": "01-clip-and-blend",
+      "test_file": "01-clip-and-blend/blend-clip-parent-non-overflow.svg",
+      "ref_file": "01-clip-and-blend/blend-clip-parent-non-overflow-ref.svg",
+      "wpt_source": "css/compositing/mix-blend-mode/mix-blend-mode-parent-with-border-radius.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [],
+      "femtovg_features": [
+        "difference",
+        "stacking_context_isolation",
+        "non_rectangular_backdrop"
+      ],
+      "description": "Parent circular shape without overflow clipping. Child yellow square blends with red circle to produce green circle, while non-overlapping yellow child does not blend with gray canvas."
+    },
+    {
+      "id": "blend-filter-order-grayscale-screen",
+      "category": "02-filter-and-blend",
+      "test_file": "02-filter-and-blend/blend-filter-order-grayscale-screen.svg",
+      "ref_file": "02-filter-and-blend/blend-filter-order-grayscale-screen-ref.svg",
+      "wpt_source": "css/filter-effects/filter-with-mix-blend-mode.html",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#FilterProperty",
+      "bug_trackers": [],
+      "femtovg_features": [
+        "feColorMatrix",
+        "screen",
+        "filter_blend_precedence"
+      ],
+      "description": "Order of operations: filter (feColorMatrix grayscale) applies to element before mix-blend-mode: screen blends with backdrop."
+    },
+    {
+      "id": "blend-filter-identity-isolation",
+      "category": "02-filter-and-blend",
+      "test_file": "02-filter-and-blend/blend-filter-identity-isolation.svg",
+      "ref_file": "02-filter-and-blend/blend-filter-identity-isolation-ref.svg",
+      "wpt_source": "css/compositing/mix-blend-mode/mix-blend-mode-filter.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [],
+      "femtovg_features": [
+        "feColorMatrix",
+        "difference",
+        "filter_backdrop_pass"
+      ],
+      "description": "Presence of a filter does not isolate the element from its backdrop or disrupt the blend pass; red difference over yellow yields lime."
+    },
+    {
+      "id": "filter-chained-identity",
+      "category": "02-filter-and-blend",
+      "test_file": "02-filter-and-blend/filter-chained-identity.svg",
+      "ref_file": "02-filter-and-blend/filter-chained-identity-ref.svg",
+      "wpt_source": "css/filter-effects/filter-chained-url-url-001.html",
+      "spec_link": "https://drafts.fxtf.org/filter-effects/#FilterProperty",
+      "bug_trackers": [],
+      "femtovg_features": [
+        "filter_graphs",
+        "feColorMatrix",
+        "multi_stage_filter_evaluation"
+      ],
+      "description": "Chained filter primitives evaluated sequentially preserve color values and alpha channels without loss or degradation."
+    },
+    {
+      "id": "blend-mask-circle-difference",
+      "category": "03-mask-and-blend",
+      "test_file": "03-mask-and-blend/blend-mask-circle-difference.svg",
+      "ref_file": "03-mask-and-blend/blend-mask-circle-difference-ref.svg",
+      "wpt_source": "css/compositing/mix-blend-mode/mix-blend-mode-mask.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [],
+      "femtovg_features": [
+        "vector_mask",
+        "difference",
+        "mask_blending_interaction"
+      ],
+      "description": "Mask restricts where blended element is visible; red difference over yellow produces green circle, while backdrop outside mask remains intact."
+    },
+    {
+      "id": "filter-vs-mask-precedence",
+      "category": "03-mask-and-blend",
+      "test_file": "03-mask-and-blend/filter-vs-mask-precedence.svg",
+      "ref_file": "03-mask-and-blend/filter-vs-mask-precedence-ref.svg",
+      "wpt_source": "css/filter-effects/svg-filter-vs-mask.html",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#FilterProperty",
+      "bug_trackers": [],
+      "femtovg_features": [
+        "feGaussianBlur",
+        "vector_mask",
+        "filter_mask_order"
+      ],
+      "description": "Filter applies before mask on SVG elements; blurred red square is clipped by mask to 100x100, preventing red blur fringe leakage."
+    },
+    {
+      "id": "filter-vs-clip-precedence",
+      "category": "03-mask-and-blend",
+      "test_file": "03-mask-and-blend/filter-vs-clip-precedence.svg",
+      "ref_file": "03-mask-and-blend/filter-vs-clip-precedence-ref.svg",
+      "wpt_source": "css/filter-effects/svg-filter-vs-clip-path.html",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#FilterProperty",
+      "bug_trackers": [],
+      "femtovg_features": [
+        "feGaussianBlur",
+        "clip_path",
+        "filter_clip_order"
+      ],
+      "description": "Filter applies before clip-path on SVG elements; blurred red square is clipped to 100x100, preventing red blur fringe leakage."
+    },
+    {
+      "id": "blend-isolation-explicit",
+      "category": "04-stacking-context-and-isolation",
+      "test_file": "04-stacking-context-and-isolation/blend-isolation-explicit.svg",
+      "ref_file": "04-stacking-context-and-isolation/blend-isolation-explicit-ref.svg",
+      "wpt_source": "css/compositing/isolation/blend-isolation.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#isolation",
+      "bug_trackers": [],
+      "femtovg_features": [
+        "isolation_isolate",
+        "difference",
+        "isolated_backdrop"
+      ],
+      "description": "Group with isolation: isolate prevents inner element with difference blend mode from blending with outer green backdrop; solid green passes."
+    },
+    {
+      "id": "blend-isolation-group-opacity",
+      "category": "04-stacking-context-and-isolation",
+      "test_file": "04-stacking-context-and-isolation/blend-isolation-group-opacity.svg",
+      "ref_file": "04-stacking-context-and-isolation/blend-isolation-group-opacity-ref.svg",
+      "wpt_source": "css/compositing/Blending_in_a_group_with_opacity.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [],
+      "femtovg_features": [
+        "group_opacity_isolation",
+        "lighten",
+        "layer_compositing"
+      ],
+      "description": "Group with opacity < 1 creates isolated stacking context; inner lighten blend mode does not lighten against outer blue backdrop."
+    },
+    {
+      "id": "blend-stacking-context-bounds-isolation",
+      "category": "04-stacking-context-and-isolation",
+      "test_file": "04-stacking-context-and-isolation/blend-stacking-context-bounds-isolation.svg",
+      "ref_file": "04-stacking-context-and-isolation/blend-stacking-context-bounds-isolation-ref.svg",
+      "wpt_source": "css/compositing/mix-blend-mode/mix-blend-mode-stacking-context-creates-isolation.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [],
+      "femtovg_features": [
+        "stacking_context_isolation",
+        "multiply",
+        "overflow_bounds_isolation"
+      ],
+      "description": "Isolated group (lime) with multiply child (red); intersection is black, but child overflowing the group bounds does not blend with container yellow."
+    },
+    {
+      "id": "blend-transparent-backdrop-boundary",
+      "category": "04-stacking-context-and-isolation",
+      "test_file": "04-stacking-context-and-isolation/blend-transparent-backdrop-boundary.svg",
+      "ref_file": "04-stacking-context-and-isolation/blend-transparent-backdrop-boundary-ref.svg",
+      "wpt_source": "css/compositing/mix-blend-mode/mix-blend-mode-blended-element-with-transparent-pixels.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [],
+      "femtovg_features": [
+        "stacking_context_isolation",
+        "difference",
+        "transparent_backdrop_handling"
+      ],
+      "description": "Isolated group with oversized blended child; perimeter outside group bounds blends with group's transparent backdrop, resulting in aqua border (red indicates isolation leak to canvas)."
+    },
+    {
+      "id": "blend-overflowing-child",
+      "category": "04-stacking-context-and-isolation",
+      "test_file": "04-stacking-context-and-isolation/blend-overflowing-child.svg",
+      "ref_file": "04-stacking-context-and-isolation/blend-overflowing-child-ref.svg",
+      "wpt_source": "css/compositing/mix-blend-mode/mix-blend-mode-overflowing-child.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [],
+      "femtovg_features": [
+        "stacking_context_isolation",
+        "difference",
+        "overflow_canvas_isolation"
+      ],
+      "description": "Two green squares with black intersection over lightgray canvas; overflowing blender child does not blend with lightgray canvas."
+    },
+    {
+      "id": "blend-interposed-child",
+      "category": "04-stacking-context-and-isolation",
+      "test_file": "04-stacking-context-and-isolation/blend-interposed-child.svg",
+      "ref_file": "04-stacking-context-and-isolation/blend-interposed-child-ref.svg",
+      "wpt_source": "css/compositing/mix-blend-mode/mix-blend-mode-blended-element-interposed.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [],
+      "femtovg_features": [
+        "group_buffer_compositing",
+        "difference"
+      ],
+      "description": "Children inside a blended group composite together into group buffer before blending with backdrop; red child covering dark base blends with yellow to yield lime."
+    },
+    {
+      "id": "filter-blur-clip-ancestor",
+      "category": "05-filter-clip-regressions",
+      "test_file": "05-filter-clip-regressions/filter-blur-clip-ancestor.svg",
+      "ref_file": "05-filter-clip-regressions/filter-blur-clip-ancestor-ref.svg",
+      "wpt_source": "css/filter-effects/blur-clip-stacking-context-001.html",
+      "spec_link": "https://drafts.fxtf.org/filter-effects/#funcdef-filter-blur",
+      "bug_trackers": [
+        "https://bugzilla.mozilla.org/show_bug.cgi?id=1459065"
+      ],
+      "femtovg_features": [
+        "feGaussianBlur",
+        "ancestor_clip_path",
+        "filter_bounds_clipping"
+      ],
+      "description": "Blur filter effect on elements is strictly clipped by ancestor clipPath; zero blue blur fringes escape from behind covering green rect."
+    },
+    {
+      "id": "filter-clip-under-blur",
+      "category": "05-filter-clip-regressions",
+      "test_file": "05-filter-clip-regressions/filter-clip-under-blur.svg",
+      "ref_file": "05-filter-clip-regressions/filter-clip-under-blur-ref.svg",
+      "wpt_source": "css/filter-effects/clip-under-filter-001.html",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#funcdef-filter-blur",
+      "bug_trackers": [
+        "https://crbug.com/809102"
+      ],
+      "femtovg_features": [
+        "feGaussianBlur",
+        "descendant_clip_path",
+        "filter_subgraph_clipping"
+      ],
+      "description": "Clips applied to descendants of a filter group are evaluated in the descendant local coordinate space before blur is executed."
+    },
+    {
+      "id": "filter-drop-shadow-overflow-clipped",
+      "category": "05-filter-clip-regressions",
+      "test_file": "05-filter-clip-regressions/filter-drop-shadow-overflow-clipped.svg",
+      "ref_file": "05-filter-clip-regressions/filter-drop-shadow-overflow-clipped-ref.svg",
+      "wpt_source": "css/filter-effects/drop-shadow-clipped-001.html",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#dropshadowEquivalent",
+      "bug_trackers": [
+        "https://crbug.com/804670"
+      ],
+      "femtovg_features": [
+        "feDropShadow",
+        "ancestor_clip_path",
+        "out_of_bounds_shadow_casting"
+      ],
+      "description": "Source element outside ancestor clip is clipped away, but its drop-shadow cast back into the clip bounds remains visible."
+    },
+    {
+      "id": "blend-plus-lighter-isolated",
+      "category": "06-svg-compositing-primitives",
+      "test_file": "06-svg-compositing-primitives/blend-plus-lighter-isolated.svg",
+      "ref_file": "06-svg-compositing-primitives/blend-plus-lighter-isolated-ref.svg",
+      "wpt_source": "css/compositing/mix-blend-mode/mix-blend-mode-plus-lighter-svg-basic.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-2/#mix-blend-mode",
+      "bug_trackers": [],
+      "femtovg_features": [
+        "plus_lighter",
+        "isolation_isolate",
+        "additive_color_accumulation"
+      ],
+      "description": "Tests plus-lighter additive blending on overlapping semi-transparent SVG rects within an isolated group."
+    },
+    {
+      "id": "blend-svg-root-isolation",
+      "category": "06-svg-compositing-primitives",
+      "test_file": "06-svg-compositing-primitives/blend-svg-root-isolation.svg",
+      "ref_file": "06-svg-compositing-primitives/blend-svg-root-isolation-ref.svg",
+      "wpt_source": "css/compositing/svg/mix-blend-mode-in-svg-image.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#isolation",
+      "bug_trackers": [],
+      "femtovg_features": [
+        "svg_root_isolated_backdrop",
+        "difference"
+      ],
+      "description": "SVG root document establishes an isolated transparent backdrop; green difference with transparent black yields pure green."
+    },
+    {
+      "id": "blend-svg-rectangle-multiply",
+      "category": "06-svg-compositing-primitives",
+      "test_file": "06-svg-compositing-primitives/blend-svg-rectangle-multiply.svg",
+      "ref_file": "06-svg-compositing-primitives/blend-svg-rectangle-multiply-ref.svg",
+      "wpt_source": "css/compositing/svg/mix-blend-mode-svg-rectangle.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#csscompositingrules_SVG",
+      "bug_trackers": [],
+      "femtovg_features": [
+        "separable_blend_modes",
+        "multiply",
+        "svg_geometry_blending"
+      ],
+      "description": "Element-to-element SVG blending using multiply; aqua rect overlapped by red rect produces solid black square."
+    },
+    {
+      "id": "fill-line-bare",
+      "category": "07-zero-area-collinear-fills",
+      "test_file": "07-zero-area-collinear-fills/fill-line-bare.svg",
+      "ref_file": "07-zero-area-collinear-fills/fill-line-bare-ref.svg",
+      "wpt_source": "svg/import/shapes-line-02-f-manual.svg",
+      "spec_link": "https://www.w3.org/TR/SVG2/shapes.html#LineElement",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/360",
+        "https://github.com/femtovg/femtovg/issues/341"
+      ],
+      "femtovg_features": [
+        "expand_fill",
+        "zero_area_contour",
+        "line_fill_pruning"
+      ],
+      "description": "Filling an SVG <line> element produces zero inked pixels across horizontal, vertical, diagonal, and rotated lines under explicit or default fill."
+    },
+    {
+      "id": "fill-path-open-collinear",
+      "category": "07-zero-area-collinear-fills",
+      "test_file": "07-zero-area-collinear-fills/fill-path-open-collinear.svg",
+      "ref_file": "07-zero-area-collinear-fills/fill-path-open-collinear-ref.svg",
+      "wpt_source": "https://www.w3.org/TR/SVG2/painting.html#FillProperty",
+      "spec_link": "https://www.w3.org/TR/SVG2/painting.html#FillProperty",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/360",
+        "https://github.com/femtovg/femtovg/issues/341"
+      ],
+      "femtovg_features": [
+        "expand_fill",
+        "open_path_fill",
+        "collinear_contour_pruning"
+      ],
+      "description": "An open path without closepath whose points lie on one line encloses zero area and produces zero inked pixels."
+    },
+    {
+      "id": "fill-path-closed-collinear",
+      "category": "07-zero-area-collinear-fills",
+      "test_file": "07-zero-area-collinear-fills/fill-path-closed-collinear.svg",
+      "ref_file": "07-zero-area-collinear-fills/fill-path-closed-collinear-ref.svg",
+      "wpt_source": "https://www.w3.org/TR/SVG2/painting.html#FillProperty",
+      "spec_link": "https://www.w3.org/TR/SVG2/painting.html#FillProperty",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/360",
+        "https://github.com/femtovg/femtovg/issues/341"
+      ],
+      "femtovg_features": [
+        "expand_fill",
+        "closed_collinear_polygon",
+        "zero_area_fill"
+      ],
+      "description": "Closed degenerate polygon with collinear vertices (M...L...Z) encloses zero area and produces zero inked pixels."
+    },
+    {
+      "id": "fill-path-retraced-line",
+      "category": "07-zero-area-collinear-fills",
+      "test_file": "07-zero-area-collinear-fills/fill-path-retraced-line.svg",
+      "ref_file": "07-zero-area-collinear-fills/fill-path-retraced-line-ref.svg",
+      "wpt_source": "https://www.w3.org/TR/SVG2/painting.html#FillProperty",
+      "spec_link": "https://www.w3.org/TR/SVG2/painting.html#FillProperty",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/360",
+        "https://github.com/femtovg/femtovg/issues/341"
+      ],
+      "femtovg_features": [
+        "expand_fill",
+        "retraced_segment",
+        "zero_area_fill"
+      ],
+      "description": "Path that steps outward and retraces backward along the identical line has zero enclosed area and produces zero inked pixels."
+    },
+    {
+      "id": "fill-path-collinear-bezier",
+      "category": "07-zero-area-collinear-fills",
+      "test_file": "07-zero-area-collinear-fills/fill-path-collinear-bezier.svg",
+      "ref_file": "07-zero-area-collinear-fills/fill-path-collinear-bezier-ref.svg",
+      "wpt_source": "https://www.w3.org/TR/SVG2/paths.html#PathDataCubicBezierCommands",
+      "spec_link": "https://www.w3.org/TR/SVG2/paths.html#PathDataCubicBezierCommands",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/360",
+        "https://github.com/femtovg/femtovg/issues/341"
+      ],
+      "femtovg_features": [
+        "expand_fill",
+        "collinear_bezier",
+        "zero_curvature_pruning"
+      ],
+      "description": "Cubic and quadratic B\u00e9zier curves whose control points lie entirely on the line segment between endpoints enclose zero area and draw nothing."
+    },
+    {
+      "id": "fill-path-shape-with-collinear-tail",
+      "category": "07-zero-area-collinear-fills",
+      "test_file": "07-zero-area-collinear-fills/fill-path-shape-with-collinear-tail.svg",
+      "ref_file": "07-zero-area-collinear-fills/fill-path-shape-with-collinear-tail-ref.svg",
+      "wpt_source": "https://github.com/femtovg/femtovg/pull/360",
+      "spec_link": "https://www.w3.org/TR/SVG2/painting.html#FillProperty",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/360",
+        "https://github.com/femtovg/femtovg/issues/341"
+      ],
+      "femtovg_features": [
+        "expand_fill",
+        "multi_subpath_fill",
+        "zero_area_tail_pruning"
+      ],
+      "description": "A valid non-zero area polygon (50x50 square) attached to a 1000-unit collinear tail fills the square normally while the tail produces zero pixels."
+    },
+    {
+      "id": "fill-path-fractional-collinear",
+      "category": "07-zero-area-collinear-fills",
+      "test_file": "07-zero-area-collinear-fills/fill-path-fractional-collinear.svg",
+      "ref_file": "07-zero-area-collinear-fills/fill-path-fractional-collinear-ref.svg",
+      "wpt_source": "https://github.com/femtovg/femtovg/pull/360",
+      "spec_link": "https://www.w3.org/TR/SVG2/painting.html#FillProperty",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/360",
+        "https://github.com/femtovg/femtovg/issues/341"
+      ],
+      "femtovg_features": [
+        "expand_fill",
+        "fractional_precision",
+        "collinear_tolerance"
+      ],
+      "description": "Collinear points with non-integer floating-point coordinates evaluate to zero area without precision leakage and produce zero inked pixels."
+    },
+    {
+      "id": "fill-path-subpixel-sliver-control",
+      "category": "07-zero-area-collinear-fills",
+      "test_file": "07-zero-area-collinear-fills/fill-path-subpixel-sliver-control.svg",
+      "ref_file": "07-zero-area-collinear-fills/fill-path-subpixel-sliver-control-ref.svg",
+      "wpt_source": "https://github.com/femtovg/femtovg/pull/360",
+      "spec_link": "https://www.w3.org/TR/SVG2/painting.html#FillProperty",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/360",
+        "https://github.com/femtovg/femtovg/issues/341"
+      ],
+      "femtovg_features": [
+        "expand_fill",
+        "anti_aliasing",
+        "subpixel_geometry"
+      ],
+      "description": "Contrast control: a narrow sliver with positive non-zero area (height=1px, base=160px) is not collinear and must fill with anti-aliasing."
+    },
+    {
+      "id": "blur-axis-zero-directional",
+      "category": "08-gaussian-blur-edge-and-kernel",
+      "test_file": "08-gaussian-blur-edge-and-kernel/blur-axis-zero-directional.svg",
+      "ref_file": "08-gaussian-blur-edge-and-kernel/blur-axis-zero-directional-ref.svg",
+      "wpt_source": "css/filter-effects/feGaussianBlur-stdDeviation-axis-zero.html",
+      "spec_link": "https://drafts.csswg.org/filter-effects-1/#element-attrdef-fegaussianblur-stddeviation",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/issues/325"
+      ],
+      "femtovg_features": [
+        "feGaussianBlur",
+        "directional_1d_blur",
+        "axis_zero_handling"
+      ],
+      "description": "stdDeviation with 0 on one axis blurs strictly along the non-zero axis without blurring the perpendicular axis or dividing by zero."
+    },
+    {
+      "id": "blur-negative-and-zero-stddev",
+      "category": "08-gaussian-blur-edge-and-kernel",
+      "test_file": "08-gaussian-blur-edge-and-kernel/blur-negative-and-zero-stddev.svg",
+      "ref_file": "08-gaussian-blur-edge-and-kernel/blur-negative-and-zero-stddev-ref.svg",
+      "wpt_source": "css/filter-effects/feGaussianBlur-negative-deviation.svg",
+      "spec_link": "https://drafts.csswg.org/filter-effects-1/#element-attrdef-fegaussianblur-stddeviation",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/issues/325"
+      ],
+      "femtovg_features": [
+        "feGaussianBlur",
+        "zero_stddev_identity",
+        "negative_stddev_clamping"
+      ],
+      "description": "Zero or negative stdDeviation disables blur and acts as an exact identity pass (sharp edges, no blur halo)."
+    },
+    {
+      "id": "blur-edge-mode-transparent-fade",
+      "category": "08-gaussian-blur-edge-and-kernel",
+      "test_file": "08-gaussian-blur-edge-and-kernel/blur-edge-mode-transparent-fade.svg",
+      "ref_file": "08-gaussian-blur-edge-and-kernel/blur-edge-mode-transparent-fade-ref.svg",
+      "wpt_source": "https://drafts.fxtf.org/filter-effects-1/#feGaussianBlurElement",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#feGaussianBlurElement",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/issues/325"
+      ],
+      "femtovg_features": [
+        "feGaussianBlur",
+        "edgeMode_none",
+        "transparent_padding",
+        "blur_reach_expansion"
+      ],
+      "description": "Default edgeMode='none' samples transparent black outside element bounds; blurred rect fades smoothly to alpha=0 over 3*sigma without edge clamping bands."
+    },
+    {
+      "id": "blur-element-expansion-vs-child-clip",
+      "category": "08-gaussian-blur-edge-and-kernel",
+      "test_file": "08-gaussian-blur-edge-and-kernel/blur-element-expansion-vs-child-clip.svg",
+      "ref_file": "08-gaussian-blur-edge-and-kernel/blur-element-expansion-vs-child-clip-ref.svg",
+      "wpt_source": "css/filter-effects/blur-clip-stacking-context-002.html",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#FilterProperty",
+      "bug_trackers": [
+        "https://bugzilla.mozilla.org/show_bug.cgi?id=1459065",
+        "https://github.com/femtovg/femtovg/issues/325"
+      ],
+      "femtovg_features": [
+        "feGaussianBlur",
+        "filter_layer_expansion",
+        "visual_overflow_bounds"
+      ],
+      "description": "Filter effects applied to an element itself expand its visual overflow bounds; element bounding box does not clip its own filter halo."
+    },
+    {
+      "id": "blur-primitive-subregion-clipping",
+      "category": "08-gaussian-blur-edge-and-kernel",
+      "test_file": "08-gaussian-blur-edge-and-kernel/blur-primitive-subregion-clipping.svg",
+      "ref_file": "08-gaussian-blur-edge-and-kernel/blur-primitive-subregion-clipping-ref.svg",
+      "wpt_source": "css/filter-effects/filter-subregion-01.html",
+      "spec_link": "https://drafts.fxtf.org/filter-effects/#FilterPrimitiveSubRegion",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/issues/325"
+      ],
+      "femtovg_features": [
+        "feGaussianBlur",
+        "filter_primitive_subregion",
+        "subregion_clipping"
+      ],
+      "description": "Explicit filter primitive subregion (x, y, width, height) strictly clips the blurred output to the defined subregion rectangle."
+    },
+    {
+      "id": "blur-chained-quadrature-variance",
+      "category": "08-gaussian-blur-edge-and-kernel",
+      "test_file": "08-gaussian-blur-edge-and-kernel/blur-chained-quadrature-variance.svg",
+      "ref_file": "08-gaussian-blur-edge-and-kernel/blur-chained-quadrature-variance-ref.svg",
+      "wpt_source": "https://github.com/femtovg/femtovg/issues/325",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#feGaussianBlurElement",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/issues/325"
+      ],
+      "femtovg_features": [
+        "feGaussianBlur",
+        "chained_filter_blur",
+        "quadrature_compounding"
+      ],
+      "description": "Successive Gaussian convolutions compound in quadrature: chained blurs with sigma=3 and sigma=4 match a single blur of sigma=5.0."
+    },
+    {
+      "id": "blur-color-interpolation-linear-vs-srgb",
+      "category": "08-gaussian-blur-edge-and-kernel",
+      "test_file": "08-gaussian-blur-edge-and-kernel/blur-color-interpolation-linear-vs-srgb.svg",
+      "ref_file": "08-gaussian-blur-edge-and-kernel/blur-color-interpolation-linear-vs-srgb-ref.svg",
+      "wpt_source": "https://drafts.fxtf.org/filter-effects-1/#propdef-color-interpolation-filters",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#propdef-color-interpolation-filters",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/issues/325"
+      ],
+      "femtovg_features": [
+        "feGaussianBlur",
+        "color_interpolation_filters",
+        "sRGB_filtering"
+      ],
+      "description": "Blur under color-interpolation-filters='sRGB' operates in non-linear sRGB space, matching CSS blur() shorthand."
+    },
+    {
+      "id": "feblend-mode-normal",
+      "category": "09-feblend-modes",
+      "test_file": "09-feblend-modes/feblend-mode-normal.svg",
+      "ref_file": "09-feblend-modes/feblend-mode-normal-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/filters/feBlend/mode=normal.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#feBlendElement",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feBlend",
+        "blend_mode_normal"
+      ],
+      "description": "Verifies feBlend primitive with mode='normal' blending lightblue over seagreen in sRGB (Source lightblue overwrites backdrop)."
+    },
+    {
+      "id": "feblend-mode-multiply",
+      "category": "09-feblend-modes",
+      "test_file": "09-feblend-modes/feblend-mode-multiply.svg",
+      "ref_file": "09-feblend-modes/feblend-mode-multiply-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/filters/feBlend/mode=multiply.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#feBlendElement",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feBlend",
+        "blend_mode_multiply"
+      ],
+      "description": "Verifies feBlend primitive with mode='multiply' blending lightblue over seagreen in sRGB (cb * cs midtone darkening)."
+    },
+    {
+      "id": "feblend-mode-screen",
+      "category": "09-feblend-modes",
+      "test_file": "09-feblend-modes/feblend-mode-screen.svg",
+      "ref_file": "09-feblend-modes/feblend-mode-screen-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/filters/feBlend/mode=screen.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#feBlendElement",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feBlend",
+        "blend_mode_screen"
+      ],
+      "description": "Verifies feBlend primitive with mode='screen' blending lightblue over seagreen in sRGB (cb + cs - cb * cs midtone lightening)."
+    },
+    {
+      "id": "feblend-mode-overlay",
+      "category": "09-feblend-modes",
+      "test_file": "09-feblend-modes/feblend-mode-overlay.svg",
+      "ref_file": "09-feblend-modes/feblend-mode-overlay-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/filters/feBlend/mode=overlay.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#feBlendElement",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feBlend",
+        "blend_mode_overlay"
+      ],
+      "description": "Verifies feBlend primitive with mode='overlay' blending lightblue over seagreen in sRGB (Multiplies or screens depending on backdrop)."
+    },
+    {
+      "id": "feblend-mode-darken",
+      "category": "09-feblend-modes",
+      "test_file": "09-feblend-modes/feblend-mode-darken.svg",
+      "ref_file": "09-feblend-modes/feblend-mode-darken-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/filters/feBlend/mode=darken.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#feBlendElement",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feBlend",
+        "blend_mode_darken"
+      ],
+      "description": "Verifies feBlend primitive with mode='darken' blending lightblue over seagreen in sRGB (min(cb, cs) channel-wise)."
+    },
+    {
+      "id": "feblend-mode-lighten",
+      "category": "09-feblend-modes",
+      "test_file": "09-feblend-modes/feblend-mode-lighten.svg",
+      "ref_file": "09-feblend-modes/feblend-mode-lighten-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/filters/feBlend/mode=lighten.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#feBlendElement",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feBlend",
+        "blend_mode_lighten"
+      ],
+      "description": "Verifies feBlend primitive with mode='lighten' blending lightblue over seagreen in sRGB (max(cb, cs) channel-wise)."
+    },
+    {
+      "id": "feblend-mode-color-dodge",
+      "category": "09-feblend-modes",
+      "test_file": "09-feblend-modes/feblend-mode-color-dodge.svg",
+      "ref_file": "09-feblend-modes/feblend-mode-color-dodge-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/filters/feBlend/mode=color-dodge.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#feBlendElement",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feBlend",
+        "blend_mode_color_dodge"
+      ],
+      "description": "Verifies feBlend primitive with mode='color-dodge' blending lightblue over seagreen in sRGB (Brightens backdrop to reflect source)."
+    },
+    {
+      "id": "feblend-mode-color-burn",
+      "category": "09-feblend-modes",
+      "test_file": "09-feblend-modes/feblend-mode-color-burn.svg",
+      "ref_file": "09-feblend-modes/feblend-mode-color-burn-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/filters/feBlend/mode=color-burn.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#feBlendElement",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feBlend",
+        "blend_mode_color_burn"
+      ],
+      "description": "Verifies feBlend primitive with mode='color-burn' blending lightblue over seagreen in sRGB (Darkens backdrop to reflect source)."
+    },
+    {
+      "id": "feblend-mode-hard-light",
+      "category": "09-feblend-modes",
+      "test_file": "09-feblend-modes/feblend-mode-hard-light.svg",
+      "ref_file": "09-feblend-modes/feblend-mode-hard-light-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/filters/feBlend/mode=hard-light.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#feBlendElement",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feBlend",
+        "blend_mode_hard_light"
+      ],
+      "description": "Verifies feBlend primitive with mode='hard-light' blending lightblue over seagreen in sRGB (Multiplies or screens depending on source)."
+    },
+    {
+      "id": "feblend-mode-soft-light",
+      "category": "09-feblend-modes",
+      "test_file": "09-feblend-modes/feblend-mode-soft-light.svg",
+      "ref_file": "09-feblend-modes/feblend-mode-soft-light-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/filters/feBlend/mode=soft-light.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#feBlendElement",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feBlend",
+        "blend_mode_soft_light"
+      ],
+      "description": "Verifies feBlend primitive with mode='soft-light' blending lightblue over seagreen in sRGB (Darkens or lightens depending on source)."
+    },
+    {
+      "id": "feblend-mode-difference",
+      "category": "09-feblend-modes",
+      "test_file": "09-feblend-modes/feblend-mode-difference.svg",
+      "ref_file": "09-feblend-modes/feblend-mode-difference-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/filters/feBlend/mode=difference.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#feBlendElement",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feBlend",
+        "blend_mode_difference"
+      ],
+      "description": "Verifies feBlend primitive with mode='difference' blending lightblue over seagreen in sRGB (abs(cb - cs) subtractive difference)."
+    },
+    {
+      "id": "feblend-mode-exclusion",
+      "category": "09-feblend-modes",
+      "test_file": "09-feblend-modes/feblend-mode-exclusion.svg",
+      "ref_file": "09-feblend-modes/feblend-mode-exclusion-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/filters/feBlend/mode=exclusion.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#feBlendElement",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feBlend",
+        "blend_mode_exclusion"
+      ],
+      "description": "Verifies feBlend primitive with mode='exclusion' blending lightblue over seagreen in sRGB (Similar to difference with lower contrast)."
+    },
+    {
+      "id": "feblend-mode-hue",
+      "category": "09-feblend-modes",
+      "test_file": "09-feblend-modes/feblend-mode-hue.svg",
+      "ref_file": "09-feblend-modes/feblend-mode-hue-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/filters/feBlend/mode=hue.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#feBlendElement",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feBlend",
+        "blend_mode_hue"
+      ],
+      "description": "Verifies feBlend primitive with mode='hue' blending lightblue over seagreen in sRGB (Luminosity and saturation of backdrop with hue of source)."
+    },
+    {
+      "id": "feblend-mode-saturation",
+      "category": "09-feblend-modes",
+      "test_file": "09-feblend-modes/feblend-mode-saturation.svg",
+      "ref_file": "09-feblend-modes/feblend-mode-saturation-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/filters/feBlend/mode=saturation.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#feBlendElement",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feBlend",
+        "blend_mode_saturation"
+      ],
+      "description": "Verifies feBlend primitive with mode='saturation' blending lightblue over seagreen in sRGB (Luminosity and hue of backdrop with saturation of source)."
+    },
+    {
+      "id": "feblend-mode-color",
+      "category": "09-feblend-modes",
+      "test_file": "09-feblend-modes/feblend-mode-color.svg",
+      "ref_file": "09-feblend-modes/feblend-mode-color-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/filters/feBlend/mode=color.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#feBlendElement",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feBlend",
+        "blend_mode_color"
+      ],
+      "description": "Verifies feBlend primitive with mode='color' blending lightblue over seagreen in sRGB (Luminosity of backdrop with hue and saturation of source)."
+    },
+    {
+      "id": "feblend-mode-luminosity",
+      "category": "09-feblend-modes",
+      "test_file": "09-feblend-modes/feblend-mode-luminosity.svg",
+      "ref_file": "09-feblend-modes/feblend-mode-luminosity-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/filters/feBlend/mode=luminosity.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#feBlendElement",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feBlend",
+        "blend_mode_luminosity"
+      ],
+      "description": "Verifies feBlend primitive with mode='luminosity' blending lightblue over seagreen in sRGB (Hue and saturation of backdrop with luminosity of source)."
+    },
+    {
+      "id": "feblend-subregion-input1",
+      "category": "09-feblend-modes",
+      "test_file": "09-feblend-modes/feblend-subregion-input1.svg",
+      "ref_file": "09-feblend-modes/feblend-subregion-input1-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/filters/feBlend/with-subregion-on-input-1.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#FilterPrimitiveSubRegion",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feBlend",
+        "subregion_clipping",
+        "alpha_blending"
+      ],
+      "description": "Tests feBlend when input 1 (feFlood) has a subregion smaller than the filter primitive bounds; verifies transparent outside preserves backdrop."
+    },
+    {
+      "id": "feblend-subregion-input2",
+      "category": "09-feblend-modes",
+      "test_file": "09-feblend-modes/feblend-subregion-input2.svg",
+      "ref_file": "09-feblend-modes/feblend-subregion-input2-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/filters/feBlend/with-subregion-on-input-2.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#FilterPrimitiveSubRegion",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feBlend",
+        "subregion_clipping",
+        "in2_subregion"
+      ],
+      "description": "Tests feBlend when input 2 (in2) has a subregion, verifying commutative multiply output."
+    },
+    {
+      "id": "mix-blend-normal",
+      "category": "10-mix-blend-modes-all",
+      "test_file": "10-mix-blend-modes-all/mix-blend-normal.svg",
+      "ref_file": "10-mix-blend-modes-all/mix-blend-normal-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/painting/mix-blend-mode/normal.svg",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/356"
+      ],
+      "femtovg_features": [
+        "LayerEffects",
+        "with_blend",
+        "blend_mode_normal",
+        "layer_compositing"
+      ],
+      "description": "Verifies mix-blend-mode: normal on a composite group layer blending lightblue over seagreen (Source lightblue overwrites backdrop)."
+    },
+    {
+      "id": "mix-blend-multiply",
+      "category": "10-mix-blend-modes-all",
+      "test_file": "10-mix-blend-modes-all/mix-blend-multiply.svg",
+      "ref_file": "10-mix-blend-modes-all/mix-blend-multiply-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/painting/mix-blend-mode/multiply.svg",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/356"
+      ],
+      "femtovg_features": [
+        "LayerEffects",
+        "with_blend",
+        "blend_mode_multiply",
+        "layer_compositing"
+      ],
+      "description": "Verifies mix-blend-mode: multiply on a composite group layer blending lightblue over seagreen (cb * cs midtone darkening)."
+    },
+    {
+      "id": "mix-blend-screen",
+      "category": "10-mix-blend-modes-all",
+      "test_file": "10-mix-blend-modes-all/mix-blend-screen.svg",
+      "ref_file": "10-mix-blend-modes-all/mix-blend-screen-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/painting/mix-blend-mode/screen.svg",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/356"
+      ],
+      "femtovg_features": [
+        "LayerEffects",
+        "with_blend",
+        "blend_mode_screen",
+        "layer_compositing"
+      ],
+      "description": "Verifies mix-blend-mode: screen on a composite group layer blending lightblue over seagreen (cb + cs - cb * cs midtone lightening)."
+    },
+    {
+      "id": "mix-blend-overlay",
+      "category": "10-mix-blend-modes-all",
+      "test_file": "10-mix-blend-modes-all/mix-blend-overlay.svg",
+      "ref_file": "10-mix-blend-modes-all/mix-blend-overlay-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/painting/mix-blend-mode/overlay.svg",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/356"
+      ],
+      "femtovg_features": [
+        "LayerEffects",
+        "with_blend",
+        "blend_mode_overlay",
+        "layer_compositing"
+      ],
+      "description": "Verifies mix-blend-mode: overlay on a composite group layer blending lightblue over seagreen (Multiplies or screens depending on backdrop)."
+    },
+    {
+      "id": "mix-blend-darken",
+      "category": "10-mix-blend-modes-all",
+      "test_file": "10-mix-blend-modes-all/mix-blend-darken.svg",
+      "ref_file": "10-mix-blend-modes-all/mix-blend-darken-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/painting/mix-blend-mode/darken.svg",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/356"
+      ],
+      "femtovg_features": [
+        "LayerEffects",
+        "with_blend",
+        "blend_mode_darken",
+        "layer_compositing"
+      ],
+      "description": "Verifies mix-blend-mode: darken on a composite group layer blending lightblue over seagreen (min(cb, cs) channel-wise)."
+    },
+    {
+      "id": "mix-blend-lighten",
+      "category": "10-mix-blend-modes-all",
+      "test_file": "10-mix-blend-modes-all/mix-blend-lighten.svg",
+      "ref_file": "10-mix-blend-modes-all/mix-blend-lighten-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/painting/mix-blend-mode/lighten.svg",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/356"
+      ],
+      "femtovg_features": [
+        "LayerEffects",
+        "with_blend",
+        "blend_mode_lighten",
+        "layer_compositing"
+      ],
+      "description": "Verifies mix-blend-mode: lighten on a composite group layer blending lightblue over seagreen (max(cb, cs) channel-wise)."
+    },
+    {
+      "id": "mix-blend-color-dodge",
+      "category": "10-mix-blend-modes-all",
+      "test_file": "10-mix-blend-modes-all/mix-blend-color-dodge.svg",
+      "ref_file": "10-mix-blend-modes-all/mix-blend-color-dodge-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/painting/mix-blend-mode/color-dodge.svg",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/356"
+      ],
+      "femtovg_features": [
+        "LayerEffects",
+        "with_blend",
+        "blend_mode_color_dodge",
+        "layer_compositing"
+      ],
+      "description": "Verifies mix-blend-mode: color-dodge on a composite group layer blending lightblue over seagreen (Brightens backdrop to reflect source)."
+    },
+    {
+      "id": "mix-blend-color-burn",
+      "category": "10-mix-blend-modes-all",
+      "test_file": "10-mix-blend-modes-all/mix-blend-color-burn.svg",
+      "ref_file": "10-mix-blend-modes-all/mix-blend-color-burn-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/painting/mix-blend-mode/color-burn.svg",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/356"
+      ],
+      "femtovg_features": [
+        "LayerEffects",
+        "with_blend",
+        "blend_mode_color_burn",
+        "layer_compositing"
+      ],
+      "description": "Verifies mix-blend-mode: color-burn on a composite group layer blending lightblue over seagreen (Darkens backdrop to reflect source)."
+    },
+    {
+      "id": "mix-blend-hard-light",
+      "category": "10-mix-blend-modes-all",
+      "test_file": "10-mix-blend-modes-all/mix-blend-hard-light.svg",
+      "ref_file": "10-mix-blend-modes-all/mix-blend-hard-light-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/painting/mix-blend-mode/hard-light.svg",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/356"
+      ],
+      "femtovg_features": [
+        "LayerEffects",
+        "with_blend",
+        "blend_mode_hard_light",
+        "layer_compositing"
+      ],
+      "description": "Verifies mix-blend-mode: hard-light on a composite group layer blending lightblue over seagreen (Multiplies or screens depending on source)."
+    },
+    {
+      "id": "mix-blend-soft-light",
+      "category": "10-mix-blend-modes-all",
+      "test_file": "10-mix-blend-modes-all/mix-blend-soft-light.svg",
+      "ref_file": "10-mix-blend-modes-all/mix-blend-soft-light-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/painting/mix-blend-mode/soft-light.svg",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/356"
+      ],
+      "femtovg_features": [
+        "LayerEffects",
+        "with_blend",
+        "blend_mode_soft_light",
+        "layer_compositing"
+      ],
+      "description": "Verifies mix-blend-mode: soft-light on a composite group layer blending lightblue over seagreen (Darkens or lightens depending on source)."
+    },
+    {
+      "id": "mix-blend-difference",
+      "category": "10-mix-blend-modes-all",
+      "test_file": "10-mix-blend-modes-all/mix-blend-difference.svg",
+      "ref_file": "10-mix-blend-modes-all/mix-blend-difference-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/painting/mix-blend-mode/difference.svg",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/356"
+      ],
+      "femtovg_features": [
+        "LayerEffects",
+        "with_blend",
+        "blend_mode_difference",
+        "layer_compositing"
+      ],
+      "description": "Verifies mix-blend-mode: difference on a composite group layer blending lightblue over seagreen (abs(cb - cs) subtractive difference)."
+    },
+    {
+      "id": "mix-blend-exclusion",
+      "category": "10-mix-blend-modes-all",
+      "test_file": "10-mix-blend-modes-all/mix-blend-exclusion.svg",
+      "ref_file": "10-mix-blend-modes-all/mix-blend-exclusion-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/painting/mix-blend-mode/exclusion.svg",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/356"
+      ],
+      "femtovg_features": [
+        "LayerEffects",
+        "with_blend",
+        "blend_mode_exclusion",
+        "layer_compositing"
+      ],
+      "description": "Verifies mix-blend-mode: exclusion on a composite group layer blending lightblue over seagreen (Similar to difference with lower contrast)."
+    },
+    {
+      "id": "mix-blend-hue",
+      "category": "10-mix-blend-modes-all",
+      "test_file": "10-mix-blend-modes-all/mix-blend-hue.svg",
+      "ref_file": "10-mix-blend-modes-all/mix-blend-hue-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/painting/mix-blend-mode/hue.svg",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/356"
+      ],
+      "femtovg_features": [
+        "LayerEffects",
+        "with_blend",
+        "blend_mode_hue",
+        "layer_compositing"
+      ],
+      "description": "Verifies mix-blend-mode: hue on a composite group layer blending lightblue over seagreen (Luminosity and saturation of backdrop with hue of source)."
+    },
+    {
+      "id": "mix-blend-saturation",
+      "category": "10-mix-blend-modes-all",
+      "test_file": "10-mix-blend-modes-all/mix-blend-saturation.svg",
+      "ref_file": "10-mix-blend-modes-all/mix-blend-saturation-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/painting/mix-blend-mode/saturation.svg",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/356"
+      ],
+      "femtovg_features": [
+        "LayerEffects",
+        "with_blend",
+        "blend_mode_saturation",
+        "layer_compositing"
+      ],
+      "description": "Verifies mix-blend-mode: saturation on a composite group layer blending lightblue over seagreen (Luminosity and hue of backdrop with saturation of source)."
+    },
+    {
+      "id": "mix-blend-color",
+      "category": "10-mix-blend-modes-all",
+      "test_file": "10-mix-blend-modes-all/mix-blend-color.svg",
+      "ref_file": "10-mix-blend-modes-all/mix-blend-color-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/painting/mix-blend-mode/color.svg",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/356"
+      ],
+      "femtovg_features": [
+        "LayerEffects",
+        "with_blend",
+        "blend_mode_color",
+        "layer_compositing"
+      ],
+      "description": "Verifies mix-blend-mode: color on a composite group layer blending lightblue over seagreen (Luminosity of backdrop with hue and saturation of source)."
+    },
+    {
+      "id": "mix-blend-luminosity",
+      "category": "10-mix-blend-modes-all",
+      "test_file": "10-mix-blend-modes-all/mix-blend-luminosity.svg",
+      "ref_file": "10-mix-blend-modes-all/mix-blend-luminosity-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/painting/mix-blend-mode/luminosity.svg",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/356"
+      ],
+      "femtovg_features": [
+        "LayerEffects",
+        "with_blend",
+        "blend_mode_luminosity",
+        "layer_compositing"
+      ],
+      "description": "Verifies mix-blend-mode: luminosity on a composite group layer blending lightblue over seagreen (Hue and saturation of backdrop with luminosity of source)."
+    },
+    {
+      "id": "blend-radial-gradient-multiply",
+      "category": "11-blend-gradients-and-clips",
+      "test_file": "11-blend-gradients-and-clips/blend-radial-gradient-multiply.svg",
+      "ref_file": "11-blend-gradients-and-clips/blend-radial-gradient-multiply-ref.svg",
+      "wpt_source": "wpt/css/compositing/mix-blend-mode/mix-blend-mode-radial-gradient.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/356"
+      ],
+      "femtovg_features": [
+        "radial_gradient",
+        "multiply",
+        "LayerEffects",
+        "layer_shader"
+      ],
+      "description": "Verifies radial gradient rasterization under mix-blend-mode: multiply over white backdrop."
+    },
+    {
+      "id": "blend-gradient-alpha-screen",
+      "category": "11-blend-gradients-and-clips",
+      "test_file": "11-blend-gradients-and-clips/blend-gradient-alpha-screen.svg",
+      "ref_file": "11-blend-gradients-and-clips/blend-gradient-alpha-screen-ref.svg",
+      "wpt_source": "wpt/css/compositing/mix-blend-mode/mix-blend-mode-gradient-alpha.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/356"
+      ],
+      "femtovg_features": [
+        "linear_gradient",
+        "alpha_gradient",
+        "screen",
+        "LayerEffects"
+      ],
+      "description": "Verifies linear gradient with varying alpha stops under mix-blend-mode: screen over black backdrop."
+    },
+    {
+      "id": "blend-clip-path-nested-overlay",
+      "category": "11-blend-gradients-and-clips",
+      "test_file": "11-blend-gradients-and-clips/blend-clip-path-nested-overlay.svg",
+      "ref_file": "11-blend-gradients-and-clips/blend-clip-path-nested-overlay-ref.svg",
+      "wpt_source": "wpt/css/compositing/mix-blend-mode/mix-blend-mode-nested-clip.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/356"
+      ],
+      "femtovg_features": [
+        "nested_clip_path",
+        "overlay",
+        "LayerEffects",
+        "stencil_clip"
+      ],
+      "description": "Verifies nested clip paths (rounded rectangle and circle) on an element with mix-blend-mode: overlay."
+    },
+    {
+      "id": "blend-clip-path-gradient-difference",
+      "category": "11-blend-gradients-and-clips",
+      "test_file": "11-blend-gradients-and-clips/blend-clip-path-gradient-difference.svg",
+      "ref_file": "11-blend-gradients-and-clips/blend-clip-path-gradient-difference-ref.svg",
+      "wpt_source": "wpt/css/compositing/mix-blend-mode/mix-blend-mode-polygon-clip.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/356"
+      ],
+      "femtovg_features": [
+        "polygon_clip",
+        "linear_gradient",
+        "difference",
+        "LayerEffects"
+      ],
+      "description": "Verifies 10-point star polygon clipping applied to gradient element under mix-blend-mode: difference."
+    },
+    {
+      "id": "blend-scissor-rect-clip",
+      "category": "11-blend-gradients-and-clips",
+      "test_file": "11-blend-gradients-and-clips/blend-scissor-rect-clip.svg",
+      "ref_file": "11-blend-gradients-and-clips/blend-scissor-rect-clip-ref.svg",
+      "wpt_source": "wpt/css/compositing/mix-blend-mode/mix-blend-mode-clipped-rect.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/356"
+      ],
+      "femtovg_features": [
+        "rectangular_clip",
+        "multiply",
+        "scissor_rect",
+        "LayerEffects"
+      ],
+      "description": "Verifies rectangular clip-path interaction with mix-blend-mode: multiply over solid backdrop."
+    },
+    {
+      "id": "blend-group-opacity-gradient",
+      "category": "11-blend-gradients-and-clips",
+      "test_file": "11-blend-gradients-and-clips/blend-group-opacity-gradient.svg",
+      "ref_file": "11-blend-gradients-and-clips/blend-group-opacity-gradient-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/painting/mix-blend-mode/opacity-on-group.svg",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#csscompositingrules_SVG",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/356"
+      ],
+      "femtovg_features": [
+        "group_opacity",
+        "multiply",
+        "isolation",
+        "LayerEffects"
+      ],
+      "description": "Verifies interaction of group opacity with mix-blend-mode on group layer containing a gradient."
+    },
+    {
+      "id": "filter-chain-blur-feblend-sourcealpha",
+      "category": "12-blend-filter-chains",
+      "test_file": "12-blend-filter-chains/filter-chain-blur-feblend-sourcealpha.svg",
+      "ref_file": "12-blend-filter-chains/filter-chain-blur-feblend-sourcealpha-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/filters/feBlend/multiple-primitives-4.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#feBlendElement",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/issues/325",
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feGaussianBlur",
+        "SourceAlpha",
+        "feBlend",
+        "screen"
+      ],
+      "description": "Cross-checks Issue #325 (zero-radius Gaussian blur) feeding PR #355 (feBlend screen mode)."
+    },
+    {
+      "id": "filter-chain-colormatrix-feblend-screen",
+      "category": "12-blend-filter-chains",
+      "test_file": "12-blend-filter-chains/filter-chain-colormatrix-feblend-screen.svg",
+      "ref_file": "12-blend-filter-chains/filter-chain-colormatrix-feblend-screen-ref.svg",
+      "wpt_source": "wpt/filter-effects/feBlend-feColorMatrix.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#feBlendElement",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feColorMatrix",
+        "feBlend",
+        "screen"
+      ],
+      "description": "Verifies feColorMatrix output feeding feBlend primitive with screen mode."
+    },
+    {
+      "id": "filter-chain-offset-blur-feblend",
+      "category": "12-blend-filter-chains",
+      "test_file": "12-blend-filter-chains/filter-chain-offset-blur-feblend.svg",
+      "ref_file": "12-blend-filter-chains/filter-chain-offset-blur-feblend-ref.svg",
+      "wpt_source": "wpt/filter-effects/drop-shadow-pipeline.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#feBlendElement",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feOffset",
+        "feGaussianBlur",
+        "feBlend",
+        "drop_shadow_pipeline"
+      ],
+      "description": "Verifies drop-shadow chain (feOffset -> feGaussianBlur -> feFlood -> feComposite -> feBlend)."
+    },
+    {
+      "id": "filter-chain-double-feblend",
+      "category": "12-blend-filter-chains",
+      "test_file": "12-blend-filter-chains/filter-chain-double-feblend.svg",
+      "ref_file": "12-blend-filter-chains/filter-chain-double-feblend-ref.svg",
+      "wpt_source": "wpt/filter-effects/chained-feblend.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#feBlendElement",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feBlend",
+        "multi_stage_filter",
+        "screen"
+      ],
+      "description": "Verifies pipeline with sequential feBlend primitives where the output of one blend feeds the next."
+    },
+    {
+      "id": "filter-layer-mix-blend-filtered",
+      "category": "12-blend-filter-chains",
+      "test_file": "12-blend-filter-chains/filter-layer-mix-blend-filtered.svg",
+      "ref_file": "12-blend-filter-chains/filter-layer-mix-blend-filtered-ref.svg",
+      "wpt_source": "wpt/css/compositing/mix-blend-mode-filter-interaction.html",
+      "spec_link": "https://drafts.fxtf.org/compositing-1/#mix-blend-mode",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355",
+        "https://github.com/femtovg/femtovg/pull/356"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "LayerEffects",
+        "layer_compositing",
+        "feFlood",
+        "multiply"
+      ],
+      "description": "Verifies interaction between ImageFilter on a child element and LayerEffects::with_blend on its parent group."
+    },
+    {
+      "id": "filter-subregion-chain-feblend",
+      "category": "12-blend-filter-chains",
+      "test_file": "12-blend-filter-chains/filter-subregion-chain-feblend.svg",
+      "ref_file": "12-blend-filter-chains/filter-subregion-chain-feblend-ref.svg",
+      "wpt_source": "resvg-test-suite/tests/filters/feBlend/subregion-chain.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#FilterPrimitiveSubRegion",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feBlend",
+        "subregion_propagation",
+        "screen"
+      ],
+      "description": "Verifies subregion clipping and transparent boundary compositing across chained filter primitives."
+    },
+    {
+      "id": "feblend-colorspace-srgb-multiply",
+      "category": "13-blend-color-spaces",
+      "test_file": "13-blend-color-spaces/feblend-colorspace-srgb-multiply.svg",
+      "ref_file": "13-blend-color-spaces/feblend-colorspace-srgb-multiply-ref.svg",
+      "wpt_source": "wpt/filter-effects/color-interpolation-filters-srgb.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#ColorInterpolationFiltersProperty",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feBlend",
+        "color_interpolation_filters",
+        "sRGB"
+      ],
+      "description": "Verifies feBlend with color-interpolation-filters='sRGB' producing exact unlinearized gamma multiply output."
+    },
+    {
+      "id": "feblend-colorspace-linearrgb-multiply",
+      "category": "13-blend-color-spaces",
+      "test_file": "13-blend-color-spaces/feblend-colorspace-linearrgb-multiply.svg",
+      "ref_file": "13-blend-color-spaces/feblend-colorspace-linearrgb-multiply-ref.svg",
+      "wpt_source": "wpt/filter-effects/color-interpolation-filters-linearrgb.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#ColorInterpolationFiltersProperty",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feBlend",
+        "color_interpolation_filters",
+        "linearRGB"
+      ],
+      "description": "Verifies feBlend with color-interpolation-filters='linearRGB' converting inputs to linear space before multiplication."
+    },
+    {
+      "id": "feblend-colorspace-linearrgb-screen",
+      "category": "13-blend-color-spaces",
+      "test_file": "13-blend-color-spaces/feblend-colorspace-linearrgb-screen.svg",
+      "ref_file": "13-blend-color-spaces/feblend-colorspace-linearrgb-screen-ref.svg",
+      "wpt_source": "wpt/filter-effects/color-interpolation-filters-screen.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#ColorInterpolationFiltersProperty",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feBlend",
+        "color_interpolation_filters",
+        "linearRGB",
+        "screen"
+      ],
+      "description": "Verifies feBlend screen mode in linearRGB produces #B0E3E9 (distinct from sRGB screen #BCEDEF)."
+    },
+    {
+      "id": "gradient-colorspace-linearrgb-blend",
+      "category": "13-blend-color-spaces",
+      "test_file": "13-blend-color-spaces/gradient-colorspace-linearrgb-blend.svg",
+      "ref_file": "13-blend-color-spaces/gradient-colorspace-linearrgb-blend-ref.svg",
+      "wpt_source": "wpt/css/compositing/mix-blend-mode-gradient-linearrgb.html",
+      "spec_link": "https://www.w3.org/TR/SVG2/painting.html#ColorInterpolationProperty",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/356"
+      ],
+      "femtovg_features": [
+        "linear_gradient",
+        "color_interpolation",
+        "linearRGB",
+        "multiply",
+        "LayerEffects"
+      ],
+      "description": "Verifies linearRGB gradient color interpolation is preserved through layer effects mix-blend-mode: multiply."
+    },
+    {
+      "id": "gradient-colorspace-srgb-blend",
+      "category": "13-blend-color-spaces",
+      "test_file": "13-blend-color-spaces/gradient-colorspace-srgb-blend.svg",
+      "ref_file": "13-blend-color-spaces/gradient-colorspace-srgb-blend-ref.svg",
+      "wpt_source": "wpt/css/compositing/mix-blend-mode-gradient-srgb.html",
+      "spec_link": "https://www.w3.org/TR/SVG2/painting.html#ColorInterpolationProperty",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/356"
+      ],
+      "femtovg_features": [
+        "linear_gradient",
+        "color_interpolation",
+        "sRGB",
+        "multiply",
+        "LayerEffects"
+      ],
+      "description": "Verifies sRGB gradient color interpolation is preserved through layer effects mix-blend-mode: multiply."
+    },
+    {
+      "id": "filter-chain-colorspace-transition",
+      "category": "13-blend-color-spaces",
+      "test_file": "13-blend-color-spaces/filter-chain-colorspace-transition.svg",
+      "ref_file": "13-blend-color-spaces/filter-chain-colorspace-transition-ref.svg",
+      "wpt_source": "wpt/filter-effects/color-space-transition.svg",
+      "spec_link": "https://drafts.fxtf.org/filter-effects-1/#ColorInterpolationFiltersProperty",
+      "bug_trackers": [
+        "https://github.com/femtovg/femtovg/pull/355"
+      ],
+      "femtovg_features": [
+        "ImageFilter",
+        "feBlend",
+        "color_space_conversion",
+        "pipeline_transitions"
+      ],
+      "description": "Verifies color space buffer conversion between primitives when color-interpolation-filters changes."
+    }
+  ]
+}
