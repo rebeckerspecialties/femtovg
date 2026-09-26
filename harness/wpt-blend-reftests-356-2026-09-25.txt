@@ -1,0 +1,24 @@
+pass blend-clip-parent-non-overflow: test vs ref 0.05 % | chromium test vs ref 0.05 % | test vs chromium 0.19 %
+pass blend-clip-rotated: test vs ref 0.00 % | chromium test vs ref 0.00 % | test vs chromium 0.00 %
+pass blend-clip-rounded-child: test vs ref 0.00 % | chromium test vs ref 0.00 % | test vs chromium 0.16 %
+pass blend-clip-rounded-parent: test vs ref 0.00 % | chromium test vs ref 0.10 % | test vs chromium 0.29 %
+pass blend-clip-sibling-overlap: test vs ref 0.00 % | chromium test vs ref 0.00 % | test vs chromium 0.16 %
+pass blend-filter-identity-isolation: test vs ref 0.00 % | chromium test vs ref 0.00 % | test vs chromium 0.00 %
+pass blend-filter-order-grayscale-screen: test vs ref 0.00 % | chromium test vs ref 0.00 % | test vs chromium 0.00 %
+pass blend-interposed-child: test vs ref 0.00 % | chromium test vs ref 0.00 % | test vs chromium 0.00 %
+pass blend-isolation-explicit: test vs ref 0.00 % | chromium test vs ref 0.00 % | test vs chromium 0.00 %
+pass blend-isolation-group-opacity: test vs ref 0.00 % | chromium test vs ref 0.00 % | test vs chromium 0.00 %
+pass blend-mask-circle-difference: test vs ref 0.00 % | chromium test vs ref 0.00 % | test vs chromium 0.26 %
+pass blend-overflowing-child: test vs ref 0.00 % | chromium test vs ref 0.00 % | test vs chromium 0.00 %
+FAIL blend-plus-lighter-isolated: test vs ref 3.85 % | chromium test vs ref 0.00 % | test vs chromium 3.85 %
+pass blend-stacking-context-bounds-isolation: test vs ref 0.21 % | chromium test vs ref 0.21 % | test vs chromium 0.00 %
+pass blend-svg-rectangle-multiply: test vs ref 0.00 % | chromium test vs ref 0.00 % | test vs chromium 0.00 %
+FAIL blend-svg-root-isolation: test vs ref 33.44 % | chromium test vs ref 33.44 % | test vs chromium 0.00 %
+pass blend-transparent-backdrop-boundary: test vs ref 0.00 % | chromium test vs ref 0.00 % | test vs chromium 0.00 %
+pass filter-blur-clip-ancestor: test vs ref 0.00 % | chromium test vs ref 0.56 % | test vs chromium 0.56 %
+pass filter-chained-identity: test vs ref 0.00 % | chromium test vs ref 0.00 % | test vs chromium 0.00 %
+pass filter-clip-under-blur: test vs ref 0.00 % | chromium test vs ref 0.24 % | test vs chromium 1.35 %
+FAIL filter-drop-shadow-overflow-clipped: test vs ref 0.84 % | chromium test vs ref 0.84 % | test vs chromium 0.00 %
+pass filter-vs-clip-precedence: test vs ref 0.00 % | chromium test vs ref 0.00 % | test vs chromium 0.00 %
+pass filter-vs-mask-precedence: test vs ref 0.00 % | chromium test vs ref 0.00 % | test vs chromium 0.00 %
+20/23 pass

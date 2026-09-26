@@ -84,3 +84,14 @@ drop-shadow chains no longer blurring the whole group (gpt-5-2-pro 4x
 48.34 -> 21.52, gpt-5-6-sol-pro 4x 31.81 -> 19.05); mapping that chain to
 the shadow state is the next harness step.
 (`harness/wpt-blend-reftests-harness-ab-2026-09-23.txt`)
+
+## Re-measured 2026-09-25, with #361 on master
+
+Master 9f2523b (`_logos_full_master_h15`) versus #356 with that master
+merged (`_logos_full_mixblend13`), same harness, 460x260 framing
+(`wpt-blend-reftests-master-361-2026-09-25.txt`,
+`wpt-blend-reftests-356-2026-09-25.txt`): master passes 9 of the 22 valid
+pairs, #356 passes 20 and matches Chromium on 21. `filter-drop-shadow-
+overflow-clipped` now matches Chromium to 0.00 % and misses only its
+reference (0.84 %, Chromium's own test-vs-reference gap); `plus-lighter`
+stays (usvg drops it); `blend-svg-root-isolation` is the invalid pair.
