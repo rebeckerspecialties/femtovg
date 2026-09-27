@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <!-- primitiveUnits=objectBoundingBox subregion on a rotated element: the flood must cover the
+       middle half of the rect in its own (rotated) coordinate system. -->
+  <defs>
+    <filter id="f" primitiveUnits="objectBoundingBox" x="0" y="0" width="1" height="1">
+      <feFlood flood-color="#3060c0" x="0.25" y="0.25" width="0.5" height="0.5" result="fl"/>
+      <feComposite in="fl" in2="SourceGraphic" operator="over"/>
+    </filter>
+  </defs>
+  <rect width="200" height="200" fill="#fff"/>
+  <rect x="40" y="70" width="120" height="60" fill="#e0a040" filter="url(#f)" transform="skewX(25) translate(-40 0)"/>
+</svg>
