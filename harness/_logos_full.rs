@@ -1614,7 +1614,12 @@ fn soak(device: &wgpu::Device, queue: &wgpu::Queue, out_csv: &str, list: &str) {
     let mut renderer = WGPURenderer::new(device.clone(), queue.clone());
     // NO_SLICES=1 renders each frame as one command buffer, the library default.
     if std::env::var_os("NO_SLICES").is_none() {
-        renderer.set_submission_slicing(Some(femtovg::renderer::SubmissionSlicing::default()));
+        // SLICE_WAIT=n waits past n unfinished slices (polls the device inside the flush).
+        let wait_past = std::env::var("SLICE_WAIT").ok().and_then(|v| v.parse().ok());
+        renderer.set_submission_slicing(Some(femtovg::renderer::SubmissionSlicing {
+            wait_past,
+            ..Default::default()
+        }));
     }
     let mut canvas = Canvas::new(renderer).unwrap();
     canvas.set_size(frame_w(), frame_h(), 1.0);
@@ -1725,7 +1730,12 @@ fn main() {
     let mut renderer = WGPURenderer::new(device.clone(), queue.clone());
     // NO_SLICES=1 renders each frame as one command buffer, the library default.
     if std::env::var_os("NO_SLICES").is_none() {
-        renderer.set_submission_slicing(Some(femtovg::renderer::SubmissionSlicing::default()));
+        // SLICE_WAIT=n waits past n unfinished slices (polls the device inside the flush).
+        let wait_past = std::env::var("SLICE_WAIT").ok().and_then(|v| v.parse().ok());
+        renderer.set_submission_slicing(Some(femtovg::renderer::SubmissionSlicing {
+            wait_past,
+            ..Default::default()
+        }));
     }
     let mut canvas = Canvas::new(renderer).unwrap();
     canvas.set_size(frame_w(), frame_h(), 1.0);
