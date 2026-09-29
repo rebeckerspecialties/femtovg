@@ -57,7 +57,18 @@ fn stop_list(stops: &[usvg::Stop]) -> Vec<(f32, Color)> {
         .collect()
 }
 
+/// While a group's shadow copy is drawn (`draw_shadow_only`): every paint is
+/// this colour, whose alpha is the flood opacity, and every path is shifted
+/// by this root-space offset. `SourceAlpha` keeps the source's own alpha, so
+/// fill and group opacities still apply.
+static SHADOW_COPY: std::sync::Mutex<Option<(Color, f32, f32)>> = std::sync::Mutex::new(None);
+
 fn to_paint(p: &usvg::Paint) -> Option<Paint> {
+    if let Some((color, _, _)) = *SHADOW_COPY.lock().unwrap() {
+        let mut paint = Paint::color(color);
+        paint.set_anti_alias(true);
+        return Some(paint);
+    }
     let mut paint = match p {
         usvg::Paint::Color(c) => Paint::color(Color::rgb(c.red, c.green, c.blue)),
         usvg::Paint::LinearGradient(g) => {
@@ -544,17 +555,133 @@ fn has_blend_group(group: &usvg::Group) -> bool {
     })
 }
 
-/// The group's `feDropShadow`, when its filter is one that shadows the source
-/// graphic: the shape SVG's `feDropShadow` shorthand produces.
-fn drop_shadow(group: &usvg::Group) -> Option<&usvg::filter::DropShadow> {
+/// A drop shadow of the source graphic: `feDropShadow`, or the chain it
+/// expands to written out - `feGaussianBlur in="SourceAlpha"`, `feOffset`,
+/// `feFlood`, `feComposite operator="in"` - with an `feMerge` that puts the
+/// source back over it (`merged`) or without one, when the group draws only
+/// its shadow.
+struct ShadowChain {
+    dx: f32,
+    dy: f32,
+    sigma: f32,
+    color: Color,
+    merged: bool,
+}
+
+fn drop_shadow(group: &usvg::Group) -> Option<ShadowChain> {
     if std::env::var("NO_SHADOW").is_ok() {
         return None;
     }
     let [f] = group.filters() else { return None };
-    f.primitives().iter().find_map(|p| match p.kind() {
+    let shorthand = f.primitives().iter().find_map(|p| match p.kind() {
         usvg::filter::Kind::DropShadow(ds) if matches!(ds.input(), usvg::filter::Input::SourceGraphic) => Some(ds),
         _ => None,
+    });
+    if let Some(ds) = shorthand {
+        return Some(ShadowChain {
+            dx: ds.dx(),
+            dy: ds.dy(),
+            sigma: ds.std_dev_x().get().max(ds.std_dev_y().get()),
+            color: flood_color(ds.color(), ds.opacity()),
+            merged: true,
+        });
+    }
+    shadow_chain(f.primitives())
+}
+
+fn flood_color(c: usvg::Color, opacity: usvg::Opacity) -> Color {
+    let mut color = Color::rgb(c.red, c.green, c.blue);
+    color.set_alphaf(opacity.get());
+    color
+}
+
+/// The written-out chain: the primitives before the `feComposite` must be
+/// exactly the blur of `SourceAlpha`, its offset (optional) and the flood,
+/// and after it nothing or the merge.
+fn shadow_chain(prims: &[usvg::filter::Primitive]) -> Option<ShadowChain> {
+    use usvg::filter::{CompositeOperator, Input, Kind};
+    let by_result = |input: &Input| match input {
+        Input::Reference(name) => prims.iter().find(|p| p.result() == name),
+        _ => None,
+    };
+    let (index, prim) = prims
+        .iter()
+        .enumerate()
+        .find(|(_, p)| matches!(p.kind(), Kind::Composite(c) if c.operator() == CompositeOperator::In))?;
+    let Kind::Composite(composite) = prim.kind() else {
+        return None;
+    };
+    let Kind::Flood(flood) = by_result(composite.input1())?.kind() else {
+        return None;
+    };
+    let offset = by_result(composite.input2())?;
+    let (dx, dy, blur) = match offset.kind() {
+        Kind::Offset(o) => (o.dx(), o.dy(), by_result(o.input())?),
+        _ => (0.0, 0.0, offset),
+    };
+    let Kind::GaussianBlur(blur) = blur.kind() else {
+        return None;
+    };
+    if !matches!(blur.input(), Input::SourceAlpha) || index != 2 + usize::from(matches!(offset.kind(), Kind::Offset(_))) {
+        return None;
+    }
+    let merged = match &prims[index + 1..] {
+        [] => false,
+        [merge] => match merge.kind() {
+            Kind::Merge(m) => {
+                matches!(m.inputs(), [Input::Reference(shadow), Input::SourceGraphic] if shadow == prim.result())
+            }
+            _ => return None,
+        },
+        _ => return None,
+    };
+    Some(ShadowChain {
+        dx,
+        dy,
+        sigma: blur.std_dev_x().get().max(blur.std_dev_y().get()),
+        color: flood_color(flood.color(), flood.opacity()),
+        merged,
     })
+}
+
+/// The group's shadow alone: its subtree in the flood colour, shifted by
+/// the offset in root space, blurred in a layer, under the group's clip and
+/// filter region like any filtered group.
+fn draw_shadow_only(
+    canvas: &mut Canvas<WGPURenderer>,
+    group: &usvg::Group,
+    shadow: &ShadowChain,
+    scale: f32,
+    masks: &MaskMap,
+) {
+    let clipped = push_clip(canvas, group);
+    canvas.save();
+    let region = filter_region(group);
+    if let Some((_, result)) = region {
+        scissor_to(canvas, result);
+    }
+    let sigma = shadow.sigma * scale;
+    let blur: &[ImageFilter] = if sigma > 0.0 {
+        &[ImageFilter::GaussianBlur { sigma }]
+    } else {
+        &[]
+    };
+    let fx = LayerEffects::new().with_opacity(group.opacity().get()).with_filters(blur);
+    LAYERS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    if !canvas.begin_layer(&fx) {
+        PASS_THROUGH.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    }
+    if let Some((source, _)) = region {
+        scissor_to(canvas, source);
+    }
+    *SHADOW_COPY.lock().unwrap() = Some((shadow.color, shadow.dx * scale, shadow.dy * scale));
+    draw_nodes(canvas, group.children(), scale, masks);
+    *SHADOW_COPY.lock().unwrap() = None;
+    canvas.end_layer();
+    canvas.restore();
+    if clipped {
+        canvas.restore();
+    }
 }
 
 /// An `feTurbulence` chain this backend runs as a whole: the noise passes,
@@ -1349,6 +1476,11 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                     FILTERS_SKIPPED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                     continue;
                 }
+                let shadow = drop_shadow(group);
+                if let Some(shadow) = shadow.as_ref().filter(|s| !s.merged) {
+                    draw_shadow_only(canvas, group, shadow, scale, masks);
+                    continue;
+                }
                 let clipped = push_clip(canvas, group);
                 // A shadow set before begin_layer is cast once by the layer's
                 // result - the Canvas 2D layer rule, and what feDropShadow on
@@ -1359,15 +1491,12 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                 if let Some((_, result)) = region {
                     scissor_to(canvas, result);
                 }
-                let shadowed = drop_shadow(group).is_some();
-                if let Some(ds) = drop_shadow(group) {
-                    let c = ds.color();
-                    let mut color = Color::rgb(c.red, c.green, c.blue);
-                    color.set_alphaf(ds.opacity().get());
-                    canvas.set_shadow_color(color);
-                    canvas.set_shadow_offset(ds.dx() * scale, ds.dy() * scale);
+                let shadowed = shadow.is_some();
+                if let Some(s) = &shadow {
+                    canvas.set_shadow_color(s.color);
+                    canvas.set_shadow_offset(s.dx * scale, s.dy * scale);
                     // Canvas shadowBlur is two sigma; usvg's deviation is in user units.
-                    canvas.set_shadow_blur(2.0 * ds.std_dev_x().get().max(ds.std_dev_y().get()) * scale);
+                    canvas.set_shadow_blur(2.0 * s.sigma * scale);
                 }
                 let stencil = plan.as_ref().is_some_and(|p| p.stencil);
                 match group_effects(
@@ -1460,6 +1589,15 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                 }
                 canvas.save();
                 canvas.set_transform(&ts_to_t2d(svg_path.abs_transform()));
+                if let Some((_, dx, dy)) = *SHADOW_COPY.lock().unwrap() {
+                    // The offset applies after every transform: a translation
+                    // added to the composed matrix's own.
+                    let mut shifted = canvas.transform();
+                    shifted.0[4] += dx;
+                    shifted.0[5] += dy;
+                    canvas.reset_transform();
+                    canvas.set_transform(&shifted);
+                }
                 if let Some(fill) = svg_path.fill() {
                     if let Some(mut paint) = to_paint(fill.paint()) {
                         paint.set_fill_rule(match fill.rule() {
@@ -1493,6 +1631,37 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                         canvas.stroke_path(&path, &paint);
                         canvas.set_global_alpha(1.0);
                     }
+                }
+                canvas.restore();
+            }
+            usvg::Node::Image(image) => {
+                if !image.is_visible() {
+                    continue;
+                }
+                let size = image.size();
+                canvas.save();
+                // usvg's transform already fits the raster's own size onto
+                // the element's rect (`preserveAspectRatio` included).
+                canvas.set_transform(&ts_to_t2d(image.abs_transform()));
+                match image.kind() {
+                    usvg::ImageKind::PNG(data) | usvg::ImageKind::JPEG(data) => {
+                        let flags = if image.rendering_mode() == usvg::ImageRendering::OptimizeSpeed {
+                            femtovg::ImageFlags::NEAREST
+                        } else {
+                            femtovg::ImageFlags::empty()
+                        };
+                        if let Ok(id) = canvas.load_image_mem(data, flags) {
+                            track_image(id);
+                            let mut rect = Path::new();
+                            rect.rect(0.0, 0.0, size.width(), size.height());
+                            let mut paint = Paint::image(id, 0.0, 0.0, size.width(), size.height(), 0.0, 1.0);
+                            paint.set_anti_alias(true);
+                            canvas.fill_path(&rect, &paint);
+                        }
+                    }
+                    usvg::ImageKind::SVG(tree) => draw_nodes(canvas, tree.root().children(), scale, masks),
+                    // The harness decodes only PNG and JPEG.
+                    usvg::ImageKind::GIF(_) | usvg::ImageKind::WEBP(_) => {}
                 }
                 canvas.restore();
             }

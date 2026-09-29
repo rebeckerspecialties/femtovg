@@ -535,3 +535,15 @@ luminance file's nested blob is cut to a quarter at 1x and shifted at 2x the
 same way. This is the review's `a_nested_layers_mask_rect_is_root_device_space`
 finding made visible at opacity 1; in the corpus the same displacement
 hides under opacity 0.14 (see the ablation under Metric).
+
+## Idioms the harness maps (2026-09-29)
+
+* `<image>`: PNG and JPEG rasters are decoded with `Canvas::load_image_mem`
+  and filled over the raster's own rect under usvg's `abs_transform`, which
+  already carries the `preserveAspectRatio` fit; nested SVG images recurse.
+* The written-out drop shadow - `feGaussianBlur in="SourceAlpha"`,
+  `feOffset`, `feFlood`, `feComposite operator="in"` - maps like
+  `feDropShadow` to the canvas shadow when an `feMerge` puts the source back
+  over it; without the merge the group draws only its shadow: the subtree in
+  the flood colour, shifted in root space, blurred in a layer
+  (`corpus/icons/wasm_speed_benchmark_master.svg`'s `waShadowOnly`).
