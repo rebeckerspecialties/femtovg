@@ -1645,10 +1645,13 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                 canvas.set_transform(&ts_to_t2d(image.abs_transform()));
                 match image.kind() {
                     usvg::ImageKind::PNG(data) | usvg::ImageKind::JPEG(data) => {
+                        // A browser minifies a smooth image through a filtered
+                        // downsample; mipmaps are the GPU's. `pixelated`
+                        // (optimizeSpeed) samples the base level, unfiltered.
                         let flags = if image.rendering_mode() == usvg::ImageRendering::OptimizeSpeed {
                             femtovg::ImageFlags::NEAREST
                         } else {
-                            femtovg::ImageFlags::empty()
+                            femtovg::ImageFlags::GENERATE_MIPMAPS
                         };
                         if let Ok(id) = canvas.load_image_mem(data, flags) {
                             track_image(id);
