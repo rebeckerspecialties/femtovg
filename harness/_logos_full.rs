@@ -8,9 +8,13 @@
 //! SKIP_UNSUPPORTED_FILTERS rule, and both are counted under LAYER_STATS.
 //! `--cfg harness_clip` enables `Canvas::clip_path` (#324),
 //! `--cfg harness_turbulence` enables `ImageFilter::Turbulence` (#338) and
-//! `--cfg harness_blend` enables `ImageFilter::Blend` (feBlend):
-//! `cargo rustc --example _logos_full --features wgpu -- --cfg harness_clip --cfg harness_turbulence --cfg harness_blend`
+//! `--cfg harness_blend` enables `ImageFilter::Blend` (feBlend),
+//! `--cfg harness_mix_blend` `LayerEffects::with_blend` (#356) and
+//! `--cfg harness_slices` `WGPURenderer::set_submission_slicing` (#368):
+//! `cargo rustc --release --example _logos_full --features wgpu -- --cfg harness_clip --cfg harness_turbulence --cfg harness_blend --cfg harness_mix_blend`
 //! (or the same cfgs in RUSTFLAGS, which also rebuilds every dependency).
+//! A plain `cargo build` leaves every one of them out: check the
+//! `harness cfgs:` line of LAYER_STATS=1 before trusting a binary.
 #![cfg(feature = "wgpu")]
 #![allow(unexpected_cfgs)]
 
@@ -1782,11 +1786,166 @@ fn rusage() -> (f64, u64) {
     (cpu_ms, r.ru_maxrss as u64)
 }
 
+/// Peak memory while frames render, for `MEM_PEAKS=1`: a thread samples the
+/// task's ledgers (`task_info(TASK_VM_INFO)`) a few times per millisecond
+/// and keeps the maxima since the last `reset`. `footprint` is what jetsam
+/// and Activity Monitor count, CPU and GPU together; `graphics` is the part
+/// of it tagged graphics - on Apple silicon Metal's textures, buffers and
+/// command memory; `cpu` is the rest. Zeros off macOS.
+mod mem {
+    use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
+
+    #[derive(Clone, Copy, Default)]
+    pub struct Sample {
+        pub footprint: u64,
+        pub graphics: u64,
+        pub cpu: u64,
+        /// The kernel's own lifetime maximum of the footprint.
+        pub lifetime: u64,
+    }
+
+    static FOOTPRINT: AtomicU64 = AtomicU64::new(0);
+    static GRAPHICS: AtomicU64 = AtomicU64::new(0);
+    static CPU: AtomicU64 = AtomicU64::new(0);
+
+    /// `struct task_vm_info` of `<mach/task_info.h>`, packed to 4 bytes: 93
+    /// words, read at the byte offsets of the fields named here.
+    #[cfg(target_os = "macos")]
+    fn ledgers() -> Option<[u32; 93]> {
+        extern "C" {
+            static mach_task_self_: u32;
+            fn task_info(task: u32, flavor: u32, info: *mut u32, count: *mut u32) -> i32;
+        }
+        const TASK_VM_INFO: u32 = 22;
+        let mut words = [0u32; 93];
+        let mut count = words.len() as u32;
+        (unsafe { task_info(mach_task_self_, TASK_VM_INFO, words.as_mut_ptr(), &mut count) } == 0).then_some(words)
+    }
+
+    #[cfg(target_os = "macos")]
+    const FIELDS: [(&str, usize); 11] = [
+        ("resident_size", 16),
+        ("device", 32),
+        ("internal", 48),
+        ("external", 64),
+        ("compressed", 120),
+        ("phys_footprint", 144),
+        ("ledger_phys_footprint_peak", 168),
+        ("ledger_purgeable_nonvolatile", 176),
+        ("ledger_tag_graphics_footprint", 272),
+        ("ledger_tag_graphics_footprint_compressed", 280),
+        ("ledger_tag_graphics_nofootprint", 288),
+    ];
+
+    #[cfg(target_os = "macos")]
+    fn field(words: &[u32; 93], name: &str) -> u64 {
+        let offset = FIELDS.iter().find(|(n, _)| *n == name).unwrap().1;
+        words[offset / 4] as u64 | (words[offset / 4 + 1] as u64) << 32
+    }
+
+    #[cfg(target_os = "macos")]
+    pub fn now() -> Sample {
+        let Some(words) = ledgers() else {
+            return Sample::default();
+        };
+        let footprint = field(&words, "phys_footprint");
+        let graphics = field(&words, "ledger_tag_graphics_footprint")
+            + field(&words, "ledger_tag_graphics_footprint_compressed");
+        Sample {
+            footprint,
+            graphics,
+            cpu: footprint.saturating_sub(graphics),
+            lifetime: field(&words, "ledger_phys_footprint_peak"),
+        }
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    pub fn now() -> Sample {
+        Sample::default()
+    }
+
+    /// Every ledger field this module knows, for `MEM_DEBUG`.
+    pub fn dump(label: &str) {
+        #[cfg(target_os = "macos")]
+        if let Some(words) = ledgers() {
+            let fields: Vec<String> = FIELDS
+                .iter()
+                .map(|(name, _)| format!("{name}={:.1}", field(&words, name) as f64 / 1048576.0))
+                .collect();
+            eprintln!("MEM_DEBUG {label} (MiB): {}", fields.join(" "));
+        }
+        let _ = label;
+    }
+
+    /// Starts the sampler when `MEM_PEAKS` is set and says whether it did.
+    pub fn start() -> bool {
+        if std::env::var_os("MEM_PEAKS").is_none() {
+            return false;
+        }
+        std::thread::spawn(|| loop {
+            let s = now();
+            FOOTPRINT.fetch_max(s.footprint, Relaxed);
+            GRAPHICS.fetch_max(s.graphics, Relaxed);
+            CPU.fetch_max(s.cpu, Relaxed);
+            std::thread::sleep(std::time::Duration::from_micros(200));
+        });
+        true
+    }
+
+    /// Forgets the maxima: the next `peaks` covers what happens from here.
+    pub fn reset() {
+        let s = now();
+        FOOTPRINT.store(s.footprint, Relaxed);
+        GRAPHICS.store(s.graphics, Relaxed);
+        CPU.store(s.cpu, Relaxed);
+    }
+
+    pub fn peaks() -> Sample {
+        let s = now();
+        Sample {
+            footprint: FOOTPRINT.load(Relaxed).max(s.footprint),
+            graphics: GRAPHICS.load(Relaxed).max(s.graphics),
+            cpu: CPU.load(Relaxed).max(s.cpu),
+            lifetime: s.lifetime,
+        }
+    }
+}
+
+/// The slicing a frame is submitted with: the default 64 passes per slice,
+/// or SLICE_PASSES=n.
+#[cfg(harness_slices)]
+fn slicing_from_env() -> femtovg::renderer::SubmissionSlicing {
+    let mut slicing = femtovg::renderer::SubmissionSlicing::default();
+    if let Some(passes) = std::env::var("SLICE_PASSES").ok().and_then(|v| v.parse().ok()) {
+        slicing.passes = passes;
+    }
+    slicing
+}
+
+/// Render passes and command buffers of the last frame: every pass costs a
+/// Metal command buffer's driver memory until it completes. Zeros on a tree
+/// without #368's `last_frame_slices`.
+#[cfg(harness_slices)]
+fn frame_passes(canvas: &Canvas<WGPURenderer>) -> (u32, usize) {
+    let slices = canvas.renderer().last_frame_slices();
+    (slices.iter().sum(), slices.len())
+}
+
+#[cfg(not(harness_slices))]
+fn frame_passes(_canvas: &Canvas<WGPURenderer>) -> (u32, usize) {
+    (0, 0)
+}
+
 fn soak(device: &wgpu::Device, queue: &wgpu::Queue, out_csv: &str, list: &str) {
+    let sampling = mem::start();
+    #[cfg_attr(not(harness_slices), allow(unused_mut))]
     let mut renderer = WGPURenderer::new(device.clone(), queue.clone());
-    // NO_SLICES=1 renders each frame as one command buffer, the library default.
+    // `--cfg harness_slices` (a tree with #368) submits each frame in slices
+    // of render passes; NO_SLICES=1 keeps one command buffer per frame, the
+    // library default.
+    #[cfg(harness_slices)]
     if std::env::var_os("NO_SLICES").is_none() {
-        renderer.set_submission_slicing(Some(Default::default()));
+        renderer.set_submission_slicing(Some(slicing_from_env()));
     }
     let mut canvas = Canvas::new(renderer).unwrap();
     canvas.set_size(frame_w(), frame_h(), 1.0);
@@ -1828,10 +1987,19 @@ fn soak(device: &wgpu::Device, queue: &wgpu::Queue, out_csv: &str, list: &str) {
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
         view_formats: &[],
     });
-    let mut csv = String::from("pass,file,zoom,wall_ms,cpu_ms,transient_bytes,images,maxrss_bytes\n");
+    // With MEM_PEAKS five columns hold the frame's sampled peaks and what it
+    // left held once the GPU was idle again (zeros without); the last two
+    // are the frame's render passes and command buffers.
+    let mut csv = String::from(
+        "pass,file,zoom,wall_ms,cpu_ms,transient_bytes,images,maxrss_bytes,\
+         peak_footprint,peak_graphics,peak_cpu,footprint_after,graphics_after,passes,command_buffers\n",
+    );
     for pass in 0..passes {
         for (name, tree) in &trees {
             for &zoom in &zooms {
+                if sampling {
+                    mem::reset();
+                }
                 let (cpu0, _) = rusage();
                 let t0 = std::time::Instant::now();
                 render_scene(&mut canvas, tree, zoom, Color::white());
@@ -1840,6 +2008,7 @@ fn soak(device: &wgpu::Device, queue: &wgpu::Queue, out_csv: &str, list: &str) {
                 queue.submit(commands);
                 device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
                 let wall = t0.elapsed().as_secs_f64() * 1000.0;
+                let (frame_passes, command_buffers) = frame_passes(&canvas);
                 let (cpu1, maxrss) = rusage();
                 // Images the canvas holds: needs a measurement-only
                 // `Canvas::debug_image_count` on the tree, enabled with
@@ -1848,10 +2017,21 @@ fn soak(device: &wgpu::Device, queue: &wgpu::Queue, out_csv: &str, list: &str) {
                 let images = canvas.debug_image_count();
                 #[cfg(not(harness_image_count))]
                 let images = 0usize;
+                let (peak, after) = if sampling {
+                    (mem::peaks(), mem::now())
+                } else {
+                    Default::default()
+                };
                 let short = std::path::Path::new(name).file_stem().unwrap().to_string_lossy();
                 csv.push_str(&format!(
-                    "{pass},{short},{zoom},{wall:.3},{:.3},{transient},{images},{maxrss}\n",
-                    cpu1 - cpu0
+                    "{pass},{short},{zoom},{wall:.3},{:.3},{transient},{images},{maxrss},{},{},{},{},{},\
+                     {frame_passes},{command_buffers}\n",
+                    cpu1 - cpu0,
+                    peak.footprint,
+                    peak.graphics,
+                    peak.cpu,
+                    after.footprint,
+                    after.graphics
                 ));
             }
         }
@@ -1894,10 +2074,14 @@ fn main() {
     }))
     .unwrap();
 
+    #[cfg_attr(not(harness_slices), allow(unused_mut))]
     let mut renderer = WGPURenderer::new(device.clone(), queue.clone());
-    // NO_SLICES=1 renders each frame as one command buffer, the library default.
+    // `--cfg harness_slices` (a tree with #368) submits each frame in slices
+    // of render passes; NO_SLICES=1 keeps one command buffer per frame, the
+    // library default.
+    #[cfg(harness_slices)]
     if std::env::var_os("NO_SLICES").is_none() {
-        renderer.set_submission_slicing(Some(Default::default()));
+        renderer.set_submission_slicing(Some(slicing_from_env()));
     }
     let mut canvas = Canvas::new(renderer).unwrap();
     canvas.set_size(frame_w(), frame_h(), 1.0);
@@ -1943,12 +2127,50 @@ fn main() {
     // FRAMES=n draws the scene n times (each frame clears and redraws), so
     // state that leaks across frames shows up in the last one.
     let frames: usize = std::env::var("FRAMES").ok().and_then(|v| v.parse().ok()).unwrap_or(1);
+    // MEM_PEAKS=1 reports the frames' peak memory over the idle baseline
+    // (device, target and parsed tree in place) on one stderr line.
+    let sampling = mem::start();
+    let baseline = mem::now();
+    mem::reset();
+    let started = std::time::Instant::now();
     for _frame in 0..frames {
         render_scene(&mut canvas, &tree, scale, bg);
         TRANSIENT_AT_FLUSH.store(canvas.transient_image_bytes(), std::sync::atomic::Ordering::Relaxed);
         let commands = canvas.flush_to_output(&target);
         queue.submit(commands);
+        if std::env::var_os("MEM_DEBUG").is_some() {
+            mem::dump("after submit");
+        }
         device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
+    }
+    if sampling {
+        let frame_ms = started.elapsed().as_secs_f64() * 1000.0 / frames as f64;
+        let (peak, after) = (mem::peaks(), mem::now());
+        let (passes, command_buffers) = frame_passes(&canvas);
+        eprintln!(
+            "MEM baseline_footprint={} baseline_graphics={} peak_footprint={} peak_graphics={} peak_cpu={} \
+             lifetime_peak={} after_footprint={} after_graphics={} frame_ms={frame_ms:.3} passes={passes} \
+             command_buffers={command_buffers}",
+            baseline.footprint,
+            baseline.graphics,
+            peak.footprint,
+            peak.graphics,
+            peak.cpu,
+            peak.lifetime,
+            after.footprint,
+            after.graphics
+        );
+        // MEM_SETTLE_MS=n: what is still held n ms after the frame, with the
+        // device polled again - memory the driver returns when idle is gone.
+        if let Some(ms) = std::env::var("MEM_SETTLE_MS").ok().and_then(|v| v.parse::<u64>().ok()) {
+            std::thread::sleep(std::time::Duration::from_millis(ms));
+            let _ = device.poll(wgpu::PollType::Poll);
+            let settled = mem::now();
+            eprintln!(
+                "MEM settled_ms={ms} settled_footprint={} settled_graphics={}",
+                settled.footprint, settled.graphics
+            );
+        }
     }
 
     let unpadded = frame_w() * 4;
@@ -2008,9 +2230,12 @@ fn main() {
             PASS_THROUGH.load(std::sync::atomic::Ordering::Relaxed)
         );
         eprintln!(
-            "harness cfgs: clip={} turbulence={}",
+            "harness cfgs: clip={} turbulence={} blend={} mix_blend={} slices={}",
             cfg!(harness_clip),
-            cfg!(harness_turbulence)
+            cfg!(harness_turbulence),
+            cfg!(harness_blend),
+            cfg!(harness_mix_blend),
+            cfg!(harness_slices)
         );
         eprintln!(
             "filters skipped (SKIP_UNSUPPORTED_FILTERS): {}",
