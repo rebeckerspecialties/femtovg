@@ -37,16 +37,17 @@ pixels beyond 20/255 at the median, 0.000 % structural; at 1x 0.11 % against Chr
 0.14 % against Firefox, the two browsers 0.002 % apart.
 
 **Passes.** A frame's driver memory is its render passes: 2.30 MiB each at the median over
-122 frames of more than 100 passes, whatever the target size. On master a third of them
-drew nothing:
+122 frames of more than 100 passes, whatever the target size. On master 28 to 34 % of
+them drew nothing:
 
 | render passes per frame | master median / max | #368 median / max | fewer in total |
 |---|---|---|---|
 | 27 BuseyBench portraits (108 frames) | 390 / 1,453 | 312 / 991 | 28 % |
 | the other 684 files (2,736 frames) | 2 / 370 | 1 / 245 | 34 % |
 
-Outside BuseyBench only 14 frames exceed 64 passes after the change: blur reftests and
-probes at 2x, 4x and 1080p, and `google-workspace-48px` at 4x on master (86, now 58).
+Outside BuseyBench 23 frames exceed 64 passes on master and 14 after the change, all 14
+blur reftests and probes at 2x, 4x and 1080p; the one logo among the 23,
+`google-workspace-48px` at 4x, drops from 86 passes to 58.
 
 **Peak memory of one frame**, process footprint in MiB, median / max. About 445 MiB of
 every figure is a pool the Metal driver grows for the first frame of any process, a single
@@ -84,7 +85,7 @@ give, at the price of polling the device from inside the flush.
 | frame p50 / p99 / max, ms | 1.26 / 63.7 / 203 | 1.24 / 47.6 / 158 | 1.25 / 32.3 / 58 |
 
 The driver returns its pool one to two seconds after the last heavy frame. Over ten passes
-the sliced peak settles between 1.39 and 1.50 GiB after the third; over twenty passes of
+the sliced peak stays between 1,389 and 1,495 MiB after the third; over twenty passes of
 the 684 non-BuseyBench files (41,040 frames) master's footprint floor moves from 856 to
 876 MiB and its peak from 1,512 to 1,529.
 
