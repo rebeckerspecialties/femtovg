@@ -143,6 +143,7 @@ built against each checkout through `[patch.crates-io]`.
 
 Every pass of every corpus frame coalesces: what a pass costs over the driver's pool
 falls from 2.30 MiB to 72 KiB at the median. femtovg's library and integration tests
-(431) pass against the branch. Slicing no longer changes the memory there; drawing no
-undrawn passes still saves a tenth of the frame time.
+(431) pass against the branch. Slicing no longer changes the memory there. Drawing no
+undrawn passes still shortens the heaviest frame by a tenth (110 to 97 ms unsliced), and
+slicing shortens it further because the GPU starts sooner.
 
