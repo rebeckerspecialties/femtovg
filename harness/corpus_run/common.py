@@ -38,6 +38,7 @@ BUILDS = {
     'final': (f'{BIN}/_logos_full_final', {}),
     'final_noslices': (f'{BIN}/_logos_full_final', {'NO_SLICES': '1'}),
 }
+BUILDS['mm'] = (f'{BIN}/_logos_full_mm', {})  # #370, mipmaps on wgpu, on its own base
 # "build#n" repeats a build under its own label, for run-to-run spread.
 for _b in list(BUILDS):
     for _i in (2, 3):

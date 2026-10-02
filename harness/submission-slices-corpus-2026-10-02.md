@@ -27,7 +27,9 @@ Metal.
   canvas that is never recreated.
 
 `corpus_run/` holds the scripts: `files.py` (the list), `refs.py` (browser references),
-`run.py pixels|memory`, `soak.py`, `analyze.py`, `chart.py`.
+`run.py pixels|memory`, `soak.py`, `analyze.py`, `chart.py`. Every frame's passes, peaks
+and accuracy are in `submission-slices-corpus-2026-10-02.csv`; the sliced columns are
+filled for the 247 frames of more than 16 passes, the rest being one slice.
 
 ## Findings
 
