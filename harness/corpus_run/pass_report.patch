@@ -1,0 +1,192 @@
+diff --git a/src/renderer/wgpu.rs b/src/renderer/wgpu.rs
+index 4b26470..265988a 100644
+--- a/src/renderer/wgpu.rs
++++ b/src/renderer/wgpu.rs
+@@ -590,6 +590,9 @@ impl Renderer for WGPURenderer {
+         if commands.is_empty() {
+             return None;
+         }
++        if std::env::var_os("FEMTOVG_PASS_REPORT").is_some() {
++            pass_report(&commands, images);
++        }
+ 
+         // The bind groups recorded below hold this buffer, so it cannot grow mid-frame.
+         let needed_slots = commands.len() as u64 * UNIFORM_SLOTS_PER_COMMAND;
+@@ -990,6 +993,177 @@ mod transient_cost_tests {
+ /// The render-loop state an image-filter pass draws through: the images,
+ /// the target it must restore when done, the open pass builder and the
+ /// pipeline mapper.
++/// EXPERIMENT (not for merging): why a frame's target switches drew nothing,
++/// and how few passes a scheduler could get away with. One stderr line.
++fn pass_report(commands: &[super::Command], images: &ImageStore<Image>) {
++    use super::CommandType as C;
++    use std::collections::{BTreeMap, HashMap, HashSet};
++
++    // 1. Target switches that are left before anything is drawn.
++    let mut undrawn: BTreeMap<&'static str, u32> = BTreeMap::new();
++    let mut pending: Option<&'static str> = Some("start");
++    for c in commands {
++        match &c.cmd_type {
++            C::SetRenderTarget(_) => {
++                if let Some(set) = pending {
++                    *undrawn.entry(match set { "start" => "start>switch", "switch" => "switch>switch", _ => "filter>switch" }).or_default() += 1;
++                }
++                pending = Some("switch");
++            }
++            C::RenderFilteredImage { .. } => {
++                if let Some(set) = pending {
++                    *undrawn.entry(match set { "start" => "start>filter", "switch" => "switch>filter", _ => "filter>filter" }).or_default() += 1;
++                }
++                pending = Some("filter");
++            }
++            _ => pending = None,
++        }
++    }
++    if let Some(set) = pending {
++        *undrawn.entry(match set { "start" => "start>end", "switch" => "switch>end", _ => "filter>end" }).or_default() += 1;
++    }
++
++    // 2. Segments: runs of draws on one target, and filter commands.
++    struct Segment {
++        target: RenderTarget,
++        filter: bool,
++        clears_first: bool,
++        reads: Vec<crate::ImageId>,
++        scratch: Option<crate::ImageId>,
++    }
++    let mut segments: Vec<Segment> = Vec::new();
++    let mut target = RenderTarget::Screen;
++    let mut open = false;
++    for c in commands {
++        match &c.cmd_type {
++            C::SetRenderTarget(t) => {
++                target = *t;
++                open = false;
++            }
++            C::RenderFilteredImage { target_image, .. } => {
++                let mut reads: Vec<crate::ImageId> = c.image.into_iter().collect();
++                reads.extend(c.glyph_texture.image_id());
++                segments.push(Segment { target: RenderTarget::Image(*target_image), filter: true, clears_first: true, reads, scratch: c.filter_scratch });
++                open = false;
++            }
++            other => {
++                if !open {
++                    segments.push(Segment { target, filter: false, clears_first: matches!(other, C::ClearRect { .. }), reads: Vec::new(), scratch: None });
++                    open = true;
++                }
++                let segment = segments.last_mut().unwrap();
++                segment.reads.extend(c.image);
++                segment.reads.extend(c.glyph_texture.image_id());
++            }
++        }
++    }
++    let drawn = segments.iter().filter(|s| !s.filter).count();
++    let filters = segments.len() - drawn;
++
++    // 3. The fewest passes a scheduler could use: merge a segment into the
++    // previous pass on its target unless that would put the pass both before
++    // and after something it depends on. With `rename`, a segment that
++    // starts by clearing an image gets a fresh image instead of reusing one.
++    let schedule = |rename: bool| -> (usize, usize, u64) {
++        let mut succ: Vec<Vec<usize>> = Vec::new();
++        let mut is_filter: Vec<bool> = Vec::new();
++        let mut last_on: HashMap<RenderTarget, usize> = HashMap::new();
++        let mut writer: HashMap<crate::ImageId, usize> = HashMap::new();
++        let mut readers: HashMap<crate::ImageId, Vec<usize>> = HashMap::new();
++        let mut versions = 0usize;
++        let mut version_bytes = 0u64;
++        let reachable = |succ: &Vec<Vec<usize>>, from: usize, to: &HashSet<usize>| -> bool {
++            let mut seen = HashSet::new();
++            let mut stack: Vec<usize> = succ[from].clone();
++            while let Some(n) = stack.pop() {
++                if to.contains(&n) {
++                    return true;
++                }
++                if seen.insert(n) {
++                    stack.extend(succ[n].iter().copied());
++                }
++            }
++            false
++        };
++        for s in &segments {
++            let mut preds: HashSet<usize> = s.reads.iter().filter_map(|x| writer.get(x).copied()).collect();
++            let fresh = rename && s.clears_first;
++            let mut candidate = None;
++            if let RenderTarget::Image(x) = s.target {
++                if s.clears_first {
++                    versions += 1;
++                    if let Some(image) = images.get(x) {
++                        version_bytes += (image.info.width() * image.info.height() * 4) as u64;
++                    }
++                }
++                if !fresh {
++                    preds.extend(readers.get(&x).into_iter().flatten().copied());
++                    preds.extend(writer.get(&x).copied());
++                    candidate = last_on.get(&s.target).copied();
++                }
++            } else {
++                candidate = last_on.get(&s.target).copied();
++            }
++            if !rename {
++                if let Some(scratch) = s.scratch {
++                    preds.extend(writer.get(&scratch).copied());
++                }
++            }
++            let mut node = None;
++            if let Some(c) = candidate.filter(|&c| !s.filter && !is_filter[c]) {
++                let mut others = preds.clone();
++                others.remove(&c);
++                if !reachable(&succ, c, &others) {
++                    for p in others {
++                        succ[p].push(c);
++                    }
++                    node = Some(c);
++                }
++            }
++            let node = node.unwrap_or_else(|| {
++                let n = succ.len();
++                succ.push(Vec::new());
++                is_filter.push(s.filter);
++                for p in preds.iter().copied().chain(candidate) {
++                    succ[p].push(n);
++                }
++                n
++            });
++            for x in &s.reads {
++                readers.entry(*x).or_default().push(node);
++            }
++            if let RenderTarget::Image(x) = s.target {
++                writer.insert(x, node);
++                readers.remove(&x);
++            }
++            if let Some(scratch) = s.scratch {
++                writer.insert(scratch, node);
++            }
++            last_on.insert(s.target, node);
++        }
++        (is_filter.iter().filter(|f| !**f).count(), versions, version_bytes)
++    };
++    let (merged, versions, version_bytes) = schedule(false);
++    let (merged_renamed, _, _) = schedule(true);
++    let mut ids: HashSet<crate::ImageId> = HashSet::new();
++    let mut id_bytes = 0u64;
++    for s in &segments {
++        if let RenderTarget::Image(x) = s.target {
++            if ids.insert(x) {
++                if let Some(image) = images.get(x) {
++                    id_bytes += (image.info.width() * image.info.height() * 4) as u64;
++                }
++            }
++        }
++    }
++    let causes: Vec<String> = undrawn.iter().map(|(k, v)| format!("{k}={v}")).collect();
++    eprintln!(
++        "PASSREPORT drawn={drawn} filters={filters} merged={merged} merged_renamed={merged_renamed} images={} image_bytes={id_bytes} versions={versions} version_bytes={version_bytes} {}",
++        ids.len(),
++        causes.join(" ")
++    );
++}
++
+ /// The frame's command encoding: the encoder, the uniform slots staged for
+ /// it, and, with slicing on, the command buffers submitted so far.
+ struct FrameEncoder {

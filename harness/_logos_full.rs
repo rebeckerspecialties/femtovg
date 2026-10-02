@@ -2045,13 +2045,11 @@ fn main() {
     if args.get(1).map(String::as_str) == Some("soak") {
         let instance = wgpu::Instance::default();
         let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions::default())).unwrap();
+        // The rest by default, so the harness builds across wgpu versions.
         let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
-            label: None,
-            required_features: wgpu::Features::empty(),
             required_limits: device_limits(&adapter),
-            experimental_features: wgpu::ExperimentalFeatures::disabled(),
             memory_hints: wgpu::MemoryHints::MemoryUsage,
-            trace: wgpu::Trace::default(),
+            ..Default::default()
         }))
         .unwrap();
         soak(&device, &queue, &args[2], &args[3]);
@@ -2065,12 +2063,9 @@ fn main() {
     let instance = wgpu::Instance::default();
     let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions::default())).unwrap();
     let (device, queue) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
-        label: None,
-        required_features: wgpu::Features::empty(),
         required_limits: device_limits(&adapter),
-        experimental_features: wgpu::ExperimentalFeatures::disabled(),
         memory_hints: wgpu::MemoryHints::MemoryUsage,
-        trace: wgpu::Trace::default(),
+        ..Default::default()
     }))
     .unwrap();
 

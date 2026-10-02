@@ -67,6 +67,9 @@ def render(f, framing, build, memory):
     m = re.search(r'harness cfgs: (.*)', err)
     if m:
         row['cfgs'] = m.group(1).strip()
+    m = re.search(r'^PASSREPORT (.*)$', err, re.M)
+    if m:
+        row['passes'] = {k: int(v) for k, v in re.findall(r'([\w>]+)=(\d+)', m.group(1))}
     m = re.search(r'^MEM (.*)$', err, re.M)
     if m:
         row['mem'] = {k: (float(v) if '.' in v else int(v)) for k, v in re.findall(r'(\w+)=([\d.]+)', m.group(1))}

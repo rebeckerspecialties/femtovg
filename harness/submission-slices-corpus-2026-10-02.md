@@ -94,3 +94,55 @@ the 684 non-BuseyBench files (41,040 frames) master's footprint floor moves from
 **Quality given up for memory.** The transient budget passes layers through on 36 frames,
 the same ones in every build: BuseyBench at 2x (3), 4x (24) and 1080p (6), and three
 shadow-edge probes at 4x. No other file loses a layer at any framing.
+
+## Where the undrawn passes came from
+
+`corpus_run/pass_report.patch` (an experiment on #368, not for merging) classifies every
+target switch of a frame that was left before anything was drawn, by what set the target
+and what came next, and estimates the fewest passes a scheduler could use.
+
+| undrawn passes on master | BuseyBench (108 frames) | everything else (2,736 frames) |
+|---|---|---|
+| all passes | 52,068 | 20,036 |
+| undrawn | 14,403 (28 %) | 6,813 (34 %) |
+| a filter handed the target back, the next command was another filter | 10,496 | 1,641 |
+| the canvas switched target, the next command was a filter | 3,216 | 604 |
+| a filter handed the target back, the next command switched it | 327 | 495 |
+| the canvas switched target twice in a row | 256 | 1,336 |
+| the frame's first pass: the renderer sets the screen, so does the first command | 108 | 2,736 |
+
+Two habits of a GL-shaped command stream account for all of it. The render target is
+state: `Canvas::end_layer` switches back to the parent before it runs the layer's
+filters, and every filter command switches to its own targets and then restores the one
+before it, as one restores a bound framebuffer. In OpenGL a bind that nothing draws
+under costs nothing; the WGPU backend turned every such state change into "end the
+pass, begin a pass", because a wgpu pass is the only way to have a current target.
+
+What is left after #368 is passes that draw: 37,665 on the BuseyBench frames, 19,211
+runs of canvas draws on one target and 18,454 filter passes. Merging runs on the same
+target wherever no dependency sits between them (layer contents first, then one pass
+on the parent) would reach 34,557 (8 % fewer) with stores reused as they are today, and
+28,237 (25 %) if every cleared store were a fresh image, for 16 MiB more textures per
+frame at the median and 35 MiB at most at 460x260.
+
+## With gfx-rs/wgpu#10506
+
+The wgpu pull request that encodes an encoder's passes into one Metal command buffer,
+head `aedebc002`, against the trunk commit it is merged with (`dd033bfb7`); femtovg
+built against each checkout through `[patch.crates-io]`.
+
+| | master on wgpu trunk | master on the wgpu PR | #368 on the wgpu PR, slicing on |
+|---|---|---|---|
+| frames identical to wgpu 30.0.1 | 2,844 of 2,844 | 2,844 of 2,844 | 2,844 of 2,844 |
+| BuseyBench 460x260, peak footprint MiB, median / max | 1,447 / 4,062 | 481 / 522 | 493 / 519 |
+| BuseyBench 1920x1080 | 1,728 / 4,192 | 599 / 660 | 600 / 706 |
+| other 684 files, 460x260 | 460 / 772 | 458 / 475 | 457 / 474 |
+| BuseyBench 460x260, frame ms, median / max | 125 / 386 | 51 / 112 | 39 / 63 |
+| soak, 460x260 x 3 zooms: peak footprint | 4,297 MiB | 604 MiB | 604 MiB |
+| soak wall time; frame p99 / max, ms | 18.6 s; 53.6 / 230 | 14.8 s; 37.3 / 86 | 11.9 s; 22.3 / 49 |
+
+Every pass of every corpus frame coalesces: what a pass costs over the driver's pool
+falls from 2.30 MiB to 72 KiB at the median. femtovg's library and integration tests
+(431) pass against the branch. Slicing no longer changes the memory there; drawing no
+undrawn passes still saves a tenth of the frame time.
+

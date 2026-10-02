@@ -40,6 +40,14 @@ BUILDS = {
 }
 BUILDS['mm'] = (f'{BIN}/_logos_full_mm', {})  # #370, mipmaps on wgpu, on its own base
 # "build#n" repeats a build under its own label, for run-to-run spread.
+# #368 with corpus_run/pass_report.patch applied: one PASSREPORT line per frame
+BUILDS['report'] = (f'{BIN}/_logos_full_report', {'FEMTOVG_PASS_REPORT': '1', 'NO_SLICES': '1'})
+# femtovg against a local wgpu checkout: trunk dd033bfb7, and gfx-rs/wgpu#10506 (aedebc002) merged with it
+BUILDS['wgpu_trunk'] = (f'{BIN}/_logos_full_wt_master', {})           # femtovg master
+BUILDS['wgpu_pr'] = (f'{BIN}/_logos_full_wp_master', {})              # femtovg master
+BUILDS['wgpu_trunk_368'] = (f'{BIN}/_logos_full_wt_pr368', {})        # femtovg #368, slicing on
+BUILDS['wgpu_pr_368'] = (f'{BIN}/_logos_full_wp_pr368', {})           # femtovg #368, slicing on
+BUILDS['wgpu_pr_368_noslices'] = (f'{BIN}/_logos_full_wp_pr368', {'NO_SLICES': '1'})
 for _b in list(BUILDS):
     for _i in (2, 3):
         BUILDS[f'{_b}#{_i}'] = BUILDS[_b]
