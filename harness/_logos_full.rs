@@ -214,9 +214,10 @@ fn group_effects(
     scale: f32,
     masks: &MaskMap,
     force_layer: bool,
-    // The chain's passes run in an inner layer of their own (a glow, a
-    // chain the source is merged over), so this layer carries none.
-    filters_inner: bool,
+    // The chain is rendered elsewhere - in an inner layer of its own (a
+    // glow, a chain the source is merged over) or by the shadow state (a
+    // recognized drop shadow) - so this layer carries none of its passes.
+    chain_elsewhere: bool,
 ) -> Option<LayerEffects> {
     let opacity = if std::env::var("NO_OPACITY").is_ok() {
         1.0
@@ -229,7 +230,7 @@ fn group_effects(
         ..
     } = layer_chain(group, scale);
     let _ = canvas;
-    if filters_inner {
+    if chain_elsewhere {
         blurs.clear();
         linear = false;
     }
@@ -738,57 +739,73 @@ fn flood_color(c: usvg::Color, opacity: usvg::Opacity) -> Color {
     color
 }
 
-/// The written-out chain: the blur of `SourceAlpha`, its offset (optional),
-/// then the colouring - `feFlood` with `feComposite operator="in"`, or an
-/// `feColorMatrix` that sets a constant colour and scales alpha - and after
-/// it nothing or the merge.
+/// The written-out chain: the blur of `SourceAlpha`, then in either order
+/// its offset (optional) and its colouring (optional: `feFlood` with
+/// `feComposite operator="in"`, or an `feColorMatrix` that sets a constant
+/// colour and scales alpha; without one the silhouette is `SourceAlpha`'s
+/// own opaque black), and after them nothing or the merge that puts the
+/// source back over the shadow.
 fn shadow_chain(prims: &[usvg::filter::Primitive]) -> Option<ShadowChain> {
     use usvg::filter::{CompositeOperator, Input, Kind};
     let by_result = |input: &Input| match input {
         Input::Reference(name) => prims.iter().find(|p| p.result() == name),
         _ => None,
     };
-    // The colouring primitive, the colour it gives, and the input it colours.
-    let (index, prim, color, coloured) = prims.iter().enumerate().find_map(|(index, p)| match p.kind() {
-        Kind::Composite(c) if c.operator() == CompositeOperator::In => {
-            let Kind::Flood(flood) = by_result(c.input1())?.kind() else {
+    let (chain, merged) = match prims.last()?.kind() {
+        Kind::Merge(m) => {
+            let [Input::Reference(shadow), Input::SourceGraphic] = m.inputs() else {
                 return None;
             };
-            Some((index, p, flood_color(flood.color(), flood.opacity()), c.input2()))
+            let chain = &prims[..prims.len() - 1];
+            if chain.last()?.result() != shadow {
+                return None;
+            }
+            (chain, true)
         }
-        Kind::ColorMatrix(cm) => Some((index, p, matrix_shadow_color(cm.kind())?, cm.input())),
-        _ => None,
-    })?;
-    let offset = by_result(coloured)?;
-    let (dx, dy, blur) = match offset.kind() {
-        Kind::Offset(o) => (o.dx(), o.dy(), by_result(o.input())?),
-        _ => (0.0, 0.0, offset),
+        _ => (prims, false),
     };
-    let Kind::GaussianBlur(blur) = blur.kind() else {
-        return None;
-    };
-    let before = 1 + usize::from(matches!(offset.kind(), Kind::Offset(_)));
-    let flood_first = matches!(prim.kind(), Kind::Composite(_));
-    if !matches!(blur.input(), Input::SourceAlpha) || index != before + usize::from(flood_first) {
-        return None;
-    }
-    let merged = match &prims[index + 1..] {
-        [] => false,
-        [merge] => match merge.kind() {
-            Kind::Merge(m) => {
-                matches!(m.inputs(), [Input::Reference(shadow), Input::SourceGraphic] if shadow == prim.result())
+    // Peel the offset and the colouring off the end, each at most once,
+    // down to the blur; `accounted` counts the primitives they are.
+    let mut cursor = chain.last()?;
+    let mut shift: Option<(f32, f32)> = None;
+    let mut color: Option<Color> = None;
+    let mut accounted = 1;
+    loop {
+        match cursor.kind() {
+            Kind::Offset(o) if shift.is_none() => {
+                shift = Some((o.dx(), o.dy()));
+                cursor = by_result(o.input())?;
+                accounted += 1;
+            }
+            Kind::Composite(c) if color.is_none() && c.operator() == CompositeOperator::In => {
+                let Kind::Flood(flood) = by_result(c.input1())?.kind() else {
+                    return None;
+                };
+                color = Some(flood_color(flood.color(), flood.opacity()));
+                cursor = by_result(c.input2())?;
+                accounted += 2;
+            }
+            Kind::ColorMatrix(cm) if color.is_none() => {
+                color = Some(matrix_shadow_color(cm.kind())?);
+                cursor = by_result(cm.input())?;
+                accounted += 1;
+            }
+            Kind::GaussianBlur(blur) => {
+                if !matches!(blur.input(), Input::SourceAlpha) || chain.len() != accounted {
+                    return None;
+                }
+                let (dx, dy) = shift.unwrap_or((0.0, 0.0));
+                return Some(ShadowChain {
+                    dx,
+                    dy,
+                    sigma: blur.std_dev_x().get().max(blur.std_dev_y().get()),
+                    color: color.unwrap_or(Color::rgb(0, 0, 0)),
+                    merged,
+                });
             }
             _ => return None,
-        },
-        _ => return None,
-    };
-    Some(ShadowChain {
-        dx,
-        dy,
-        sigma: blur.std_dev_x().get().max(blur.std_dev_y().get()),
-        color,
-        merged,
-    })
+        }
+    }
 }
 
 /// The colour an `feColorMatrix` paints a silhouette: a matrix whose colour
@@ -1714,7 +1731,11 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                 // A glow blurs in an inner layer and redraws sharp on top, as
                 // does any chain that ends with the source over its result;
                 // the group's other effects, when it has any, wrap both.
-                let inner: Option<Vec<ImageFilter>> = if chain.over_source {
+                // A chain the shadow state renders (a recognized drop
+                // shadow) is not run again as filters.
+                let inner: Option<Vec<ImageFilter>> = if shadowed {
+                    None
+                } else if chain.over_source {
                     Some(chain_filters(&chain))
                 } else if glow(group) {
                     Some(blur_filters(group, scale))
@@ -1729,7 +1750,7 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                     scale,
                     masks,
                     shadowed || stencil,
-                    inner.is_some(),
+                    shadowed || inner.is_some(),
                 ) {
                     Some(fx) => {
                         // Size the layer to the group's own layer bounding box (usvg
