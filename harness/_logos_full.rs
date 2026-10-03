@@ -387,13 +387,43 @@ fn precapture_blend_sources(
 
 /// The group's filter as layer passes, each in the color space its
 /// primitive asks for: blurs, color matrices and alpha transfers chained
-/// from the source graphic. Stops at a primitive it cannot map and before a
-/// final `feBlend`, which `blur_blend` maps; `complete` says nothing was
-/// left out. The passes may end in linearRGB (`linear`).
+/// from the source graphic or its alpha. Stops at a primitive it cannot
+/// map, before a final `feBlend`, which `blur_blend` maps, and at a final
+/// `feMerge` or `feComposite over` that puts the source graphic over the
+/// chain's result (`over_source`: the group draws its filtered layer and
+/// then itself on top); `complete` says nothing was left out. A chain
+/// started from the alpha applies whole or not at all - its passes replace
+/// the group with a silhouette, which only the rest of the chain makes
+/// sense of. The passes may end in linearRGB (`linear`).
 struct LayerChain {
     passes: Vec<ImageFilter>,
     linear: bool,
     complete: bool,
+    over_source: bool,
+}
+
+/// The chain's passes as a layer's filters, back in sRGB at the end.
+fn chain_filters(chain: &LayerChain) -> Vec<ImageFilter> {
+    let mut filters = chain.passes.clone();
+    if chain.linear {
+        filters.extend(color_space_pass(false));
+    }
+    filters
+}
+
+/// Whether `prim`, with the chain's last result `previous`, puts the
+/// source graphic over that result: `feMerge` of the two, the source last,
+/// or `feComposite operator="over" in="SourceGraphic"`.
+fn puts_source_over(prim: &usvg::filter::Primitive, previous: Option<&str>) -> bool {
+    use usvg::filter::{CompositeOperator, Input, Kind};
+    let is_previous = |input: &Input| matches!(input, Input::Reference(r) if Some(r.as_str()) == previous);
+    match prim.kind() {
+        Kind::Merge(m) => matches!(m.inputs(), [below, Input::SourceGraphic] if is_previous(below)),
+        Kind::Composite(c) => {
+            c.operator() == CompositeOperator::Over && matches!(c.input1(), Input::SourceGraphic) && is_previous(c.input2())
+        }
+        _ => false,
+    }
 }
 
 fn layer_chain(group: &usvg::Group, scale: f32) -> LayerChain {
@@ -402,17 +432,25 @@ fn layer_chain(group: &usvg::Group, scale: f32) -> LayerChain {
         passes: Vec::new(),
         linear: false,
         complete: true,
+        over_source: false,
     };
     let [f] = group.filters() else {
         chain.complete = group.filters().is_empty();
         return chain;
     };
     let mut previous: Option<&str> = None;
+    #[allow(unused_mut)]
+    let mut from_alpha = false;
     // Results that are fully transparent (`feFlood` at opacity 0): blending
     // the chain with one is the identity, the export idiom
     // `feFlood -> feBlend in=SourceGraphic in2=flood -> feGaussianBlur`.
     let mut transparent: Vec<&str> = Vec::new();
-    for prim in f.primitives() {
+    let primitives = f.primitives();
+    for (index, prim) in primitives.iter().enumerate() {
+        if index + 1 == primitives.len() && previous.is_some() && puts_source_over(prim, previous) {
+            chain.over_source = true;
+            break;
+        }
         // The chain may start from the source's alpha (`in="SourceAlpha"`,
         // the shadow chains of Sketch and Figma): a color matrix that keeps
         // alpha and zeroes the color runs first.
@@ -461,6 +499,7 @@ fn layer_chain(group: &usvg::Group, scale: f32) -> LayerChain {
         #[cfg(harness_morph)]
         if previous.is_none() && matches!(primary_input(prim), Some(Input::SourceAlpha)) {
             chain.passes.push(source_alpha());
+            from_alpha = true;
         }
         let linear = prim.color_interpolation() == ColorInterpolation::LinearRGB;
         if linear != chain.linear {
@@ -471,6 +510,10 @@ fn layer_chain(group: &usvg::Group, scale: f32) -> LayerChain {
         }
         chain.passes.push(pass);
         previous = Some(prim.result());
+    }
+    if from_alpha && !chain.complete {
+        chain.passes.clear();
+        chain.linear = false;
     }
     chain
 }
@@ -1559,10 +1602,11 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                 // to be replaced by feTurbulence output), so drawing it raw is
                 // worse than drawing nothing.
                 let plan = turbulence_plan(canvas, group);
+                let chain = layer_chain(group, scale);
                 #[cfg(harness_blend)]
-                let mapped = plan.is_some() || blur_blend(group).is_some() || layer_chain(group, scale).complete;
+                let mapped = plan.is_some() || blur_blend(group).is_some() || chain.complete;
                 #[cfg(not(harness_blend))]
-                let mapped = plan.is_some() || layer_chain(group, scale).complete;
+                let mapped = plan.is_some() || chain.complete;
                 if std::env::var("SKIP_UNSUPPORTED_FILTERS").is_ok()
                     && !mapped
                     && group.filters().iter().any(|f| replaces_source(f))
@@ -1616,8 +1660,9 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                         log_layer(canvas, group, scale, "layer");
                         DEPTH.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                         // A glow blurs in an inner layer and redraws sharp on
-                        // top; the group's other effects wrap both.
-                        let glow = glow(group);
+                        // top, as does any chain that ends with the source
+                        // over its result; the group's other effects wrap both.
+                        let glow = glow(group) || chain.over_source;
                         let fx = if glow { fx.with_filters(&[]) } else { fx };
                         if !canvas.begin_layer(&fx) {
                             PASS_THROUGH.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
@@ -1626,7 +1671,12 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                             scissor_to(canvas, source);
                         }
                         if glow {
-                            let blur = LayerEffects::new().with_filters(&blur_filters(group, scale));
+                            let filters = if chain.over_source {
+                                chain_filters(&chain)
+                            } else {
+                                blur_filters(group, scale)
+                            };
+                            let blur = LayerEffects::new().with_filters(&filters);
                             let _ = canvas.begin_layer(&blur);
                             draw_filtered(canvas, group, plan, scale, masks);
                             canvas.end_layer();
