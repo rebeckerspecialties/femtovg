@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <!-- feMorphology erode with radius="15 0" under a filter region that clears the shape: the browsers erode x only -->
+  <filter id="f" x="-50%" y="-50%" width="200%" height="200%"><feMorphology operator="erode" radius="15 0"/></filter>
+  <rect x="40" y="40" width="80" height="60" fill="green" filter="url(#f)"/>
+</svg>
