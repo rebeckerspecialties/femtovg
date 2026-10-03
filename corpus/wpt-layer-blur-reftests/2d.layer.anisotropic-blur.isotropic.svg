@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <!--
+    WPT: html/canvas/element/layers/2d.layer.anisotropic-blur.isotropic.tentative.html
+    ctx.beginLayer({filter: {name: 'gaussianBlur', stdDeviation: [4, 4]}}); fillRect(50, 50, 100, 100) in teal.
+    The canvas filter blurs per axis; a renderer with one sigma spreads the larger value both ways.
+  -->
+  <defs>
+    <filter id="blur" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="4 4"/>
+    </filter>
+  </defs>
+  <rect x="50" y="50" width="100" height="100" fill="teal" filter="url(#blur)"/>
+</svg>

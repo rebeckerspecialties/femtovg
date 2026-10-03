@@ -2,7 +2,7 @@
 """Browser references for the full-corpus run: Chromium 131 for every file at the four framings,
 Firefox at z1 (refs.py firefox framings=z1,z2,z4,hd group=NAME for more). Resumable: existing PNGs
 are kept. A file make_ref.py cannot frame gets no reference."""
-import os, shutil, subprocess, sys, tempfile
+import json, os, shutil, subprocess, sys, tempfile
 from concurrent.futures import ThreadPoolExecutor
 from PIL import Image
 from common import *
@@ -77,16 +77,21 @@ def firefox(job):
 
 fs = files()
 which = sys.argv[1]
-# Optional: framings=z1,hd and group=NAME (repeatable) narrow a run, e.g. Firefox at every framing for one group.
-framings, groups = None, set()
+# Optional: framings=z1,hd, group=NAME (repeatable) and keys=FILE (a JSON list of keys) narrow a run,
+# e.g. Firefox at every framing for one group.
+framings, groups, keys = None, set(), None
 for arg in sys.argv[2:]:
     k, v = arg.split('=', 1)
     if k == 'framings':
         framings = v.split(',')
     elif k == 'group':
         groups.add(v)
+    elif k == 'keys':
+        keys = set(json.load(open(v)))
 if groups:
     fs = [f for f in fs if f['group'] in groups]
+if keys is not None:
+    fs = [f for f in fs if f['key'] in keys]
 if which == 'chromium':
     jobs = [(f, fr) for f in fs for fr in (framings or FRAMINGS)]
     fn, workers = chromium, 6

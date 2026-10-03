@@ -39,6 +39,8 @@ BUILDS = {
     'final_noslices': (f'{BIN}/_logos_full_final', {'NO_SLICES': '1'}),
 }
 BUILDS['mm'] = (f'{BIN}/_logos_full_mm', {})  # #370, mipmaps on wgpu, on its own base
+BUILDS['ab'] = (f'{BIN}/_logos_full_ab', {})  # #362 aniso-blur branch, --cfg harness_blur_xy
+BUILDS['bd'] = (f'{BIN}/_logos_full_bd', {})  # #325 blur-downsample branch
 # "build#n" repeats a build under its own label, for run-to-run spread.
 # #368 with corpus_run/pass_report.patch applied: one PASSREPORT line per frame
 BUILDS['report'] = (f'{BIN}/_logos_full_report', {'FEMTOVG_PASS_REPORT': '1', 'NO_SLICES': '1'})

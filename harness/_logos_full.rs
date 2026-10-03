@@ -10,6 +10,8 @@
 //! `--cfg harness_turbulence` enables `ImageFilter::Turbulence` (#338) and
 //! `--cfg harness_blend` enables `ImageFilter::Blend` (feBlend),
 //! `--cfg harness_mix_blend` `LayerEffects::with_blend` (#356) and
+//! `--cfg harness_blur_xy` `ImageFilter::GaussianBlur { sigma_x, sigma_y }` (#362);
+//! without it an `feGaussianBlur` with two values blurs both axes by the larger.
 //! `--cfg harness_slices` `WGPURenderer::set_submission_slicing` (#368):
 //! `cargo rustc --release --example _logos_full --features wgpu -- --cfg harness_clip --cfg harness_turbulence --cfg harness_blend --cfg harness_mix_blend`
 //! (or the same cfgs in RUSTFLAGS, which also rebuilds every dependency).
@@ -430,12 +432,11 @@ fn layer_chain(group: &usvg::Group, scale: f32) -> LayerChain {
                 continue;
             }
             Kind::GaussianBlur(b) if from_previous(b.input()) => {
-                let sigma = b.std_dev_x().get().max(b.std_dev_y().get()) * scale;
-                if sigma <= 0.0 {
+                let Some(blur) = gaussian_blur(b, scale) else {
                     previous = Some(prim.result());
                     continue;
-                }
-                Some(ImageFilter::GaussianBlur { sigma })
+                };
+                Some(blur)
             }
             Kind::ColorMatrix(cm) if from_previous(cm.input()) => color_matrix(cm.kind()),
             Kind::ComponentTransfer(ct) if from_previous(ct.input()) => alpha_transfer_matrix(ct),
@@ -522,14 +523,31 @@ fn blur_filters(group: &usvg::Group, scale: f32) -> Vec<ImageFilter> {
     for f in group.filters() {
         for prim in f.primitives() {
             if let usvg::filter::Kind::GaussianBlur(b) = prim.kind() {
-                let sigma = b.std_dev_x().get().max(b.std_dev_y().get()) * scale;
-                if sigma > 0.0 {
-                    blurs.push(ImageFilter::GaussianBlur { sigma });
-                }
+                blurs.extend(gaussian_blur(b, scale));
             }
         }
     }
     blurs
+}
+
+/// An `feGaussianBlur` as the filter it runs as, in device pixels: both
+/// `stdDeviation` values with `harness_blur_xy`, else the larger on both
+/// axes; `None` when neither axis blurs.
+fn gaussian_blur(b: &usvg::filter::GaussianBlur, scale: f32) -> Option<ImageFilter> {
+    let (sigma_x, sigma_y) = (b.std_dev_x().get() * scale, b.std_dev_y().get() * scale);
+    if sigma_x <= 0.0 && sigma_y <= 0.0 {
+        return None;
+    }
+    #[cfg(harness_blur_xy)]
+    {
+        Some(ImageFilter::GaussianBlur { sigma_x, sigma_y })
+    }
+    #[cfg(not(harness_blur_xy))]
+    {
+        Some(ImageFilter::GaussianBlur {
+            sigma: sigma_x.max(sigma_y),
+        })
+    }
 }
 
 /// The glow idiom: `feGaussianBlur` then `feComposite operator="over"
@@ -591,6 +609,21 @@ fn drop_shadow(group: &usvg::Group) -> Option<ShadowChain> {
         });
     }
     shadow_chain(f.primitives())
+}
+
+/// A blur of `sigma` on both axes, whichever form the library has.
+fn isotropic_blur(sigma: f32) -> ImageFilter {
+    #[cfg(harness_blur_xy)]
+    {
+        ImageFilter::GaussianBlur {
+            sigma_x: sigma,
+            sigma_y: sigma,
+        }
+    }
+    #[cfg(not(harness_blur_xy))]
+    {
+        ImageFilter::GaussianBlur { sigma }
+    }
 }
 
 fn flood_color(c: usvg::Color, opacity: usvg::Opacity) -> Color {
@@ -666,7 +699,7 @@ fn draw_shadow_only(
     }
     let sigma = shadow.sigma * scale;
     let blur: &[ImageFilter] = if sigma > 0.0 {
-        &[ImageFilter::GaussianBlur { sigma }]
+        &[isotropic_blur(sigma)]
     } else {
         &[]
     };
