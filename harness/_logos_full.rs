@@ -214,19 +214,25 @@ fn group_effects(
     scale: f32,
     masks: &MaskMap,
     force_layer: bool,
+    // The chain's passes run in an inner layer of their own (a glow, a
+    // chain the source is merged over), so this layer carries none.
+    filters_inner: bool,
 ) -> Option<LayerEffects> {
     let opacity = if std::env::var("NO_OPACITY").is_ok() {
         1.0
     } else {
         group.opacity().get()
     };
-    #[cfg_attr(not(harness_blend), allow(unused_mut))]
     let LayerChain {
         passes: mut blurs,
         mut linear,
         ..
     } = layer_chain(group, scale);
     let _ = canvas;
+    if filters_inner {
+        blurs.clear();
+        linear = false;
+    }
     #[cfg(harness_blend)]
     if let Some(BlurBlend {
         mode,
@@ -732,26 +738,28 @@ fn flood_color(c: usvg::Color, opacity: usvg::Opacity) -> Color {
     color
 }
 
-/// The written-out chain: the primitives before the `feComposite` must be
-/// exactly the blur of `SourceAlpha`, its offset (optional) and the flood,
-/// and after it nothing or the merge.
+/// The written-out chain: the blur of `SourceAlpha`, its offset (optional),
+/// then the colouring - `feFlood` with `feComposite operator="in"`, or an
+/// `feColorMatrix` that sets a constant colour and scales alpha - and after
+/// it nothing or the merge.
 fn shadow_chain(prims: &[usvg::filter::Primitive]) -> Option<ShadowChain> {
     use usvg::filter::{CompositeOperator, Input, Kind};
     let by_result = |input: &Input| match input {
         Input::Reference(name) => prims.iter().find(|p| p.result() == name),
         _ => None,
     };
-    let (index, prim) = prims
-        .iter()
-        .enumerate()
-        .find(|(_, p)| matches!(p.kind(), Kind::Composite(c) if c.operator() == CompositeOperator::In))?;
-    let Kind::Composite(composite) = prim.kind() else {
-        return None;
-    };
-    let Kind::Flood(flood) = by_result(composite.input1())?.kind() else {
-        return None;
-    };
-    let offset = by_result(composite.input2())?;
+    // The colouring primitive, the colour it gives, and the input it colours.
+    let (index, prim, color, coloured) = prims.iter().enumerate().find_map(|(index, p)| match p.kind() {
+        Kind::Composite(c) if c.operator() == CompositeOperator::In => {
+            let Kind::Flood(flood) = by_result(c.input1())?.kind() else {
+                return None;
+            };
+            Some((index, p, flood_color(flood.color(), flood.opacity()), c.input2()))
+        }
+        Kind::ColorMatrix(cm) => Some((index, p, matrix_shadow_color(cm.kind())?, cm.input())),
+        _ => None,
+    })?;
+    let offset = by_result(coloured)?;
     let (dx, dy, blur) = match offset.kind() {
         Kind::Offset(o) => (o.dx(), o.dy(), by_result(o.input())?),
         _ => (0.0, 0.0, offset),
@@ -759,7 +767,9 @@ fn shadow_chain(prims: &[usvg::filter::Primitive]) -> Option<ShadowChain> {
     let Kind::GaussianBlur(blur) = blur.kind() else {
         return None;
     };
-    if !matches!(blur.input(), Input::SourceAlpha) || index != 2 + usize::from(matches!(offset.kind(), Kind::Offset(_))) {
+    let before = 1 + usize::from(matches!(offset.kind(), Kind::Offset(_)));
+    let flood_first = matches!(prim.kind(), Kind::Composite(_));
+    if !matches!(blur.input(), Input::SourceAlpha) || index != before + usize::from(flood_first) {
         return None;
     }
     let merged = match &prims[index + 1..] {
@@ -776,9 +786,28 @@ fn shadow_chain(prims: &[usvg::filter::Primitive]) -> Option<ShadowChain> {
         dx,
         dy,
         sigma: blur.std_dev_x().get().max(blur.std_dev_y().get()),
-        color: flood_color(flood.color(), flood.opacity()),
+        color,
         merged,
     })
+}
+
+/// The colour an `feColorMatrix` paints a silhouette: a matrix whose colour
+/// rows are constants (`0 0 0 0 r`, and so on) and whose alpha row scales
+/// alpha (`0 0 0 k 0`) gives (r, g, b) at opacity k; any other matrix is not
+/// a colouring.
+fn matrix_shadow_color(kind: &usvg::filter::ColorMatrixKind) -> Option<Color> {
+    let usvg::filter::ColorMatrixKind::Matrix(v) = kind else {
+        return None;
+    };
+    let m: &[f32; 20] = v[..20].try_into().ok()?;
+    let constant_row = |row: usize| m[row * 5..row * 5 + 4].iter().all(|c| *c == 0.0);
+    if !(constant_row(0) && constant_row(1) && constant_row(2)) || m[15..18].iter().any(|c| *c != 0.0) || m[19] != 0.0 {
+        return None;
+    }
+    let channel = |value: f32| (value.clamp(0.0, 1.0) * 255.0).round() as u8;
+    let mut color = Color::rgb(channel(m[4]), channel(m[9]), channel(m[14]));
+    color.set_alphaf(m[18].clamp(0.0, 1.0));
+    Some(color)
 }
 
 /// The group's shadow alone: its subtree in the flood colour, shifted by
@@ -1433,6 +1462,26 @@ static TURBULENCE_UNSUPPORTED: std::sync::atomic::AtomicUsize = std::sync::atomi
 static CLIPS_UNSUPPORTED: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 
 /// LAYER_LOG=1: one line per layer with what a pool simulator needs.
+/// Under LAYER_LOG, which layer could not open: its kind and the group's
+/// layer bounding box in device pixels.
+fn log_pass_through(canvas: &Canvas<WGPURenderer>, group: &usvg::Group, kind: &str) {
+    if std::env::var("LAYER_LOG").is_err() {
+        return;
+    }
+    let bb = group.abs_layer_bounding_box();
+    let t = canvas.transform();
+    let (x0, y0) = t.transform_point(bb.x(), bb.y());
+    let (x1, y1) = t.transform_point(bb.right(), bb.bottom());
+    eprintln!(
+        "PASS-THROUGH kind={kind} bbox={:.0}x{:.0} at ({:.0}, {:.0}) transient={} B",
+        (x1 - x0).abs(),
+        (y1 - y0).abs(),
+        x0.min(x1),
+        y0.min(y1),
+        canvas.transient_image_bytes()
+    );
+}
+
 fn log_layer(canvas: &Canvas<WGPURenderer>, group: &usvg::Group, scale: f32, kind: &str) {
     if std::env::var("LAYER_LOG").is_err() {
         return;
@@ -1588,6 +1637,31 @@ fn device_limits(adapter: &wgpu::Adapter) -> wgpu::Limits {
     limits
 }
 
+/// The group's content: through an inner layer running `inner` (a glow's
+/// blur, a chain the source graphic is merged over) and then sharp on top
+/// of it, or, without one, directly.
+fn draw_group_body(
+    canvas: &mut Canvas<WGPURenderer>,
+    group: &usvg::Group,
+    plan: Option<NoisePlan>,
+    scale: f32,
+    masks: &MaskMap,
+    inner: Option<&[ImageFilter]>,
+) {
+    let Some(filters) = inner else {
+        draw_filtered(canvas, group, plan, scale, masks);
+        return;
+    };
+    LAYERS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    if !canvas.begin_layer(&LayerEffects::new().with_filters(filters)) {
+        PASS_THROUGH.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        log_pass_through(canvas, group, "inner");
+    }
+    draw_filtered(canvas, group, plan, scale, masks);
+    canvas.end_layer();
+    draw_filtered(canvas, group, None, scale, masks);
+}
+
 fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale: f32, masks: &MaskMap) {
     use usvg::tiny_skia_path::PathSegment;
     for node in children {
@@ -1637,6 +1711,16 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                     canvas.set_shadow_blur(2.0 * s.sigma * scale);
                 }
                 let stencil = plan.as_ref().is_some_and(|p| p.stencil);
+                // A glow blurs in an inner layer and redraws sharp on top, as
+                // does any chain that ends with the source over its result;
+                // the group's other effects, when it has any, wrap both.
+                let inner: Option<Vec<ImageFilter>> = if chain.over_source {
+                    Some(chain_filters(&chain))
+                } else if glow(group) {
+                    Some(blur_filters(group, scale))
+                } else {
+                    None
+                };
                 match group_effects(
                     canvas,
                     group,
@@ -1645,6 +1729,7 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                     scale,
                     masks,
                     shadowed || stencil,
+                    inner.is_some(),
                 ) {
                     Some(fx) => {
                         // Size the layer to the group's own layer bounding box (usvg
@@ -1659,31 +1744,14 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                         LAYERS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                         log_layer(canvas, group, scale, "layer");
                         DEPTH.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                        // A glow blurs in an inner layer and redraws sharp on
-                        // top, as does any chain that ends with the source
-                        // over its result; the group's other effects wrap both.
-                        let glow = glow(group) || chain.over_source;
-                        let fx = if glow { fx.with_filters(&[]) } else { fx };
                         if !canvas.begin_layer(&fx) {
                             PASS_THROUGH.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                            log_pass_through(canvas, group, "layer");
                         }
                         if let Some((source, _)) = region {
                             scissor_to(canvas, source);
                         }
-                        if glow {
-                            let filters = if chain.over_source {
-                                chain_filters(&chain)
-                            } else {
-                                blur_filters(group, scale)
-                            };
-                            let blur = LayerEffects::new().with_filters(&filters);
-                            let _ = canvas.begin_layer(&blur);
-                            draw_filtered(canvas, group, plan, scale, masks);
-                            canvas.end_layer();
-                            draw_filtered(canvas, group, None, scale, masks);
-                        } else {
-                            draw_filtered(canvas, group, plan, scale, masks);
-                        }
+                        draw_group_body(canvas, group, plan, scale, masks, inner.as_deref());
                         canvas.end_layer();
                         DEPTH.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
                         if std::env::var("LAYER_LOG").is_ok() {
@@ -1693,7 +1761,14 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                             canvas.restore();
                         }
                     }
-                    None => draw_filtered(canvas, group, plan, scale, masks),
+                    None => {
+                        if inner.is_some() {
+                            if let Some((source, _)) = region {
+                                scissor_to(canvas, source);
+                            }
+                        }
+                        draw_group_body(canvas, group, plan, scale, masks, inner.as_deref());
+                    }
                 }
                 canvas.restore();
                 if clipped {
