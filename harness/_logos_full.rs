@@ -2277,7 +2277,8 @@ fn main() {
             cfg!(harness_turbulence),
             cfg!(harness_blend),
             cfg!(harness_mix_blend),
-            cfg!(harness_slices)
+            cfg!(harness_slices),
+            cfg!(harness_blur_xy)
         );
         eprintln!(
             "filters skipped (SKIP_UNSUPPORTED_FILTERS): {}",
