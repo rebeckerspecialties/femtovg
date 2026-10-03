@@ -2272,7 +2272,7 @@ fn main() {
             PASS_THROUGH.load(std::sync::atomic::Ordering::Relaxed)
         );
         eprintln!(
-            "harness cfgs: clip={} turbulence={} blend={} mix_blend={} slices={}",
+            "harness cfgs: clip={} turbulence={} blend={} mix_blend={} slices={} blur_xy={}",
             cfg!(harness_clip),
             cfg!(harness_turbulence),
             cfg!(harness_blend),
