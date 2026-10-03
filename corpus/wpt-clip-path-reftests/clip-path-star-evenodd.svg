@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="200" height="200" viewBox="0 0 200 200">
+  <html:link rel="match" href="clip-path-star-evenodd-ref.svg"/>
+  <defs>
+    <clipPath id="cp" clip-rule="evenodd">
+      <polygon points="100,15 125,75 190,75 137,112 158,175 100,135 42,175 63,112 10,75 75,75"/>
+    </clipPath>
+  </defs>
+  <rect x="0" y="0" width="200" height="200" fill="green" clip-path="url(#cp)"/>
+</svg>

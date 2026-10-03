@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:html="http://www.w3.org/1999/xhtml" width="200" height="200" viewBox="0 0 200 200">
+  <html:link rel="match" href="morphology-annulus-hole-close-ref.svg"/>
+  <defs>
+    <filter id="f" x="0%" y="0%" width="100%" height="100%">
+      <feMorphology operator="dilate" radius="15"/>
+    </filter>
+  </defs>
+  <path d="M 40 40 L 120 40 L 120 120 L 40 120 Z M 70 70 L 70 90 L 90 90 L 90 70 Z" fill-rule="evenodd" fill="green" filter="url(#f)"/>
+</svg>

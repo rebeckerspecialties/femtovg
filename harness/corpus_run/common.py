@@ -43,6 +43,7 @@ BUILDS['ab'] = (f'{BIN}/_logos_full_ab', {})  # #362 aniso-blur branch, --cfg ha
 BUILDS['bd'] = (f'{BIN}/_logos_full_bd', {})  # #325 blur-downsample branch
 BUILDS['pyr'] = (f'{BIN}/_logos_full_pyr', {})  # #325 pyramid, rebased on #372 (--cfg harness_blur_xy)
 BUILDS['mo'] = (f'{BIN}/_logos_full_mo', {})  # feMorphology + feOffset, on the pyramid (--cfg harness_blur_xy --cfg harness_morph)
+BUILDS['cp'] = (f'{BIN}/_logos_full_cp', {})  # chain-passes: no parity pass, fused matrices, on mo (same cfgs)
 # "build#n" repeats a build under its own label, for run-to-run spread.
 # #368 with corpus_run/pass_report.patch applied: one PASSREPORT line per frame
 BUILDS['report'] = (f'{BIN}/_logos_full_report', {'FEMTOVG_PASS_REPORT': '1', 'NO_SLICES': '1'})
