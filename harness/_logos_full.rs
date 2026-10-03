@@ -413,8 +413,13 @@ fn layer_chain(group: &usvg::Group, scale: f32) -> LayerChain {
     // `feFlood -> feBlend in=SourceGraphic in2=flood -> feGaussianBlur`.
     let mut transparent: Vec<&str> = Vec::new();
     for prim in f.primitives() {
+        // The chain may start from the source's alpha (`in="SourceAlpha"`,
+        // the shadow chains of Sketch and Figma): a color matrix that keeps
+        // alpha and zeroes the color runs first.
         let from_previous = |input: &Input| match (input, previous) {
             (Input::SourceGraphic, None) => true,
+            #[cfg(harness_morph)]
+            (Input::SourceAlpha, None) => true,
             (Input::Reference(r), Some(p)) => r == p,
             _ => false,
         };
@@ -440,12 +445,23 @@ fn layer_chain(group: &usvg::Group, scale: f32) -> LayerChain {
             }
             Kind::ColorMatrix(cm) if from_previous(cm.input()) => color_matrix(cm.kind()),
             Kind::ComponentTransfer(ct) if from_previous(ct.input()) => alpha_transfer_matrix(ct),
+            #[cfg(harness_morph)]
+            Kind::Morphology(m) if from_previous(m.input()) => Some(morphology(m, scale)),
+            #[cfg(harness_morph)]
+            Kind::Offset(o) if from_previous(o.input()) => Some(ImageFilter::Offset {
+                dx: o.dx() * scale,
+                dy: o.dy() * scale,
+            }),
             _ => None,
         };
         let Some(pass) = pass else {
             chain.complete = matches!(prim.kind(), Kind::Blend(_));
             break;
         };
+        #[cfg(harness_morph)]
+        if previous.is_none() && matches!(primary_input(prim), Some(Input::SourceAlpha)) {
+            chain.passes.push(source_alpha());
+        }
         let linear = prim.color_interpolation() == ColorInterpolation::LinearRGB;
         if linear != chain.linear {
             if let Some(transfer) = color_space_pass(linear) {
@@ -457,6 +473,47 @@ fn layer_chain(group: &usvg::Group, scale: f32) -> LayerChain {
         previous = Some(prim.result());
     }
     chain
+}
+
+/// The input a one-input primitive reads.
+#[cfg(harness_morph)]
+fn primary_input(prim: &usvg::filter::Primitive) -> Option<&usvg::filter::Input> {
+    use usvg::filter::Kind;
+    match prim.kind() {
+        Kind::GaussianBlur(k) => Some(k.input()),
+        Kind::ColorMatrix(k) => Some(k.input()),
+        Kind::ComponentTransfer(k) => Some(k.input()),
+        Kind::Morphology(k) => Some(k.input()),
+        Kind::Offset(k) => Some(k.input()),
+        _ => None,
+    }
+}
+
+/// `SourceAlpha` as a pass: the color matrix that keeps alpha and zeroes
+/// the color, (0, 0, 0, a) in premultiplied terms.
+#[cfg(harness_morph)]
+fn source_alpha() -> ImageFilter {
+    ImageFilter::ColorMatrix {
+        matrix: [
+            0.0, 0.0, 0.0, 0.0, 0.0, //
+            0.0, 0.0, 0.0, 0.0, 0.0, //
+            0.0, 0.0, 0.0, 0.0, 0.0, //
+            0.0, 0.0, 0.0, 1.0, 0.0,
+        ],
+    }
+}
+
+/// An `feMorphology` in device pixels.
+#[cfg(harness_morph)]
+fn morphology(m: &usvg::filter::Morphology, scale: f32) -> ImageFilter {
+    ImageFilter::Morphology {
+        radius_x: m.radius_x().get() * scale,
+        radius_y: m.radius_y().get() * scale,
+        operator: match m.operator() {
+            usvg::filter::MorphologyOperator::Erode => femtovg::MorphologyOperator::Erode,
+            usvg::filter::MorphologyOperator::Dilate => femtovg::MorphologyOperator::Dilate,
+        },
+    }
 }
 
 /// The pass into (`to_linear`) or out of linearRGB; none on a tree without
@@ -2272,13 +2329,14 @@ fn main() {
             PASS_THROUGH.load(std::sync::atomic::Ordering::Relaxed)
         );
         eprintln!(
-            "harness cfgs: clip={} turbulence={} blend={} mix_blend={} slices={} blur_xy={}",
+            "harness cfgs: clip={} turbulence={} blend={} mix_blend={} slices={} blur_xy={} morph={}",
             cfg!(harness_clip),
             cfg!(harness_turbulence),
             cfg!(harness_blend),
             cfg!(harness_mix_blend),
             cfg!(harness_slices),
-            cfg!(harness_blur_xy)
+            cfg!(harness_blur_xy),
+            cfg!(harness_morph)
         );
         eprintln!(
             "filters skipped (SKIP_UNSUPPORTED_FILTERS): {}",
