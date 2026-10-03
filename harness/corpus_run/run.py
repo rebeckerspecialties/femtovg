@@ -96,7 +96,7 @@ def done_set(path):
 def pixels(builds):
     path = f'{OUT}/pixels.jsonl'
     done = done_set(path)
-    jobs = [(f, fr, b) for f in files() for fr in FRAMINGS for b in builds if (f['key'], fr, b) not in done]
+    jobs = [(f, fr, b) for f in files() for fr in DEFAULT_FRAMINGS for b in builds if (f['key'], fr, b) not in done]
     lock = threading.Lock()
     out = open(path, 'a')
 
@@ -127,7 +127,7 @@ def memory(builds, frames=None):
     fs = files()
     n = 0
     for i, f in enumerate(fs):
-        for framing in FRAMINGS:
+        for framing in DEFAULT_FRAMINGS:
             if frames is not None and (f['key'], framing) not in frames:
                 continue
             for build in builds:

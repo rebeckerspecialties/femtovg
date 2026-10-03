@@ -93,7 +93,7 @@ if groups:
 if keys is not None:
     fs = [f for f in fs if f['key'] in keys]
 if which == 'chromium':
-    jobs = [(f, fr) for f in fs for fr in (framings or FRAMINGS)]
+    jobs = [(f, fr) for f in fs for fr in (framings or DEFAULT_FRAMINGS)]
     fn, workers = chromium, 6
 else:
     jobs = [(f, fr) for f in fs for fr in (framings or ['z1'])]

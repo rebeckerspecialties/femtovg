@@ -92,7 +92,7 @@ def main():
         key, rewrite = VARIANTS[name]
         svg = f'{VAR}/{name}.svg'
         open(svg, 'w').write(rewrite(open(fs[key]['path']).read()))
-        for framing in FRAMINGS:
+        for framing in DEFAULT_FRAMINGS:
             fv = f'{PNG}/{build}_{key}_{framing}.png'
             if not os.path.exists(fv):
                 print(name, framing, 'no femtovg frame', fv)

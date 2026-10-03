@@ -2,7 +2,7 @@
 """Build a Chromium/Firefox reference page for one SVG at one pivot zoom.
 
 The page reproduces the femtovg harness framing exactly: a 460x260 canvas,
-pivot zoom about (230,130), then the SVG's own viewport (its width and height,
+pivot zoom about (230,130) or PIVOT, then the SVG's own viewport (its width and height,
 read as usvg reads them) scaled by 200/max(w,h) into a box at (130,30) - so
 femtovg's `translate(230,130) scale(s) translate(-230,-130); translate(130,30)
 scale(200/max(w,h))` over usvg's tree and the browser land on the same pixels.
@@ -64,7 +64,8 @@ keep = " ".join(a for a in re.findall(r'\b(?:fill|stroke|fill-rule|opacity|style
 import os
 FW = os.environ.get("FRAME_W", "460"); FH = os.environ.get("FRAME_H", "260")
 BOX = os.environ.get("BOX", "200"); BX = os.environ.get("BOX_X", "130"); BY = os.environ.get("BOX_Y", "30")
-PX = float(FW) / 2; PY_ = float(FH) / 2
+# The pivot of the zoom: the frame centre, or PIVOT=x,y as the harness reads it.
+PX, PY_ = (float(v) for v in os.environ["PIVOT"].split(",")) if os.environ.get("PIVOT") else (float(FW) / 2, float(FH) / 2)
 fit = float(BOX) / max(w, h)
 print(f'''<!doctype html><body style="margin:0;background:#fff">
 <svg width="{FW}" height="{FH}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">

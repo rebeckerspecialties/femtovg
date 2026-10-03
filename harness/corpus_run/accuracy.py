@@ -73,7 +73,7 @@ def render(f, framing, build):
 
 def main():
     build = sys.argv[1]
-    sel, framings, png_dir = [], list(FRAMINGS), None
+    sel, framings, png_dir = [], list(DEFAULT_FRAMINGS), None
     for arg in sys.argv[2:]:
         k, v = arg.split('=', 1)
         if k == 'group':

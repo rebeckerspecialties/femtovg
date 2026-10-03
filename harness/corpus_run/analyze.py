@@ -74,7 +74,7 @@ def m(r, field):
 
 
 print('\n## Render passes per frame (eager = master; lazy = a pass begun only when drawn into)')
-for fr in FRAMINGS:
+for fr in DEFAULT_FRAMINGS:
     for label in ('everything else', 'BuseyBench + pressure'):
         eager = [v['slices']['mem']['passes'] for (k, f), v in frames.items() if f == fr and kind(k) == label and 'slices' in v and 'mem' in v['slices']]
         lazy = [v['lazy']['mem']['passes'] for (k, f), v in frames.items() if f == fr and kind(k) == label and 'lazy' in v and 'mem' in v['lazy']]
@@ -87,13 +87,13 @@ for fr in FRAMINGS:
 print('\n## Peak memory per frame, MiB (one process per frame; footprint = CPU + GPU, graphics = GPU part, cpu = the rest)')
 mem_builds = [b for b in ('base', 'final_noslices', 'final', 'slices', 'wait2') if any(b in v and 'mem' in v[b] for v in frames.values())]
 floor = {}
-for fr in FRAMINGS:
+for fr in DEFAULT_FRAMINGS:
     for b in mem_builds:
         g = [m(v[b], 'peak_graphics') for (k, f), v in frames.items() if f == fr and b in v and 'mem' in v[b]]
         if g:
             floor[(fr, b)] = min(g)
 print('  fixed driver pool (smallest graphics peak of any frame):', {f'{fr}/{b}': round(x) for (fr, b), x in floor.items() if b == 'base'})
-for fr in FRAMINGS:
+for fr in DEFAULT_FRAMINGS:
     for label in ('everything else', 'BuseyBench + pressure'):
         for b in mem_builds:
             sel = [v[b] for (k, f), v in frames.items() if f == fr and kind(k) == label and b in v and 'mem' in v[b]]
