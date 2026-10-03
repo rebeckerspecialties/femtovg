@@ -547,3 +547,38 @@ hides under opacity 0.14 (see the ablation under Metric).
   over it; without the merge the group draws only its shadow: the subtree in
   the flood colour, shifted in root space, blurred in a layer
   (`corpus/icons/wasm_speed_benchmark_master.svg`'s `waShadowOnly`).
+  The offset may come first (`feOffset in="SourceAlpha"`, then its blur): a
+  translation and a blur commute, so it is the same shadow (WPT
+  `blur-drop-shadow-pipeline`).
+* A chain whose last primitive composites the source graphic with the
+  chain's result - `feMerge` with the source last, or `feComposite` with
+  `over`, `in`, `out`, `atop` or `xor` between `SourceGraphic` and the
+  result (`SourceAlpha` as the second input of `in`/`out`) - draws the
+  chain in an inner layer and the group itself, the two composited under
+  the Porter-Duff operator, in the order the primitive's inputs give;
+  anything but `over` gets an isolating layer around both so the operator
+  sees the group alone, not the page (2026-10-03; the glow idiom is the
+  `over` case). `arithmetic` stays unmapped.
+
+## Filter parameters follow the element's transform (2026-10-03)
+
+A filter's `stdDeviation`, `radius` and `dx`/`dy` are user units along the
+filtered element's axes; a layer runs in device pixels along the frame's.
+`FilterSpace` is the linear part of the frame scale times the group's
+`abs_transform`: an offset maps through it exactly (`rotate(90)` turns
+`dx="20"` into a vertical shift), a blur's deviations take the marginals of
+the mapped Gaussian and a morphology's radii the extent of the mapped kernel
+on each device axis - exact for scales and quarter turns, an axis-aligned
+approximation of a rotated anisotropic kernel otherwise. Blink filters in the
+element's own space and transforms the result. Before this the frame scale
+alone was applied (the WPT `offset-with-*-transform-*` tests shifted along
+the wrong axis or by the wrong amount: 2-3 % of pixels at 4x).
+
+A chain the backend cannot finish now runs **all or nothing**: an incomplete
+chain's first passes alone (an offset without the `feComposite` that reads
+it, two offsets without their `feMerge`) land further from the browser than
+the source drawn raw, and credited the passes with what the chain does (WPT
+`offset-composite-out` 13.0 % raw vs 16.3 % with the offset applied,
+`offset-triple-chain-rgb-shadow` 0 vs 1.3 %). The exception stays: a chain
+that stops at an `feBlend` counts as run, as the mapping section's rule 1
+set out. `PARTIAL_CHAINS=1` restores the earlier policy for comparison.

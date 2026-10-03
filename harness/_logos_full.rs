@@ -396,9 +396,10 @@ fn precapture_blend_sources(
 /// primitive asks for: blurs, color matrices and alpha transfers chained
 /// from the source graphic or its alpha. Stops at a primitive it cannot
 /// map, before a final `feBlend`, which `blur_blend` maps, and at a final
-/// `feMerge` or `feComposite over` that puts the source graphic over the
-/// chain's result (`over_source`: the group draws its filtered layer and
-/// then itself on top); `complete` says nothing was left out. A chain
+/// `feMerge` or `feComposite` that composites the source graphic with the
+/// chain's result (`with_source`: the Porter-Duff operator the group's
+/// filtered layer and the group itself composite under, and which of them
+/// draws first); `complete` says nothing was left out. A chain
 /// started from the alpha applies whole or not at all - its passes replace
 /// the group with a silhouette, which only the rest of the chain makes
 /// sense of. The passes may end in linearRGB (`linear`).
@@ -406,7 +407,62 @@ struct LayerChain {
     passes: Vec<ImageFilter>,
     linear: bool,
     complete: bool,
-    over_source: bool,
+    with_source: Option<(CompositeOperation, bool)>,
+}
+
+/// The linear part of the map from a group's user space to device pixels:
+/// the frame's scale times the group's absolute transform. A filter's
+/// parameters are user units along the group's axes; the layer runs in
+/// device pixels along the frame's. An offset maps exactly; a blur's
+/// deviations and a morphology's radii take the extent of the mapped kernel
+/// on each device axis, exact for scales and quarter turns (Blink filters
+/// in the element's own space and transforms the result).
+#[derive(Clone, Copy)]
+struct FilterSpace {
+    sx: f32,
+    kx: f32,
+    ky: f32,
+    sy: f32,
+}
+
+impl FilterSpace {
+    fn of(group: &usvg::Group, scale: f32) -> Self {
+        let t = group.abs_transform();
+        Self {
+            sx: t.sx * scale,
+            kx: t.kx * scale,
+            ky: t.ky * scale,
+            sy: t.sy * scale,
+        }
+    }
+
+    /// A user-space vector in device pixels.
+    fn vector(&self, x: f32, y: f32) -> (f32, f32) {
+        (self.sx * x + self.kx * y, self.ky * x + self.sy * y)
+    }
+
+    /// A Gaussian's deviations along the device axes: the marginals of the
+    /// mapped distribution.
+    fn deviations(&self, sigma_x: f32, sigma_y: f32) -> (f32, f32) {
+        (
+            (self.sx * sigma_x).hypot(self.kx * sigma_y),
+            (self.ky * sigma_x).hypot(self.sy * sigma_y),
+        )
+    }
+
+    /// A rectangular kernel's half-extents along the device axes.
+    fn radii(&self, radius_x: f32, radius_y: f32) -> (f32, f32) {
+        (
+            (self.sx * radius_x).abs() + (self.kx * radius_y).abs(),
+            (self.ky * radius_x).abs() + (self.sy * radius_y).abs(),
+        )
+    }
+
+    /// The one deviation a shadow blurs by: the larger device one.
+    fn shadow_sigma(&self, sigma: f32) -> f32 {
+        let (x, y) = self.deviations(sigma, sigma);
+        x.max(y)
+    }
 }
 
 /// The chain's passes as a layer's filters, back in sRGB at the end.
@@ -418,28 +474,56 @@ fn chain_filters(chain: &LayerChain) -> Vec<ImageFilter> {
     filters
 }
 
-/// Whether `prim`, with the chain's last result `previous`, puts the
-/// source graphic over that result: `feMerge` of the two, the source last,
-/// or `feComposite operator="over" in="SourceGraphic"`.
-fn puts_source_over(prim: &usvg::filter::Primitive, previous: Option<&str>) -> bool {
+/// How `prim`, with the chain's last result `previous`, composites the
+/// source graphic with that result, when it does: the Porter-Duff operator
+/// the composite runs under, and whether the chain's layer draws first -
+/// the source graphic is then the operator's source, drawn over, in, out
+/// of, atop or xor the chain's result - or the source graphic draws first
+/// and the chain's layer composites with it. `feMerge` of the two with the
+/// source last is `over`. `SourceAlpha` serves as the second input of `in`
+/// and `out`, which read only its alpha; `arithmetic` is no operator.
+fn composites_with_source(
+    prim: &usvg::filter::Primitive,
+    previous: Option<&str>,
+) -> Option<(CompositeOperation, bool)> {
     use usvg::filter::{CompositeOperator, Input, Kind};
     let is_previous = |input: &Input| matches!(input, Input::Reference(r) if Some(r.as_str()) == previous);
     match prim.kind() {
-        Kind::Merge(m) => matches!(m.inputs(), [below, Input::SourceGraphic] if is_previous(below)),
+        Kind::Merge(m) => matches!(m.inputs(), [below, Input::SourceGraphic] if is_previous(below))
+            .then_some((CompositeOperation::SourceOver, true)),
         Kind::Composite(c) => {
-            c.operator() == CompositeOperator::Over && matches!(c.input1(), Input::SourceGraphic) && is_previous(c.input2())
+            let op = match c.operator() {
+                CompositeOperator::Over => CompositeOperation::SourceOver,
+                CompositeOperator::In => CompositeOperation::SourceIn,
+                CompositeOperator::Out => CompositeOperation::SourceOut,
+                CompositeOperator::Atop => CompositeOperation::Atop,
+                CompositeOperator::Xor => CompositeOperation::Xor,
+                CompositeOperator::Arithmetic { .. } => return None,
+            };
+            let alpha_only = matches!(op, CompositeOperation::SourceIn | CompositeOperation::SourceOut);
+            let is_source = |input: &Input| {
+                matches!(input, Input::SourceGraphic) || (alpha_only && matches!(input, Input::SourceAlpha))
+            };
+            if matches!(c.input1(), Input::SourceGraphic) && is_previous(c.input2()) {
+                Some((op, true))
+            } else if is_previous(c.input1()) && is_source(c.input2()) {
+                Some((op, false))
+            } else {
+                None
+            }
         }
-        _ => false,
+        _ => None,
     }
 }
 
 fn layer_chain(group: &usvg::Group, scale: f32) -> LayerChain {
     use usvg::filter::{ColorInterpolation, Input, Kind};
+    let space = FilterSpace::of(group, scale);
     let mut chain = LayerChain {
         passes: Vec::new(),
         linear: false,
         complete: true,
-        over_source: false,
+        with_source: None,
     };
     let [f] = group.filters() else {
         chain.complete = group.filters().is_empty();
@@ -454,9 +538,11 @@ fn layer_chain(group: &usvg::Group, scale: f32) -> LayerChain {
     let mut transparent: Vec<&str> = Vec::new();
     let primitives = f.primitives();
     for (index, prim) in primitives.iter().enumerate() {
-        if index + 1 == primitives.len() && previous.is_some() && puts_source_over(prim, previous) {
-            chain.over_source = true;
-            break;
+        if index + 1 == primitives.len() && previous.is_some() {
+            if let Some(with_source) = composites_with_source(prim, previous) {
+                chain.with_source = Some(with_source);
+                break;
+            }
         }
         // The chain may start from the source's alpha (`in="SourceAlpha"`,
         // the shadow chains of Sketch and Figma): a color matrix that keeps
@@ -482,7 +568,7 @@ fn layer_chain(group: &usvg::Group, scale: f32) -> LayerChain {
                 continue;
             }
             Kind::GaussianBlur(b) if from_previous(b.input()) => {
-                let Some(blur) = gaussian_blur(b, scale) else {
+                let Some(blur) = gaussian_blur(b, space) else {
                     previous = Some(prim.result());
                     continue;
                 };
@@ -491,12 +577,12 @@ fn layer_chain(group: &usvg::Group, scale: f32) -> LayerChain {
             Kind::ColorMatrix(cm) if from_previous(cm.input()) => color_matrix(cm.kind()),
             Kind::ComponentTransfer(ct) if from_previous(ct.input()) => alpha_transfer_matrix(ct),
             #[cfg(harness_morph)]
-            Kind::Morphology(m) if from_previous(m.input()) => Some(morphology(m, scale)),
+            Kind::Morphology(m) if from_previous(m.input()) => Some(morphology(m, space)),
             #[cfg(harness_morph)]
-            Kind::Offset(o) if from_previous(o.input()) => Some(ImageFilter::Offset {
-                dx: o.dx() * scale,
-                dy: o.dy() * scale,
-            }),
+            Kind::Offset(o) if from_previous(o.input()) => {
+                let (dx, dy) = space.vector(o.dx(), o.dy());
+                Some(ImageFilter::Offset { dx, dy })
+            }
             _ => None,
         };
         let Some(pass) = pass else {
@@ -518,7 +604,15 @@ fn layer_chain(group: &usvg::Group, scale: f32) -> LayerChain {
         chain.passes.push(pass);
         previous = Some(prim.result());
     }
-    if from_alpha && !chain.complete {
+    // A chain this backend cannot finish does not run at all: its first
+    // passes alone - an offset without the composite that reads it, a blur
+    // without the merge - land further from the browser than the source
+    // drawn raw, and would credit the passes with what the chain does. The
+    // one exception stays: a chain that stops at an `feBlend` has run (see
+    // `complete`). `PARTIAL_CHAINS` keeps the passes of a colour chain, the
+    // policy before 2026-10-03, for comparison; an alpha chain never ran
+    // partially.
+    if !chain.complete && (from_alpha || std::env::var("PARTIAL_CHAINS").is_err()) {
         chain.passes.clear();
         chain.linear = false;
     }
@@ -555,10 +649,11 @@ fn source_alpha() -> ImageFilter {
 
 /// An `feMorphology` in device pixels.
 #[cfg(harness_morph)]
-fn morphology(m: &usvg::filter::Morphology, scale: f32) -> ImageFilter {
+fn morphology(m: &usvg::filter::Morphology, space: FilterSpace) -> ImageFilter {
+    let (radius_x, radius_y) = space.radii(m.radius_x().get(), m.radius_y().get());
     ImageFilter::Morphology {
-        radius_x: m.radius_x().get() * scale,
-        radius_y: m.radius_y().get() * scale,
+        radius_x,
+        radius_y,
         operator: match m.operator() {
             usvg::filter::MorphologyOperator::Erode => femtovg::MorphologyOperator::Erode,
             usvg::filter::MorphologyOperator::Dilate => femtovg::MorphologyOperator::Dilate,
@@ -626,11 +721,12 @@ fn scissor_to(canvas: &mut Canvas<WGPURenderer>, r: usvg::NonZeroRect) {
 
 /// The group's `feGaussianBlur` primitives as layer filters, in device pixels.
 fn blur_filters(group: &usvg::Group, scale: f32) -> Vec<ImageFilter> {
+    let space = FilterSpace::of(group, scale);
     let mut blurs = Vec::new();
     for f in group.filters() {
         for prim in f.primitives() {
             if let usvg::filter::Kind::GaussianBlur(b) = prim.kind() {
-                blurs.extend(gaussian_blur(b, scale));
+                blurs.extend(gaussian_blur(b, space));
             }
         }
     }
@@ -640,8 +736,8 @@ fn blur_filters(group: &usvg::Group, scale: f32) -> Vec<ImageFilter> {
 /// An `feGaussianBlur` as the filter it runs as, in device pixels: both
 /// `stdDeviation` values with `harness_blur_xy`, else the larger on both
 /// axes; `None` when neither axis blurs.
-fn gaussian_blur(b: &usvg::filter::GaussianBlur, scale: f32) -> Option<ImageFilter> {
-    let (sigma_x, sigma_y) = (b.std_dev_x().get() * scale, b.std_dev_y().get() * scale);
+fn gaussian_blur(b: &usvg::filter::GaussianBlur, space: FilterSpace) -> Option<ImageFilter> {
+    let (sigma_x, sigma_y) = space.deviations(b.std_dev_x().get(), b.std_dev_y().get());
     if sigma_x <= 0.0 && sigma_y <= 0.0 {
         return None;
     }
@@ -744,7 +840,9 @@ fn flood_color(c: usvg::Color, opacity: usvg::Opacity) -> Color {
 /// `feComposite operator="in"`, or an `feColorMatrix` that sets a constant
 /// colour and scales alpha; without one the silhouette is `SourceAlpha`'s
 /// own opaque black), and after them nothing or the merge that puts the
-/// source back over the shadow.
+/// source back over the shadow. The offset may instead come first, before
+/// the blur (`feOffset in="SourceAlpha"`, then its blur): a translation and
+/// a blur commute, so it is the same shadow.
 fn shadow_chain(prims: &[usvg::filter::Primitive]) -> Option<ShadowChain> {
     use usvg::filter::{CompositeOperator, Input, Kind};
     let by_result = |input: &Input| match input {
@@ -791,7 +889,18 @@ fn shadow_chain(prims: &[usvg::filter::Primitive]) -> Option<ShadowChain> {
                 accounted += 1;
             }
             Kind::GaussianBlur(blur) => {
-                if !matches!(blur.input(), Input::SourceAlpha) || chain.len() != accounted {
+                let input = match (blur.input(), shift) {
+                    (Input::Reference(_), None) => match by_result(blur.input())?.kind() {
+                        Kind::Offset(o) => {
+                            shift = Some((o.dx(), o.dy()));
+                            accounted += 1;
+                            o.input()
+                        }
+                        _ => return None,
+                    },
+                    (input, _) => input,
+                };
+                if !matches!(input, Input::SourceAlpha) || chain.len() != accounted {
                     return None;
                 }
                 let (dx, dy) = shift.unwrap_or((0.0, 0.0));
@@ -843,7 +952,8 @@ fn draw_shadow_only(
     if let Some((_, result)) = region {
         scissor_to(canvas, result);
     }
-    let sigma = shadow.sigma * scale;
+    let space = FilterSpace::of(group, scale);
+    let sigma = space.shadow_sigma(shadow.sigma);
     let blur: &[ImageFilter] = if sigma > 0.0 {
         &[isotropic_blur(sigma)]
     } else {
@@ -857,7 +967,8 @@ fn draw_shadow_only(
     if let Some((source, _)) = region {
         scissor_to(canvas, source);
     }
-    *SHADOW_COPY.lock().unwrap() = Some((shadow.color, shadow.dx * scale, shadow.dy * scale));
+    let (dx, dy) = space.vector(shadow.dx, shadow.dy);
+    *SHADOW_COPY.lock().unwrap() = Some((shadow.color, dx, dy));
     draw_nodes(canvas, group.children(), scale, masks);
     *SHADOW_COPY.lock().unwrap() = None;
     canvas.end_layer();
@@ -1657,26 +1768,45 @@ fn device_limits(adapter: &wgpu::Adapter) -> wgpu::Limits {
 /// The group's content: through an inner layer running `inner` (a glow's
 /// blur, a chain the source graphic is merged over) and then sharp on top
 /// of it, or, without one, directly.
+/// Draws the group: plainly, or as its chain in an inner layer composited
+/// with the group itself under `inner`'s operator - the layer first and the
+/// group over, in, out of, atop or xor it, or the group first and the layer
+/// composited with it. Any operator but source-over needs the isolating
+/// layer the caller opens around both.
 fn draw_group_body(
     canvas: &mut Canvas<WGPURenderer>,
     group: &usvg::Group,
     plan: Option<NoisePlan>,
     scale: f32,
     masks: &MaskMap,
-    inner: Option<&[ImageFilter]>,
+    inner: Option<(&[ImageFilter], CompositeOperation, bool)>,
 ) {
-    let Some(filters) = inner else {
+    let Some((filters, op, chain_first)) = inner else {
         draw_filtered(canvas, group, plan, scale, masks);
         return;
     };
-    LAYERS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-    if !canvas.begin_layer(&LayerEffects::new().with_filters(filters)) {
-        PASS_THROUGH.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        log_pass_through(canvas, group, "inner");
+    let chain_layer = |canvas: &mut Canvas<WGPURenderer>, plan: Option<NoisePlan>| {
+        LAYERS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        if !canvas.begin_layer(&LayerEffects::new().with_filters(filters)) {
+            PASS_THROUGH.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            log_pass_through(canvas, group, "inner");
+        }
+        draw_filtered(canvas, group, plan, scale, masks);
+        canvas.end_layer();
+    };
+    if chain_first {
+        chain_layer(canvas, plan);
+        canvas.save();
+        canvas.global_composite_operation(op);
+        draw_filtered(canvas, group, None, scale, masks);
+        canvas.restore();
+    } else {
+        draw_filtered(canvas, group, None, scale, masks);
+        canvas.save();
+        canvas.global_composite_operation(op);
+        chain_layer(canvas, plan);
+        canvas.restore();
     }
-    draw_filtered(canvas, group, plan, scale, masks);
-    canvas.end_layer();
-    draw_filtered(canvas, group, None, scale, masks);
 }
 
 fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale: f32, masks: &MaskMap) {
@@ -1722,26 +1852,33 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                 }
                 let shadowed = shadow.is_some();
                 if let Some(s) = &shadow {
+                    let space = FilterSpace::of(group, scale);
+                    let (dx, dy) = space.vector(s.dx, s.dy);
                     canvas.set_shadow_color(s.color);
-                    canvas.set_shadow_offset(s.dx * scale, s.dy * scale);
+                    canvas.set_shadow_offset(dx, dy);
                     // Canvas shadowBlur is two sigma; usvg's deviation is in user units.
-                    canvas.set_shadow_blur(2.0 * s.sigma * scale);
+                    canvas.set_shadow_blur(2.0 * space.shadow_sigma(s.sigma));
                 }
                 let stencil = plan.as_ref().is_some_and(|p| p.stencil);
                 // A glow blurs in an inner layer and redraws sharp on top, as
-                // does any chain that ends with the source over its result;
-                // the group's other effects, when it has any, wrap both.
+                // does any chain that ends with the source composited with
+                // its result; the group's other effects, when it has any,
+                // wrap both, and an operator other than source-over needs
+                // that wrapping layer to composite against the group alone.
                 // A chain the shadow state renders (a recognized drop
                 // shadow) is not run again as filters.
-                let inner: Option<Vec<ImageFilter>> = if shadowed {
+                let inner: Option<(Vec<ImageFilter>, CompositeOperation, bool)> = if shadowed {
                     None
-                } else if chain.over_source {
-                    Some(chain_filters(&chain))
+                } else if let Some((op, chain_first)) = chain.with_source {
+                    Some((chain_filters(&chain), op, chain_first))
                 } else if glow(group) {
-                    Some(blur_filters(group, scale))
+                    Some((blur_filters(group, scale), CompositeOperation::SourceOver, true))
                 } else {
                     None
                 };
+                let isolating = inner
+                    .as_ref()
+                    .is_some_and(|(_, op, _)| *op != CompositeOperation::SourceOver);
                 match group_effects(
                     canvas,
                     group,
@@ -1749,7 +1886,7 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                     frame_h() as usize,
                     scale,
                     masks,
-                    shadowed || stencil,
+                    shadowed || stencil || isolating,
                     shadowed || inner.is_some(),
                 ) {
                     Some(fx) => {
@@ -1772,7 +1909,14 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                         if let Some((source, _)) = region {
                             scissor_to(canvas, source);
                         }
-                        draw_group_body(canvas, group, plan, scale, masks, inner.as_deref());
+                        draw_group_body(
+                            canvas,
+                            group,
+                            plan,
+                            scale,
+                            masks,
+                            inner.as_ref().map(|(f, op, first)| (f.as_slice(), *op, *first)),
+                        );
                         canvas.end_layer();
                         DEPTH.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
                         if std::env::var("LAYER_LOG").is_ok() {
@@ -1788,7 +1932,14 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                                 scissor_to(canvas, source);
                             }
                         }
-                        draw_group_body(canvas, group, plan, scale, masks, inner.as_deref());
+                        draw_group_body(
+                            canvas,
+                            group,
+                            plan,
+                            scale,
+                            masks,
+                            inner.as_ref().map(|(f, op, first)| (f.as_slice(), *op, *first)),
+                        );
                     }
                 }
                 canvas.restore();
