@@ -2,9 +2,14 @@
 """Build a Chromium/Firefox reference page for one SVG at one pivot zoom.
 
 The page reproduces the femtovg harness framing exactly: a 460x260 canvas,
-pivot zoom about (230,130), then the SVG fitted into a 200x200 box at (130,30)
-with xMinYMin meet - so femtovg's `translate(230,130) scale(s) translate(-230,-130);
-translate(130,30) scale(200/max(w,h))` and the browser land on the same pixels.
+pivot zoom about (230,130), then the SVG's own viewport (its width and height,
+read as usvg reads them) scaled by 200/max(w,h) into a box at (130,30) - so
+femtovg's `translate(230,130) scale(s) translate(-230,-130); translate(130,30)
+scale(200/max(w,h))` over usvg's tree and the browser land on the same pixels.
+The nested svg keeps the file's viewBox and preserveAspectRatio, so a viewBox
+whose aspect differs from the viewport's is letterboxed as usvg letterboxes it;
+sizing the viewBox itself to the box misplaced 23 corpus files (SVGenius icons
+with width="200" height="200" on a 1280x1024 viewBox, ember.svg) by up to 20 px.
 
 Usage: make_ref.py logo.svg 1.3 > ref_logo_1.3.html
 Then:  chrome-headless-shell --headless --disable-gpu --screenshot=chr_logo_1.3.png \
@@ -22,11 +27,37 @@ if "<code" in t and "<svg" in t:
 m = re.search(r"<svg\b([^>]*)>", t)
 attrs, inner = m.group(1), t[m.end():t.rindex("</svg>")]
 vb = re.search(r'viewBox="([^"]*)"', attrs)
-if vb:
-    vb = vb.group(1)
-else:  # no viewBox: use width/height as the user space
-    w = re.search(r'width="([\d.]+)', attrs).group(1); h = re.search(r'height="([\d.]+)', attrs).group(1)
-    vb = f"0 0 {w} {h}"
+vb = vb.group(1) if vb else None
+vbw, vbh = [float(v) for v in vb.replace(",", " ").split()[2:4]] if vb else (None, None)
+
+
+def length(name, fallback):
+    """The root width/height as usvg resolves it (usvg::parser::converter::convert_size):
+    unitless or px as is, a percentage of the viewBox (100 x 100 without one), absolute
+    units at 96 dpi, em/ex at the default 12 px font; None when the attribute is missing."""
+    m = re.search(rf'\b{name}="\s*([\d.]+(?:[eE][-+]?\d+)?)\s*([a-zA-Z%]*)\s*"', attrs)
+    if not m:
+        return fallback
+    n, u = float(m.group(1)), m.group(2).lower()
+    if u == "%":
+        return n / 100 * ((vbw if name == "width" else vbh) if vb else 100.0)
+    return n * {"": 1, "px": 1, "mm": 96 / 25.4, "cm": 96 / 2.54, "in": 96, "pt": 96 / 72, "pc": 16, "em": 12, "ex": 6}.get(u, 1)
+
+
+w = length("width", None)
+h = length("height", None)
+# One missing: usvg derives it from the other through the viewBox aspect; both missing: the viewBox
+# (100 x 100 without one).
+if w is None and h is None:
+    w, h = (vbw, vbh) if vb else (100.0, 100.0)
+elif w is None:
+    w = h * vbw / vbh if vb else 100.0
+elif h is None:
+    h = w * vbh / vbw if vb else 100.0
+if not vb:  # no viewBox: the viewport is the user space
+    vb = f"0 0 {w:g} {h:g}"
+par = re.search(r'preserveAspectRatio="([^"]*)"', attrs)
+par = par.group(1) if par else "xMidYMid meet"
 # Carry root presentation attributes (fill="none" etc.) onto the nested svg -
 # dropping them once produced a 48% false diff.
 keep = " ".join(a for a in re.findall(r'\b(?:fill|stroke|fill-rule|opacity|style)="[^"]*"', attrs))
@@ -34,8 +65,9 @@ import os
 FW = os.environ.get("FRAME_W", "460"); FH = os.environ.get("FRAME_H", "260")
 BOX = os.environ.get("BOX", "200"); BX = os.environ.get("BOX_X", "130"); BY = os.environ.get("BOX_Y", "30")
 PX = float(FW) / 2; PY_ = float(FH) / 2
+fit = float(BOX) / max(w, h)
 print(f'''<!doctype html><body style="margin:0;background:#fff">
 <svg width="{FW}" height="{FH}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<g transform="translate({PX:g},{PY_:g}) scale({scale}) translate({-PX:g},{-PY_:g})"><svg x="{BX}" y="{BY}" width="{BOX}" height="{BOX}" viewBox="{vb}" preserveAspectRatio="xMinYMin meet" {keep}>
+<g transform="translate({PX:g},{PY_:g}) scale({scale}) translate({-PX:g},{-PY_:g})"><svg x="{BX}" y="{BY}" width="{w * fit:.6g}" height="{h * fit:.6g}" viewBox="{vb}" preserveAspectRatio="{par}" {keep}>
 {inner}
 </svg></g></svg>''')

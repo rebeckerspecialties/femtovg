@@ -36,7 +36,11 @@ for the 247 frames of more than 16 passes, the rest being a single slice.
 **Pixels.** All 2,844 frames are bit-identical between master before #369 (`f57a2c3`),
 master, and #368 with slicing on and off. Against Chromium the frames read 0.06 % of
 pixels beyond 20/255 at the median, 0.000 % structural; at 1x 0.11 % against Chromium and
-0.14 % against Firefox, the two browsers 0.002 % apart.
+0.14 % against Firefox, the two browsers 0.002 % apart. (Correction, 2026-10-02 later:
+`make_ref.py` had framed 24 SVGenius icons, `ember.svg` and `fox-with-box-on-cloud.svg` by
+their viewBox where usvg frames by the viewport, so their per-file accuracy in the CSV is
+a framing artefact - up to 69 % px>20 - and the medians here move by about 0.01 points once corrected;
+the corrected numbers are in `firefox-com-check-2026-10-02.md`, section 4.)
 
 **Passes.** A frame's driver memory is its render passes: 2.30 MiB each at the median over
 122 frames of more than 100 passes, whatever the target size. On master 28 to 34 % of

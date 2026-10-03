@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Browser references for the full-corpus run: Chromium 131 for every file at the four framings,
-Firefox at z1. Resumable: existing PNGs are kept. A file make_ref.py cannot frame gets no reference."""
+Firefox at z1 (refs.py firefox framings=z1,z2,z4,hd group=NAME for more). Resumable: existing PNGs
+are kept. A file make_ref.py cannot frame gets no reference."""
 import os, shutil, subprocess, sys, tempfile
 from concurrent.futures import ThreadPoolExecutor
 from PIL import Image
@@ -76,11 +77,21 @@ def firefox(job):
 
 fs = files()
 which = sys.argv[1]
+# Optional: framings=z1,hd and group=NAME (repeatable) narrow a run, e.g. Firefox at every framing for one group.
+framings, groups = None, set()
+for arg in sys.argv[2:]:
+    k, v = arg.split('=', 1)
+    if k == 'framings':
+        framings = v.split(',')
+    elif k == 'group':
+        groups.add(v)
+if groups:
+    fs = [f for f in fs if f['group'] in groups]
 if which == 'chromium':
-    jobs = [(f, fr) for f in fs for fr in FRAMINGS]
+    jobs = [(f, fr) for f in fs for fr in (framings or FRAMINGS)]
     fn, workers = chromium, 6
 else:
-    jobs = [(f, 'z1') for f in fs]
+    jobs = [(f, fr) for f in fs for fr in (framings or ['z1'])]
     fn, workers = firefox, 3
 counts = {}
 with ThreadPoolExecutor(workers) as ex:

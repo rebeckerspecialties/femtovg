@@ -1716,8 +1716,12 @@ fn render_scene(canvas: &mut Canvas<WGPURenderer>, tree: &usvg::Tree, scale: f32
         // An SVG viewport clips its content (overflow is hidden by default). Skip
         // this and anything the artwork pushes past its own edge - most visibly a
         // heavily blurred shape larger than the viewBox - spills into the page.
+        // The viewport is the SVG's own width and height (usvg letterboxes the
+        // viewBox inside it), not the square box: a wide file's overflow below
+        // its bottom edge is hidden in a browser too. make_ref.py sizes its
+        // nested svg the same way.
         if std::env::var("VIEWPORT_CLIP").is_ok() {
-            canvas.scissor(0.0, 0.0, box_size(), box_size());
+            canvas.scissor(0.0, 0.0, size.width() * fit, size.height() * fit);
         }
         canvas.scale(fit, fit);
         *ROOT_DEVICE.lock().unwrap() = canvas.transform();
@@ -2086,6 +2090,16 @@ fn main() {
         .and_then(|v| v.parse::<usize>().ok())
     {
         canvas.set_transient_image_budget(mb << 20);
+    }
+    // FILTER_WORK_GSAMPLES: the filter work budget in Gi samples (library
+    // default 4). A layer whose blur passes would exceed it keeps its content
+    // but drops the filter, which no LAYER_STATS counter shows; raising the
+    // budget tells that case apart from a kernel difference.
+    if let Some(gs) = std::env::var("FILTER_WORK_GSAMPLES")
+        .ok()
+        .and_then(|v| v.parse::<u64>().ok())
+    {
+        canvas.set_filter_work_budget(gs << 30);
     }
 
     let tree = {
