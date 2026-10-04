@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- Fixed the WGPU backend drawing a frame from a later frame's vertices and
+  uniforms when two frames were flushed before either was submitted, as when
+  several targets are rendered and their command buffers submitted together:
+  the frame's uploads went to buffers shared across frames, and wgpu runs the
+  queued writes at the next submit ahead of every command buffer in it. Each
+  flush now uploads into buffers of its own.
 - Added `ImageFilter::Morphology` and `ImageFilter::Offset`, the SVG
   `feMorphology` and `feOffset` primitives: a dilation grows the opaque
   regions of an image by a whole-pixel radius per axis and an erosion

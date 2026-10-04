@@ -65,27 +65,6 @@ const UNIFORMARRAY_SIZE: usize = 14;
 const UNIFORM_BYTES: u64 = (UNIFORMARRAY_SIZE * 4 * 4) as u64;
 // A concave fill and a stencil stroke record two sets of params, every other command one.
 const UNIFORM_SLOTS_PER_COMMAND: u64 = 2;
-const MIN_UNIFORM_SLOTS: u64 = 64;
-const MIN_VERTEX_BYTES: u64 = 4096;
-
-const UNIFORM_BUFFER_LABEL: &str = "Fragment Uniform Buffer";
-const UNIFORM_BUFFER_USAGE: wgpu::BufferUsages = wgpu::BufferUsages::UNIFORM.union(wgpu::BufferUsages::COPY_DST);
-const VERTEX_BUFFER_LABEL: &str = "Main Vertex Buffer";
-const VERTEX_BUFFER_USAGE: wgpu::BufferUsages = wgpu::BufferUsages::VERTEX.union(wgpu::BufferUsages::COPY_DST);
-
-/// Replaces `buffer` with a larger one when `needed` bytes no longer fit.
-fn grow_buffer(device: &wgpu::Device, buffer: &mut wgpu::Buffer, needed: u64, label: &str, usage: wgpu::BufferUsages) {
-    if buffer.size() >= needed {
-        return;
-    }
-
-    *buffer = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some(label),
-        size: needed.next_power_of_two(),
-        usage,
-        mapped_at_creation: false,
-    });
-}
 
 #[derive(Clone, PartialEq)]
 pub struct UniformArray([f32; UNIFORMARRAY_SIZE * 4]);
@@ -258,6 +237,9 @@ struct CachedPipeline {
 }
 
 /// WGPU renderer.
+///
+/// Each flush uploads its frame into buffers of its own, so the command
+/// buffers of several flushes can wait and be submitted together.
 #[derive(Debug)]
 pub struct WGPURenderer {
     device: wgpu::Device,
@@ -269,9 +251,7 @@ pub struct WGPURenderer {
 
     empty_texture_view: wgpu::TextureView,
     sampler_cache: SamplerCache,
-    uniform_buffer: wgpu::Buffer,
     uniform_stride: u64,
-    vertex_buffer: wgpu::Buffer,
     stencil_buffer: Option<wgpu::Texture>,
     stencil_buffer_for_textures: HashMap<wgpu::Texture, wgpu::Texture>,
     bind_group_layout: wgpu::BindGroupLayout,
@@ -379,19 +359,6 @@ impl WGPURenderer {
         let alignment = u64::from(device.limits().min_uniform_buffer_offset_alignment).max(1);
         let uniform_stride = UNIFORM_BYTES.div_ceil(alignment) * alignment;
 
-        let uniform_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some(UNIFORM_BUFFER_LABEL),
-            size: MIN_UNIFORM_SLOTS * uniform_stride,
-            usage: UNIFORM_BUFFER_USAGE,
-            mapped_at_creation: false,
-        });
-        let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some(VERTEX_BUFFER_LABEL),
-            size: MIN_VERTEX_BYTES,
-            usage: VERTEX_BUFFER_USAGE,
-            mapped_at_creation: false,
-        });
-
         let empty_texture = device.create_texture(&wgpu::TextureDescriptor {
             label: Some("empty"),
             view_formats: &[],
@@ -487,9 +454,7 @@ impl WGPURenderer {
 
             empty_texture_view: empty_texture.create_view(&Default::default()),
             sampler_cache: Rc::new(RefCell::new(HashMap::new())),
-            uniform_buffer,
             uniform_stride,
-            vertex_buffer,
             stencil_buffer: None,
             stencil_buffer_for_textures: HashMap::new(),
             bind_group_layout,
@@ -520,15 +485,21 @@ impl Renderer for WGPURenderer {
             return None;
         }
 
-        // The bind groups recorded below hold this buffer, so it cannot grow mid-frame.
+        // The frame's uploads go to buffers of its own, which its command buffer
+        // keeps alive. A buffer shared across frames would be overwritten by a
+        // flush ahead of the previous command buffer's submit: write_buffer runs
+        // at the next submit, ahead of every command buffer in it, so the
+        // earlier frame would draw from the later frame's data.
+        //
+        // The bind groups recorded below hold the uniform buffer, so it is sized
+        // for the whole frame up front.
         let needed_slots = commands.len() as u64 * UNIFORM_SLOTS_PER_COMMAND;
-        grow_buffer(
-            &self.device,
-            &mut self.uniform_buffer,
-            needed_slots * self.uniform_stride,
-            UNIFORM_BUFFER_LABEL,
-            UNIFORM_BUFFER_USAGE,
-        );
+        let uniform_buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("Fragment Uniform Buffer"),
+            size: needed_slots * self.uniform_stride,
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
 
         let output = output.into();
 
@@ -537,20 +508,11 @@ impl Renderer for WGPURenderer {
 
         let texture_view = output.view.clone();
 
-        let vertex_bytes: &[u8] = bytemuck::cast_slice(verts);
-        let vertex_needed =
-            (vertex_bytes.len() as u64).div_ceil(wgpu::COPY_BUFFER_ALIGNMENT) * wgpu::COPY_BUFFER_ALIGNMENT;
-        grow_buffer(
-            &self.device,
-            &mut self.vertex_buffer,
-            vertex_needed,
-            VERTEX_BUFFER_LABEL,
-            VERTEX_BUFFER_USAGE,
-        );
-        if !vertex_bytes.is_empty() {
-            self.queue.write_buffer(&self.vertex_buffer, 0, vertex_bytes);
-        }
-        let vertex_buffer = self.vertex_buffer.clone();
+        let vertex_buffer = self.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            label: Some("Main Vertex Buffer"),
+            contents: bytemuck::cast_slice(verts),
+            usage: wgpu::BufferUsages::VERTEX,
+        });
 
         if let Some(stencil_buffer) = &self.stencil_buffer {
             if stencil_buffer.width() != output.width || stencil_buffer.height() != output.height {
@@ -600,7 +562,7 @@ impl Renderer for WGPURenderer {
             self.device.clone(),
             self.empty_texture_view.clone(),
             self.sampler_cache.clone(),
-            self.uniform_buffer.clone(),
+            uniform_buffer.clone(),
             self.uniform_stride,
             self.shader_module.clone(),
             self.bind_group_layout.clone(),
@@ -744,11 +706,11 @@ impl Renderer for WGPURenderer {
         // write_buffer is ordered ahead of the caller's submit.
         let uniform_staging = &pipeline_and_bindgroup_mapper.uniform_staging;
         debug_assert!(
-            uniform_staging.len() as u64 <= self.uniform_buffer.size(),
+            uniform_staging.len() as u64 <= uniform_buffer.size(),
             "a command recorded more than UNIFORM_SLOTS_PER_COMMAND uniform slots"
         );
         if !uniform_staging.is_empty() {
-            self.queue.write_buffer(&self.uniform_buffer, 0, uniform_staging);
+            self.queue.write_buffer(&uniform_buffer, 0, uniform_staging);
         }
 
         let command_buffer = encoder.finish();
