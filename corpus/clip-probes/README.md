@@ -23,3 +23,13 @@ both rasterizing in software.
   reads .50 and .85 reads .75. A plain rect fill is exact.
 - A clip drawn as a path with curves reads as the square of its coverage in Chromium (.25 for .50, .57 for .75).
   Firefox reads that way for every clip on the letterboxed frame, and draws nothing in a column covered .495.
+
+## Against the exact area
+
+The circle and ellipse clip-path reftests (`corpus/wpt-clip-path-reftests`) at four framings against each pixel's
+share inside the ellipse, from 16 x 16 samples (`harness/corpus_run/ideal_clip.py`):
+
+| | femtovg, stencil clips | femtovg, shape clips | Chromium | Firefox |
+|---|---:|---:|---:|---:|
+| largest error, of 255 | 165 | 13 | 70 | 73 |
+| pixels beyond 20/255, worst frame | 0.48 % | 0 | 0.27 % | 0.31 % |
