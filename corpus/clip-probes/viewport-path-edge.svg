@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="173" height="131" viewBox="0 0 173 131">
+  <!-- No clip: a path that is no rect and ends on the viewport's right and bottom edges -->
+  <path d="M40 20L173 40V131H60Z" fill="green"/>
+</svg>

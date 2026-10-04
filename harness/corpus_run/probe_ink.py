@@ -16,6 +16,12 @@ refs = opts.get('refs', 'chr,chg,ff').split(',')
 framing = opts.get('framing', 'z1')
 names = {'chr': 'Chromium software', 'chg': 'Chromium GPU', 'ff': 'Firefox'}
 ROUND = (4 - math.pi) * 12 * 12  # what four corners of radius 12 leave out
+
+
+def polygon(*points):
+    return abs(sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(points, points[1:] + points[:1]))) / 2
+
+
 # probe -> (exact area in its own units, the side of its viewBox that fits the 200 px box)
 PROBES = {
     'rect-fill-fractional': (50.5 * 30.25, 200),
@@ -25,10 +31,12 @@ PROBES = {
     'rotated-clip-coincident': (80.5 * 60.25, 200),
     'rect-clip-path-edge': (80.5 * 60.25, 200),
     'rect-clip-rect-inside': (40 * 20, 200),
+    'rect-clip-path-inside': (polygon((20.3, 30.6), (80, 30.6), (90, 50), (80, 80), (20.3, 80)), 200),
     'rounded-clip-rect-inside': (40 * 28.4, 200),
     'nested-twin-clips': (50.5 * 30.25, 200),
     'nested-twin-rounded-clips': (80.5 * 60.25 - ROUND, 200),
     'viewport-fill': (173 * 131, 173),
+    'viewport-path-edge': (polygon((40, 20), (173, 40), (173, 131), (60, 131)), 173),
     'viewport-overflow': (173 * 131, 173),
     'viewport-clip-twin': (173 * 131, 173),
     'viewport-clip-twin-fill': (173 * 131, 173),

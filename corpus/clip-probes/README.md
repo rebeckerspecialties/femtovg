@@ -21,10 +21,12 @@ multiplies two coverages on a shared edge is short by about a sixth of a pixel p
 | `rotated-clip-coincident` | 4850 | -34.1 | -46.6 | -36.1 | -46.7 | -50.1 |
 | `rect-clip-path-edge` | 4850 | -8.2 | -32.1 | -32.7 | -31.7 | -32.9 |
 | `rect-clip-rect-inside` | 800 | -15.7 | +0.6 | -11.9 | +0.6 | -12.0 |
+| `rect-clip-path-inside` | 3196 | -23.9 | +0.1 | -18.8 | +0.1 | -19.0 |
 | `rounded-clip-rect-inside` | 1136 | +0.3 | +0.3 | -5.8 | +0.3 | -5.9 |
 | `nested-twin-clips` | 1528 | +2.4 | +0.4 | -0.0 | +0.4 | -33.3 |
 | `nested-twin-rounded-clips` | 4727 | +2.5 | +0.1 | -52.5 | +0.7 | -53.3 |
 | `viewport-fill` | 30289 | -49.0 | -49.0 | -44.3 | +0.4 | -89.0 |
+| `viewport-path-edge` | 16470 | -31.7 | -31.7 | -16.4 | +0.7 | -49.9 |
 | `viewport-overflow` | 30289 | +0.4 | +0.4 | +11.4 | +0.4 | -89.0 |
 | `viewport-clip-twin` | 30289 | -89.0 | +0.4 | +10.8 | +0.4 | -89.0 |
 | `viewport-clip-twin-fill` | 30289 | -89.0 | +0.4 | -44.9 | +0.4 | -89.0 |
@@ -41,10 +43,12 @@ about - next to that pixel's share inside (`harness/corpus_run/probe_edges.py`).
 | `rect-clip-coincident` | z1 | .70 .80 .40 .85 | .70 .80 0 .85 | .70 .80 .40 .85 | .49 .64 .20 .64 | .70 .80 .40 .85 | .49 .64 .20 .64 |
 | `rounded-clip-coincident` | z1 | .70 .80 .40 .85 | .70 .80 0 .85 | .49 .64 .16 .73 | .49 .64 .25 .57 | .49 .64 .16 .73 | .49 .64 .25 .57 |
 | `rect-clip-rect-inside` | z1 | .70 .40 | .70 0 | .70 .40 | .49 .20 | .70 .40 | .49 .20 |
+| `rect-clip-path-inside` | z1 | .70 .40 | .70 0 | .70 .40 | .49 .25 | .70 .40 | .48 .25 |
 | `rounded-clip-rect-inside` | z1 | .70 | .70 | .70 | .49 | .70 | .49 |
 | `nested-twin-clips` | z1 | .70 .80 .40 .85 | 1 1 0 1 | .70 .80 .40 .85 | .70 .80 .50 .75 | .70 .80 .40 .85 | .49 .64 .25 .56 |
 | `nested-twin-rounded-clips` | z1 | .70 .80 .40 .85 | 1 1 0 1 | .70 .80 .40 .85 | .49 .64 .25 .57 | .70 .80 .40 .85 | .49 .64 .25 .57 |
 | `viewport-fill` | z1 | .45 | .20 | .20 | .22 | .45 | 0 |
+| `viewport-path-edge` | z1 | .45 | .20 | .20 | .25 | .45 | 0 |
 | `viewport-clip-twin` | z1 | .45 | 0 | .45 | .50 | .45 | 0 |
 | `viewport-clip-twin-fill` | z1 | .45 | 0 | .45 | .22 | .45 | 0 |
 | `rect-clip-half-pixel` | z1 | .75 .75 | 1 .99 | .75 .75 | .75 .75 | .75 .75 | .57 .56 |
@@ -61,12 +65,15 @@ about - next to that pixel's share inside (`harness/corpus_run/probe_edges.py`).
   drawn as a path with curves reads as the square of its coverage in Chromium. Firefox draws nothing in the row the
   viewport's edge crosses.
 - Chromium's GPU rasterizer covers an edge once where a draw stays inside its clip (`rect-clip-rect-inside`,
-  `rounded-clip-rect-inside`), where an upright rect clip cuts an upright rect (`rect-clip-coincident`), and where
-  clips nest or lie on the viewport (`nested-twin-*`, `viewport-clip-twin*`). It multiplies where a rounded or a
-  turned clip meets its twin and where a path that is no rect ends on a rect clip's edge.
-- The shape clip does what the GPU rasterizer does in each of these: 13 of the 14 probes are within a pixel of its
-  ink (3 with stencil clips). The one left, `viewport-fill`, has no clip: the harness cuts to the viewport with a
-  scissor, whose coverage multiplies the fill's own (.20 for .45) on master as here.
+  `rect-clip-path-inside`, `rounded-clip-rect-inside`), where an upright rect clip cuts an upright rect
+  (`rect-clip-coincident`), and where clips nest or lie on the viewport (`nested-twin-*`, `viewport-clip-twin*`). It
+  multiplies where a rounded or a turned clip meets its twin and where a path that is no rect ends on a rect clip's
+  edge and reaches past it elsewhere.
+- The shape clip does what the GPU rasterizer does in each of these: 14 of the 16 probes are within a pixel of its
+  ink (3 with stencil clips). The two left, `viewport-fill` and `viewport-path-edge`, have no clip: the harness cuts
+  to the viewport with a scissor, whose coverage multiplies the draw's own (.20 for .45) on master as here. Leaving
+  the scissor off a draw it holds matches the GPU rasterizer on both, but over the corpus it moves 17 frames away
+  from that rasterizer and 14 toward it, which at higher zooms multiplies on a viewport's edge too.
 
 ## Against the exact area
 
