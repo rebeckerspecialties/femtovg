@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <title>A shadowed group at opacity .5: the opacity applies to the filter result, so the shadow under an opaque shape stays hidden</title>
+  <defs>
+    <filter id="s" x="-30%" y="-30%" width="160%" height="170%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="15"/>
+      <feOffset dx="0" dy="17" result="o"/>
+      <feColorMatrix in="o" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0"/>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="1024" height="1024" fill="#808080"/>
+  <g filter="url(#s)" opacity=".5"><rect x="100" y="100" width="300" height="300" fill="#f0e0c0"/><circle cx="700" cy="300" r="180" fill="#2050a0"/><rect x="100" y="560" width="820" height="200" fill="#ffffff" fill-opacity=".1"/></g>
+</svg>

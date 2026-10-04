@@ -218,6 +218,9 @@ fn group_effects(
     // glow, a chain the source is merged over) or by the shadow state (a
     // recognized drop shadow) - so this layer carries none of its passes.
     chain_elsewhere: bool,
+    // The layer receives a linearRGB result - a shadow merged there
+    // (`ShadowMerge`) - and converts it back to sRGB first.
+    result_linear: bool,
 ) -> Option<LayerEffects> {
     let opacity = if std::env::var("NO_OPACITY").is_ok() {
         1.0
@@ -233,6 +236,9 @@ fn group_effects(
     if chain_elsewhere {
         blurs.clear();
         linear = false;
+    }
+    if result_linear {
+        linear = true;
     }
     #[cfg(harness_blend)]
     if let Some(BlurBlend {
@@ -791,24 +797,46 @@ struct ShadowChain {
     sigma: f32,
     color: Color,
     merged: bool,
+    /// The merge - `feMerge`, or `feDropShadow`'s own composite of the
+    /// shadow and its input - runs in linearRGB (color-interpolation-filters'
+    /// default): the shadow's colour there, a flood colour converted and an
+    /// `feColorMatrix` constant as its primitive computes it.
+    linear_color: Option<Color>,
+}
+
+/// An sRGB-encoded colour's linearRGB value, alpha kept.
+fn linear_rgb(c: Color) -> Color {
+    let channel = |x: f32| {
+        if x <= 0.04045 {
+            x / 12.92
+        } else {
+            ((x + 0.055) / 1.055).powf(2.4)
+        }
+    };
+    Color::rgbaf(channel(c.r), channel(c.g), channel(c.b), c.a)
 }
 
 fn drop_shadow(group: &usvg::Group) -> Option<ShadowChain> {
+    use usvg::filter::ColorInterpolation;
     if std::env::var("NO_SHADOW").is_ok() {
         return None;
     }
     let [f] = group.filters() else { return None };
     let shorthand = f.primitives().iter().find_map(|p| match p.kind() {
-        usvg::filter::Kind::DropShadow(ds) if matches!(ds.input(), usvg::filter::Input::SourceGraphic) => Some(ds),
+        usvg::filter::Kind::DropShadow(ds) if matches!(ds.input(), usvg::filter::Input::SourceGraphic) => {
+            Some((ds, p.color_interpolation() == ColorInterpolation::LinearRGB))
+        }
         _ => None,
     });
-    if let Some(ds) = shorthand {
+    if let Some((ds, linear)) = shorthand {
+        let color = flood_color(ds.color(), ds.opacity());
         return Some(ShadowChain {
             dx: ds.dx(),
             dy: ds.dy(),
             sigma: ds.std_dev_x().get().max(ds.std_dev_y().get()),
-            color: flood_color(ds.color(), ds.opacity()),
+            color,
             merged: true,
+            linear_color: linear.then(|| linear_rgb(color)),
         });
     }
     shadow_chain(f.primitives())
@@ -844,7 +872,7 @@ fn flood_color(c: usvg::Color, opacity: usvg::Opacity) -> Color {
 /// the blur (`feOffset in="SourceAlpha"`, then its blur): a translation and
 /// a blur commute, so it is the same shadow.
 fn shadow_chain(prims: &[usvg::filter::Primitive]) -> Option<ShadowChain> {
-    use usvg::filter::{CompositeOperator, Input, Kind};
+    use usvg::filter::{ColorInterpolation, CompositeOperator, Input, Kind};
     let by_result = |input: &Input| match input {
         Input::Reference(name) => prims.iter().find(|p| p.result() == name),
         _ => None,
@@ -862,11 +890,16 @@ fn shadow_chain(prims: &[usvg::filter::Primitive]) -> Option<ShadowChain> {
         }
         _ => (prims, false),
     };
+    let merge_linear = merged && prims.last()?.color_interpolation() == ColorInterpolation::LinearRGB;
     // Peel the offset and the colouring off the end, each at most once,
     // down to the blur; `accounted` counts the primitives they are.
     let mut cursor = chain.last()?;
     let mut shift: Option<(f32, f32)> = None;
     let mut color: Option<Color> = None;
+    // The colouring in linearRGB: a flood colour converted from sRGB, a
+    // matrix's constants as they come out of it when the matrix itself
+    // runs in linearRGB, converted when it runs in sRGB.
+    let mut linear: Option<Color> = None;
     let mut accounted = 1;
     loop {
         match cursor.kind() {
@@ -879,12 +912,20 @@ fn shadow_chain(prims: &[usvg::filter::Primitive]) -> Option<ShadowChain> {
                 let Kind::Flood(flood) = by_result(c.input1())?.kind() else {
                     return None;
                 };
-                color = Some(flood_color(flood.color(), flood.opacity()));
+                let flood = flood_color(flood.color(), flood.opacity());
+                color = Some(flood);
+                linear = Some(linear_rgb(flood));
                 cursor = by_result(c.input2())?;
                 accounted += 2;
             }
             Kind::ColorMatrix(cm) if color.is_none() => {
-                color = Some(matrix_shadow_color(cm.kind())?);
+                let constants = matrix_shadow_color(cm.kind())?;
+                color = Some(constants);
+                linear = Some(if cursor.color_interpolation() == ColorInterpolation::LinearRGB {
+                    matrix_constants(cm.kind())?
+                } else {
+                    linear_rgb(constants)
+                });
                 cursor = by_result(cm.input())?;
                 accounted += 1;
             }
@@ -910,6 +951,7 @@ fn shadow_chain(prims: &[usvg::filter::Primitive]) -> Option<ShadowChain> {
                     sigma: blur.std_dev_x().get().max(blur.std_dev_y().get()),
                     color: color.unwrap_or(Color::rgb(0, 0, 0)),
                     merged,
+                    linear_color: merge_linear.then(|| linear.unwrap_or(Color::rgb(0, 0, 0))),
                 });
             }
             _ => return None,
@@ -934,6 +976,59 @@ fn matrix_shadow_color(kind: &usvg::filter::ColorMatrixKind) -> Option<Color> {
     let mut color = Color::rgb(channel(m[4]), channel(m[9]), channel(m[14]));
     color.set_alphaf(m[18].clamp(0.0, 1.0));
     Some(color)
+}
+
+/// A colouring matrix's constants (see `matrix_shadow_color`) as they come
+/// out of it, unrounded: the colour in the matrix's own colour space.
+fn matrix_constants(kind: &usvg::filter::ColorMatrixKind) -> Option<Color> {
+    let usvg::filter::ColorMatrixKind::Matrix(v) = kind else {
+        return None;
+    };
+    let unit = |i: usize| v.get(i).map(|c| c.clamp(0.0, 1.0));
+    Some(Color::rgbaf(unit(4)?, unit(9)?, unit(14)?, unit(18)?))
+}
+
+/// How a merged shadow (rule 4) composites with its group. The group's
+/// layer receives the merge - the shadow cast by an inner layer that holds
+/// the source - and applies the group's opacity, mask and blend to that
+/// result, which is what SVG applies them to: a filter's output. When the
+/// merge runs in linearRGB, the default, the inner layer converts the
+/// source into linearRGB, the shadow is cast in the merge's colour, and the
+/// group's layer converts the merged result back to sRGB. Both browsers do
+/// exactly this, through 8-bit linear intermediates: semi-transparent
+/// content over the shadow comes out brighter than an sRGB composite of the
+/// two (the skin-texture noise beside gpt-5-6-sol-pro's face, alpha 0.05
+/// over its own shadow, 40 % brighter at 4x), and opaque darks band (sRGB
+/// 9 to 17 read back as 13 in Chromium and in this mapping).
+/// `SRGB_SHADOW_MERGE=1` keeps the layers and merges in sRGB;
+/// `SINGLE_SHADOW_LAYER=1` restores the mapping before 2026-10-04, the
+/// shadow state around the group's own layer, which composites in sRGB and
+/// casts the shadow from the masked, opacity-scaled group.
+struct ShadowMerge {
+    /// The shadow's colour in the merge's colour space.
+    color: Color,
+    /// The inner layer's passes: the source into linearRGB, or none.
+    to_merge_space: Vec<ImageFilter>,
+}
+
+fn shadow_merge(shadow: &ShadowChain) -> Option<ShadowMerge> {
+    if !shadow.merged || std::env::var("SINGLE_SHADOW_LAYER").is_ok() {
+        return None;
+    }
+    let linear = shadow
+        .linear_color
+        .filter(|_| std::env::var("SRGB_SHADOW_MERGE").is_err())
+        .zip(color_space_pass(true));
+    Some(match linear {
+        Some((color, to_linear)) => ShadowMerge {
+            color,
+            to_merge_space: vec![to_linear],
+        },
+        None => ShadowMerge {
+            color: shadow.color,
+            to_merge_space: Vec::new(),
+        },
+    })
 }
 
 /// The group's shadow alone: its subtree in the flood colour, shifted by
@@ -1855,21 +1950,29 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                 let clipped = push_clip(canvas, group);
                 // A shadow set before begin_layer is cast once by the layer's
                 // result - the Canvas 2D layer rule, and what feDropShadow on
-                // a group means - so the group gets a layer and the shadow
-                // state around it.
+                // a group means - so the group gets a layer. The shadow state
+                // goes around the inner layer that holds the source when the
+                // merge has a layer of its own (`ShadowMerge`), else around
+                // the group's.
                 canvas.save();
                 let region = filter_region(group);
                 if let Some((_, result)) = region {
                     scissor_to(canvas, result);
                 }
                 let shadowed = shadow.is_some();
-                if let Some(s) = &shadow {
-                    let space = FilterSpace::of(group, scale);
-                    let (dx, dy) = space.vector(s.dx, s.dy);
-                    canvas.set_shadow_color(s.color);
-                    canvas.set_shadow_offset(dx, dy);
-                    // Canvas shadowBlur is two sigma; usvg's deviation is in user units.
-                    canvas.set_shadow_blur(2.0 * space.shadow_sigma(s.sigma));
+                let merge = shadow.as_ref().and_then(shadow_merge);
+                let cast_shadow = |canvas: &mut Canvas<WGPURenderer>, color: Color| {
+                    if let Some(s) = &shadow {
+                        let space = FilterSpace::of(group, scale);
+                        let (dx, dy) = space.vector(s.dx, s.dy);
+                        canvas.set_shadow_color(color);
+                        canvas.set_shadow_offset(dx, dy);
+                        // Canvas shadowBlur is two sigma; usvg's deviation is in user units.
+                        canvas.set_shadow_blur(2.0 * space.shadow_sigma(s.sigma));
+                    }
+                };
+                if let (Some(s), None) = (&shadow, &merge) {
+                    cast_shadow(canvas, s.color);
                 }
                 let stencil = plan.as_ref().is_some_and(|p| p.stencil);
                 // A glow blurs in an inner layer and redraws sharp on top, as
@@ -1900,6 +2003,7 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                     masks,
                     shadowed || stencil || isolating,
                     shadowed || inner.is_some(),
+                    merge.as_ref().is_some_and(|m| !m.to_merge_space.is_empty()),
                 ) {
                     Some(fx) => {
                         // Size the layer to the group's own layer bounding box (usvg
@@ -1918,6 +2022,20 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                             PASS_THROUGH.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                             log_pass_through(canvas, group, "layer");
                         }
+                        // The merge: the source in an inner layer that casts the
+                        // shadow into the group's, which holds their composite in
+                        // the merge's colour space. Its store takes in the shadow's
+                        // reach past the group's, as the single layer's did.
+                        if let Some(m) = &merge {
+                            cast_shadow(canvas, m.color);
+                            LAYERS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                            log_layer(canvas, group, scale, "merge");
+                            DEPTH.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                            if !canvas.begin_layer(&LayerEffects::new().with_filters(&m.to_merge_space)) {
+                                PASS_THROUGH.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                                log_pass_through(canvas, group, "merge");
+                            }
+                        }
                         if let Some((source, _)) = region {
                             scissor_to(canvas, source);
                         }
@@ -1929,6 +2047,13 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                             masks,
                             inner.as_ref().map(|(f, op, first)| (f.as_slice(), *op, *first)),
                         );
+                        if merge.is_some() {
+                            canvas.end_layer();
+                            DEPTH.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
+                            if std::env::var("LAYER_LOG").is_ok() {
+                                eprintln!("END depth={}", DEPTH.load(std::sync::atomic::Ordering::Relaxed));
+                            }
+                        }
                         canvas.end_layer();
                         DEPTH.fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
                         if std::env::var("LAYER_LOG").is_ok() {

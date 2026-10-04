@@ -262,6 +262,30 @@ turbulence alone to 0.087% (claude-opus-5 3.65 -> 0.01, qwen3-8-max 0.46 ->
 0.04). Evidence: `busey-turbulence.png` (full frames with diff overlays) and
 `busey-turbulence-detail.png` (3x crops against both browsers).
 
+**4a. The shadow's merge runs in the filter's colour space (2026-10-04).** A
+shadow filter without `color-interpolation-filters` runs in linearRGB, its
+`feMerge` (or `feDropShadow`'s own composite) included. Both browsers
+convert the group to linearRGB, composite it over the shadow there, and
+convert the result back, through 8-bit intermediates. The shadow state
+around the group's layer composited in sRGB instead. The two agree where the
+content is opaque or absent. Over the shadow, semi-transparent content comes
+out brighter in linearRGB. That made gpt-5-6-sol-pro's skin-texture noise beside the face
+(alpha 0.05) a fifth weaker than Chromium's at 4x: 6.03 against 7.09 in
+Chromium 141 and 9.67 in Firefox 157. The round trip also bands opaque darks
+(sRGB 9 to 17 come back as 13 in Chromium). The group's layer now
+holds the merge: an inner layer converts the source with `SrgbToLinearRgb`
+and casts the shadow, in the merge's colour, into the group's layer, which
+converts back with `LinearRgbToSrgb`. The group's layer also takes the opacity,
+mask and blend, which SVG applies to the filter's output. Before, the shadow was cast from the
+opacity-scaled group and showed through a translucent one. Now the noise
+measures 8.45, between the browsers. The 13 feTurbulence files at 4x go from
+3.57 % to 2.82 % px > 8 against Chromium and from 2.80 % to 1.71 % against
+Firefox. `SRGB_SHADOW_MERGE=1` merges in sRGB with the same layers, and
+`SINGLE_SHADOW_LAYER=1` restores the previous mapping bit for bit. The proof
+(isolation, per-pixel models, the browsers forced to sRGB), the corpus A/B
+and the residuals are in `shadow-merge-2026-10-04.md`, the tools in
+`shadow_merge/`, the probes in `corpus/shadow-merge/`.
+
 ## Invalid filter references (rule 5, 2026-09-16)
 
 **5. A `filter` that references anything but a `<filter>` is no filter at
