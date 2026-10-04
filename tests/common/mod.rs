@@ -125,12 +125,24 @@ pub fn render_rgba(
     canvas.set_size(width, height, 1.0);
     canvas.clear_rect(0, 0, width, height, clear);
     draw(&mut canvas);
-    // The render and the copy that reads it back go to the queue together, so
-    // the pixels cannot depend on the ordering of two separate submissions.
     let commands = canvas
         .flush_to_output(&target)
         .expect("flush_to_output produced no command buffer for a frame with draws");
+    // The render and the copy that reads it back go to the queue together, so
+    // the pixels cannot depend on the ordering of two separate submissions.
+    read_rgba(device, queue, &target, [commands])
+}
 
+/// Submits `commands` and then a copy of `texture` (RGBA8, created with
+/// `COPY_SRC`) into a readback buffer, together, and returns the RGBA8
+/// pixels, rows tightly packed.
+pub fn read_rgba(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    texture: &wgpu::Texture,
+    commands: impl IntoIterator<Item = wgpu::CommandBuffer>,
+) -> Vec<u8> {
+    let (width, height) = (texture.width(), texture.height());
     let unpadded = width * 4;
     let padded = unpadded.div_ceil(wgpu::COPY_BYTES_PER_ROW_ALIGNMENT) * wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
     let readback = device.create_buffer(&wgpu::BufferDescriptor {
@@ -142,7 +154,7 @@ pub fn render_rgba(
     let mut enc = device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
     enc.copy_texture_to_buffer(
         wgpu::TexelCopyTextureInfo {
-            texture: &target,
+            texture,
             mip_level: 0,
             origin: wgpu::Origin3d::ZERO,
             aspect: wgpu::TextureAspect::All,
@@ -161,7 +173,7 @@ pub fn render_rgba(
             depth_or_array_layers: 1,
         },
     );
-    queue.submit([commands, enc.finish()]);
+    queue.submit(commands.into_iter().chain([enc.finish()]));
     let slice = readback.slice(..);
     let (sender, receiver) = std::sync::mpsc::channel();
     slice.map_async(wgpu::MapMode::Read, move |result| {
