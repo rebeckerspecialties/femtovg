@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="221" viewBox="0 0 361 400">
+  <!-- The same frame clipped by a rect: its sides fall half way across a pixel column at twice the fit -->
+  <clipPath id="c"><rect x="0" y="0" width="361" height="400"/></clipPath>
+  <g clip-path="url(#c)"><rect x="-100" y="-100" width="600" height="600" fill="green"/></g>
+</svg>

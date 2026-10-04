@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="221" viewBox="0 0 361 400">
+  <!-- A rounded rectangle drawn as a cubic path clips a fill that extends past it. Letterboxed in its viewport, the
+       clip's straight sides fall half way across a pixel column at twice the fit (30.495 and 391.495 in a 460 px
+       frame): how much of that column does a renderer draw? The frame of firefox.com's Kit_Keyhole illustrations. -->
+  <clipPath id="c"><path d="M0 48C0 21.4903 21.4903 0 48 0H313C339.51 0 361 21.4903 361 48V352C361 378.51 339.51 400 313 400H48C21.4903 400 0 378.51 0 352V48Z"/></clipPath>
+  <g clip-path="url(#c)"><rect x="-100" y="-100" width="600" height="600" fill="green"/></g>
+</svg>

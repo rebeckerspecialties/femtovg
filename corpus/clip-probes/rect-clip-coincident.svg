@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <!-- The same clip over a fill with the clip's own outline: the design-tool frame, whose content ends where its clip does -->
+  <clipPath id="c"><rect x="20.3" y="30.6" width="50.5" height="30.25"/></clipPath>
+  <g clip-path="url(#c)"><rect x="20.3" y="30.6" width="50.5" height="30.25" fill="green"/></g>
+</svg>
