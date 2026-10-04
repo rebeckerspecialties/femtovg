@@ -205,18 +205,44 @@ impl GlTexture {
 
         src.check_update(&self.info, x, y)?;
 
+        // An `ImgRef` may be a view into a wider buffer (`sub_image`), whose
+        // rows are `stride` pixels apart rather than `width`. GL reads rows
+        // that far apart when told the row length; ES 2.0 has no
+        // UNPACK_ROW_LENGTH, so there a strided view is packed first.
+        let (bytes, format, bytes_per_pixel, stride): (&[u8], u32, usize, usize) = match src {
+            ImageSource::Gray(data) => (
+                unsafe { data.buf().align_to().1 },
+                if opengles_2_0 { glow::LUMINANCE } else { glow::RED },
+                1,
+                data.stride(),
+            ),
+            ImageSource::Rgb(data) => (unsafe { data.buf().align_to().1 }, glow::RGB, 3, data.stride()),
+            ImageSource::Rgba(data) => (unsafe { data.buf().align_to().1 }, glow::RGBA, 4, data.stride()),
+            #[cfg(wasm_unknown)]
+            _ => (&[], glow::RGBA, 4, size.width),
+        };
+        let packed: Vec<u8>;
+        let (bytes, row_length) = if opengles_2_0 && stride != size.width {
+            packed = bytes
+                .chunks(stride * bytes_per_pixel)
+                .flat_map(|row| &row[..size.width * bytes_per_pixel])
+                .copied()
+                .collect();
+            (packed.as_slice(), size.width)
+        } else {
+            (bytes, stride)
+        };
+
         unsafe {
             context.bind_texture(glow::TEXTURE_2D, Some(self.id));
             context.pixel_store_i32(glow::UNPACK_ALIGNMENT, 1);
             if !opengles_2_0 {
-                context.pixel_store_i32(glow::UNPACK_ROW_LENGTH, size.width as i32);
+                context.pixel_store_i32(glow::UNPACK_ROW_LENGTH, row_length as i32);
             }
         }
 
         match src {
-            ImageSource::Gray(data) => unsafe {
-                let format = if opengles_2_0 { glow::LUMINANCE } else { glow::RED };
-
+            ImageSource::Gray(_) | ImageSource::Rgb(_) | ImageSource::Rgba(_) => unsafe {
                 context.tex_sub_image_2d(
                     glow::TEXTURE_2D,
                     0,
@@ -226,33 +252,7 @@ impl GlTexture {
                     size.height as i32,
                     format,
                     glow::UNSIGNED_BYTE,
-                    glow::PixelUnpackData::Slice(Some(data.buf().align_to().1)),
-                );
-            },
-            ImageSource::Rgb(data) => unsafe {
-                context.tex_sub_image_2d(
-                    glow::TEXTURE_2D,
-                    0,
-                    x as i32,
-                    y as i32,
-                    size.width as i32,
-                    size.height as i32,
-                    glow::RGB,
-                    glow::UNSIGNED_BYTE,
-                    glow::PixelUnpackData::Slice(Some(data.buf().align_to().1)),
-                );
-            },
-            ImageSource::Rgba(data) => unsafe {
-                context.tex_sub_image_2d(
-                    glow::TEXTURE_2D,
-                    0,
-                    x as i32,
-                    y as i32,
-                    size.width as i32,
-                    size.height as i32,
-                    glow::RGBA,
-                    glow::UNSIGNED_BYTE,
-                    glow::PixelUnpackData::Slice(Some(data.buf().align_to().1)),
+                    glow::PixelUnpackData::Slice(Some(bytes)),
                 );
             },
             #[cfg(wasm_unknown)]

@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- Fixed uploading an image source that is a view into a wider buffer (an
+  `ImgRef` from `sub_image`, whose stride exceeds its width) through
+  `create_image` or `update_image`: both backends read its rows as if they
+  were packed, skewing the image. The OpenGL backend now passes the stride
+  as the unpack row length, packing the rows first on OpenGL ES 2.0, which
+  has none; the WGPU backend uses it as the row pitch.
 - Fixed the OpenGL renderer deleting the framebuffer object handed to
   `OpenGl::set_screen_target` when the renderer was dropped or the screen
   target replaced. The FBO belongs to the caller and is now left alone.

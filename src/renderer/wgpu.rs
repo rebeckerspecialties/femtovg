@@ -819,8 +819,10 @@ impl Renderer for WGPURenderer {
 
         data.check_update(&image.info, x, y)?;
 
+        // `stride` is the distance between rows in pixels: an `ImgRef` may be a
+        // view into a wider buffer (`sub_image`), so it can exceed the width.
         let converted_rgba;
-        let (bytes, bpp) = match data {
+        let (bytes, bpp, stride) = match data {
             crate::ImageSource::Rgb(img) => {
                 converted_rgba = img
                     .pixels()
@@ -831,10 +833,10 @@ impl Renderer for WGPURenderer {
                         a: 255,
                     })
                     .collect::<Vec<_>>();
-                (converted_rgba.as_bytes(), 4)
+                (converted_rgba.as_bytes(), 4, img.width())
             }
-            crate::ImageSource::Rgba(img) => (img.buf().as_bytes(), 4),
-            crate::ImageSource::Gray(img) => (img.buf().as_bytes(), 1),
+            crate::ImageSource::Rgba(img) => (img.buf().as_bytes(), 4, img.stride()),
+            crate::ImageSource::Gray(img) => (img.buf().as_bytes(), 1, img.stride()),
             #[cfg(wasm_unknown)]
             crate::ImageSource::HtmlImageElement(element) => {
                 let size = data.dimensions();
@@ -865,7 +867,7 @@ impl Renderer for WGPURenderer {
                 bytes,
                 wgpu::TexelCopyBufferLayout {
                     offset: 0,
-                    bytes_per_row: Some(bpp * data.dimensions().width as u32),
+                    bytes_per_row: Some(bpp * stride as u32),
                     rows_per_image: None,
                 },
                 wgpu::Extent3d {
