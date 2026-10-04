@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """The clip-path circle and ellipse reftests against the exact area: each frame pixel's share inside the ellipse,
 from 16 x 16 samples, shaded green over white as the test does; two builds' frames (kept with accuracy.py
-png=png_wpt under CORPUS_RUN_OUT) and both browsers' against that.
+png=png_wpt under CORPUS_RUN_OUT) and the browsers' - Chromium rasterizing in software and on the GPU, Firefox -
+against that.
   ideal_clip.py [BEFORE AFTER]   (builds, default master ca)"""
 import os, sys
 import numpy as np
@@ -29,7 +30,7 @@ for shape in SHAPES:
     for fr in FR:
         ref = ideal(shape, fr)
         edge = (ref[:, :, 0] > 0.5) & (ref[:, :, 0] < 254.5)
-        for name, p in ((BEFORE, f'{R}/png_wpt/{BEFORE}_{k}_{fr}.png'), (AFTER, f'{R}/png_wpt/{AFTER}_{k}_{fr}.png'), ('Chromium', f'{R}/refs/chr_{k}_{fr}.png'), ('Firefox', f'{R}/refs/ff_{k}_{fr}.png')):
+        for name, p in ((BEFORE, f'{R}/png_wpt/{BEFORE}_{k}_{fr}.png'), (AFTER, f'{R}/png_wpt/{AFTER}_{k}_{fr}.png'), ('Chromium', f'{R}/refs/chr_{k}_{fr}.png'), ('Chromium GPU', f'{R}/refs/chg_{k}_{fr}.png'), ('Firefox', f'{R}/refs/ff_{k}_{fr}.png')):
             if not os.path.exists(p): continue
             d = np.abs(load(p) - ref).max(axis=2)
             print(f'| {shape} | {fr} | {name} | {100 * (d > 20).mean():.3f} % | {d.max():.0f} | {d[edge].mean():.1f} |')

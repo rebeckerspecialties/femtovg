@@ -8,17 +8,23 @@ and `glpaired.py` compares two builds of it.
 
 | scene | wgpu (Metal) | OpenGL (Apple's) |
 |---|---:|---:|
-| 40 full-screen fills, no clip | 0.92 -> 0.92 ms (-0.3 %) | 0.82 -> 0.81 ms (-1.4 %) |
-| 200 cards, no clip | 2.11 -> 2.08 ms (-0.3 %) | 0.42 -> 0.42 ms (+1.1 %) |
-| 200 cards, each under a rounded-rect clip | 13.5 -> 2.6 ms | 8.2 -> 0.6 ms |
-| 200 cards, each under a circle clip | 14.9 -> 2.5 ms | |
-| 40 full-screen fills under a rect clip | 0.98 -> 1.00 ms (+2.3 %) | 0.79 -> 0.91 ms (+15 %) |
-| 40 full-screen fills under a rounded-rect clip | 0.99 -> 1.03 ms (+3.2 %) | 0.98 -> 1.17 ms (+19 %) |
-| 40 full-screen fills under an ellipse clip | 0.97 -> 1.07 ms (+9.1 %) | |
+| 40 full-screen fills, no clip | 1.47 -> 1.45 ms (0.0 %) | 0.78 -> 0.78 ms (-0.7 %) |
+| 200 cards, no clip | 2.97 -> 3.00 ms (+1.3 %) | 0.46 -> 0.46 ms (+0.6 %) |
+| 200 cards, each under a rounded-rect clip | 14.2 -> 3.2 ms | 6.5 -> 0.64 ms |
+| 200 cards, each under a circle clip | 14.0 -> 3.1 ms | |
+| 40 full-screen fills under a rect clip | 1.60 -> 1.48 ms (-6.0 %) | 0.83 -> 0.79 ms (-6.1 %) |
+| 40 full-screen fills under a rounded-rect clip | 1.51 -> 1.52 ms (+0.3 %) | 0.81 -> 0.94 ms (+15 %) |
+| 40 full-screen fills under an ellipse clip | 1.51 -> 1.59 ms (+4.6 %) | |
+
+Thirty pairs a row for the fills, fourteen for the clipped cards; a repeat of an unclipped row moves by up to 2 %
+either way.
 
 A stencil clip costs draws and a replay per clip and nothing per fragment; a shape clip costs nothing per clip and a
 few operations per fragment under it. Only a draw under a shape runs the shader variant that evaluates one: with a
-uniform switch in the one shader instead, the 40 unclipped fills cost 2.7 % more on wgpu and 17 % more on OpenGL.
+uniform switch in the one shader instead, the 40 unclipped fills cost 2.7 % more on wgpu and 17 % more on OpenGL. A
+rect filled under an upright rect clip is cut to the clip and carries none, so those fills cost less than under the
+stencil. A draw the clip holds whole needs none either, but after a draw that carried the shape it carries a
+coverage of one and stays on that variant: switching for it cost the 200 clipped cards 28 % on OpenGL.
 
 `gl_clip_check.rs` is the OpenGL backend's run-time check: eleven clips (plain, turned, skewed, tight corners, one
 pixel thick) against each pixel's exact share inside the shape, worst difference 0.048.

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <!-- A turned rect clip over a fill with the clip's own outline -->
+  <clipPath id="c"><rect x="60.3" y="50.6" width="80.5" height="60.25"/></clipPath>
+  <g transform="rotate(20 100 80)"><g clip-path="url(#c)"><rect x="60.3" y="50.6" width="80.5" height="60.25" fill="green"/></g></g>
+</svg>

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="173" height="131" viewBox="0 0 173 131">
+  <!-- The design-tool export: a clip that is the viewport's own rect, over content that reaches past it -->
+  <clipPath id="c"><rect width="173" height="131"/></clipPath>
+  <g clip-path="url(#c)"><path d="M-20 -20H200V160H-20Z" fill="green"/></g>
+</svg>

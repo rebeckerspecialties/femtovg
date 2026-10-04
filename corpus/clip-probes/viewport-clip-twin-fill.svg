@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="173" height="131" viewBox="0 0 173 131">
+  <!-- The same with content that ends on the viewport's edge too: clip, viewport and fill share one outline -->
+  <clipPath id="c"><rect width="173" height="131"/></clipPath>
+  <g clip-path="url(#c)"><rect width="173" height="131" fill="green"/></g>
+</svg>

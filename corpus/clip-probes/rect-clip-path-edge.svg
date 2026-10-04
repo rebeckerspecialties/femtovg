@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <!-- A rect clip over a path that is no rect: its left and top edges lie on the clip's, the rest reaches past it -->
+  <clipPath id="c"><rect x="20.3" y="30.6" width="80.5" height="60.25"/></clipPath>
+  <g clip-path="url(#c)"><path d="M20.3 30.6H150L170 60L150 120H20.3Z" fill="green"/></g>
+</svg>

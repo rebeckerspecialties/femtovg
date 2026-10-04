@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <!-- A rect clip over a smaller rect on its left and top edges: a toolbar in a frame -->
+  <clipPath id="c"><rect x="20.3" y="30.6" width="80.5" height="60.25"/></clipPath>
+  <g clip-path="url(#c)"><rect x="20.3" y="30.6" width="40" height="20" fill="green"/></g>
+</svg>

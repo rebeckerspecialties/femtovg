@@ -134,7 +134,13 @@ impl ApplicationHandler for App {
             canvas.clip_path(&clip, FillRule::NonZero);
             canvas.reset_transform();
             let mut everything = Path::new();
-            everything.rect(0.0, 0.0, W as f32, H as f32);
+            // No rect: under an upright rect clip a rect is drawn as the rect the two share, by its own fringe.
+            everything.move_to(-8.0, -8.0);
+            everything.line_to(W as f32 + 8.0, -8.0);
+            everything.line_to(W as f32 + 8.0, H as f32 + 8.0);
+            everything.line_to(-8.0, H as f32 + 8.0);
+            everything.line_to(-24.0, H as f32 * 0.5);
+            everything.close();
             canvas.fill_path(&everything, &Paint::color(Color::rgb(255, 0, 0)));
             // The image target stays bound after the flush, so the screenshot reads it.
             canvas.flush_to_output(());
