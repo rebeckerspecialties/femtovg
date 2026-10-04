@@ -1,0 +1,125 @@
+#!/usr/bin/env python3
+"""Evidence sheet from a corpus run (CORPUS_RUN_OUT; frames kept with accuracy.py png=DIR): one row per frame with
+before | after | Chromium | before vs Chromium | after vs Chromium, and with --firefox the same three for Firefox.
+A difference panel is white where the frame is within 8/255 of the reference, orange from 9 to 20 and red beyond.
+
+  sheet.py OUT.png BEFORE[=label] AFTER[=label] [--firefox] ROW...
+
+ROW is NAME:FRAMING followed by options, each after a colon:
+  box=X,Y,W,H   the window, in frame pixels (default: the whole frame)
+  at=CX,CY      or its center, with size=WxH (default 40x30); without either, the window sits on the pixel where
+                the two builds differ furthest toward the upper right - a clip's edge
+  zoom=N        magnify N times, nearest neighbour (to read an edge)
+  shrink=N      or reduce N times: images box-filtered, difference panels by the block maximum, so one deviating
+                pixel still shows
+  after=BUILD   another build for this row's after frame (and before=BUILD), e.g. one with a budget lifted
+and, after a semicolon, a note for the caption. The caption has the share of the whole frame beyond 20/255 for both
+builds against each reference."""
+import json, os, sys
+import numpy as np
+from PIL import Image, ImageDraw, ImageFont
+from common import OUT as R
+
+args = sys.argv[1:]
+firefox = '--firefox' in args
+args = [a for a in args if a != '--firefox']
+out = args.pop(0)
+(before, before_label), (after, after_label) = ((a.split('=', 1) + [a])[:2] for a in args[:2])
+files = {f['key']: f for f in json.load(open(f'{R}/files.json'))}
+
+
+def font(size):
+    return ImageFont.truetype('/System/Library/Fonts/Helvetica.ttc', size)
+
+
+def frame(build, key, framing):
+    for d in ('png_wpt', 'png_nyt', 'png'):  # the directories accuracy.py png= was given
+        p = f'{R}/{d}/{build}_{key}_{framing}.png'
+        if os.path.exists(p):
+            return np.asarray(Image.open(p).convert('RGB'), dtype=np.int16)
+    raise SystemExit(f'no frame {build} {key} {framing}')
+
+
+def reference(browser, key, framing):
+    return np.asarray(Image.open(f'{R}/refs/{browser}_{key}_{framing}.png').convert('RGB'), dtype=np.int16)
+
+
+def beyond(a, b):
+    return 100 * (np.abs(a - b).max(axis=2) > 20).mean()
+
+
+def picture(im, box, zoom, shrink):
+    x, y, w, h = box
+    im = Image.fromarray(im[y:y + h, x:x + w].astype(np.uint8))
+    if shrink > 1:
+        return im.resize((w // shrink, h // shrink), Image.BOX)
+    return im.resize((w * zoom, h * zoom), Image.NEAREST)
+
+
+def difference(a, b, box, zoom, shrink):
+    x, y, w, h = box
+    d = np.abs(a - b).max(axis=2)[y:y + h, x:x + w]
+    if shrink > 1:
+        hh, ww = h // shrink * shrink, w // shrink * shrink
+        d = d[:hh, :ww].reshape(hh // shrink, shrink, ww // shrink, shrink).max(axis=(1, 3))
+    heat = np.full(d.shape + (3,), 255, np.uint8)
+    heat[d > 8] = [255, 160, 0]
+    heat[d > 20] = [255, 0, 0]
+    im = Image.fromarray(heat)
+    return im if shrink > 1 else im.resize((im.width * zoom, im.height * zoom), Image.NEAREST)
+
+
+rows = []
+for spec in args[2:]:
+    spec, _, note = spec.partition(';')
+    name, framing, *options = spec.split(':')
+    opt = dict(o.split('=', 1) for o in options)
+    key = [k for k in files if k.endswith('__' + name)][0]
+    b, a = frame(opt.get('before', before), key, framing), frame(opt.get('after', after), key, framing)
+    refs = [('Chromium 131', reference('chr', key, framing))] + ([('Firefox 158', reference('ff', key, framing))] if firefox else [])
+    H, W = b.shape[:2]
+    zoom, shrink = int(opt.get('zoom', 1)), int(opt.get('shrink', 1))
+    if 'box' in opt:
+        box = tuple(int(v) for v in opt['box'].split(','))
+    else:
+        w, h = (int(v) for v in opt.get('size', '40x30').split('x')) if ('at' in opt or 'size' in opt) else (W, H)
+        if 'at' in opt:
+            cx, cy = (int(v) for v in opt['at'].split(','))
+        elif 'size' in opt:
+            ys, xs = np.nonzero(np.abs(b - a).max(axis=2) > 0)
+            if len(xs) == 0:
+                raise SystemExit(f'{name} {framing}: the builds do not differ; give at= or box=')
+            i = np.argmax(xs - ys)
+            cx, cy = int(xs[i]), int(ys[i])
+        else:
+            cx, cy = W // 2, H // 2
+        box = (min(max(cx - w // 2, 0), W - w), min(max(cy - h // 2, 0), H - h), w, h)
+    panels = [(before_label, picture(b, box, zoom, shrink)), (after_label, picture(a, box, zoom, shrink))]
+    caption = f'{name} at {framing}: beyond 20/255'
+    for label, ref in refs:
+        short = label.split()[0]
+        panels += [(label, picture(ref, box, zoom, shrink)), (f'{before_label} vs {short}', difference(b, ref, box, zoom, shrink)),
+                   (f'{after_label} vs {short}', difference(a, ref, box, zoom, shrink))]
+        caption += f', vs {short} {beyond(b, ref):.2f} % -> {beyond(a, ref):.2f} %'
+    if len(refs) == 2:
+        caption += f' (the browsers apart {beyond(refs[0][1], refs[1][1]):.2f} %)'
+    caption += f'. {note}' if note else ''
+    rows.append((caption, panels))
+    print(caption)
+
+gap, cap = 8, 36
+width = max(sum(p.width + gap for _, p in panels) for _, panels in rows) + gap
+column = max(p.width for _, panels in rows for _, p in panels) + gap
+sheet = Image.new('RGB', (max(width, len(rows[0][1]) * column + gap), sum(max(p.height for _, p in panels) + cap + gap for _, panels in rows) + gap), 'white')
+draw = ImageDraw.Draw(sheet)
+y = gap
+for caption, panels in rows:
+    draw.text((gap, y), caption, fill=(0, 0, 0), font=font(13))
+    for i, (label, p) in enumerate(panels):
+        x = gap + i * column
+        draw.text((x, y + 19), label, fill=(90, 90, 90), font=font(11))
+        sheet.paste(p, (x, y + cap))
+        draw.rectangle([x - 1, y + cap - 1, x + p.width, y + cap + p.height], outline=(200, 200, 200))
+    y += max(p.height for _, p in panels) + cap + gap
+sheet.save(out)
+print(out, sheet.size)

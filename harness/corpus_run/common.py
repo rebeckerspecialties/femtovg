@@ -53,6 +53,9 @@ BUILDS['cp'] = (f'{BIN}/_logos_full_cp', {})  # chain-passes: no parity pass, fu
 BUILDS['ca'] = (f'{BIN}/_logos_full_ca', {})  # #346 tier 1: box and ellipse clips as fragment-shader coverage (clip-analytic, on master 9d574e0)
 BUILDS['tf'] = (f'{BIN}/_logos_full_tf', {})  # #358 draft: exact-coverage fills on wgpu (thin-fills ec67485, on #356; clip/turbulence/blend cfgs)
 BUILDS['master'] = (f'{BIN}/_logos_full_master', {})  # upstream master 9d574e0 (#372, #373, #374 merged), final harness
+BUILDS['mo_big'] = (f'{BIN}/_logos_full_mo', {'TRANSIENT_BUDGET_MB': '16384'})  # #374 and #375 with the transient-image budget lifted
+BUILDS['cp_big'] = (f'{BIN}/_logos_full_cp', {'TRANSIENT_BUDGET_MB': '16384'})
+BUILDS['master_big'] = (f'{BIN}/_logos_full_master', {'TRANSIENT_BUDGET_MB': '16384'})  # master with the transient-image budget lifted: what the default 128 MiB costs
 BUILDS['moh'] = (f'{BIN}/_logos_full_moh', {})  # mo with the 2026-10-03 harness: filter parameters through the element transform, all-or-nothing chains, offset-first shadows
 BUILDS['moh_partial'] = (f'{BIN}/_logos_full_moh', {'PARTIAL_CHAINS': '1'})  # the same binary with the partial-chain policy of before
 # "build#n" repeats a build under its own label, for run-to-run spread.
