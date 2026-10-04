@@ -3,6 +3,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- Fixed the OpenGL renderer deleting the framebuffer object handed to
+  `OpenGl::set_screen_target` when the renderer was dropped or the screen
+  target replaced. The FBO belongs to the caller and is now left alone.
 - Added `ImageFilter::Morphology` and `ImageFilter::Offset`, the SVG
   `feMorphology` and `feOffset` primitives: a dilation grows the opaque
   regions of an image by a whole-pixel radius per axis and an erosion

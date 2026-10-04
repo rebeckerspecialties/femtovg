@@ -11,6 +11,9 @@ pub struct Framebuffer {
     context: Rc<glow::Context>,
     fbo: <glow::Context as glow::HasContext>::Framebuffer,
     stencil_rbo: Option<<glow::Context as glow::HasContext>::Renderbuffer>,
+    /// Whether this wrapper created `fbo` and so deletes it on drop. An
+    /// external FBO (see `OpenGl::set_screen_target`) belongs to the caller.
+    owned: bool,
 }
 
 impl Framebuffer {
@@ -19,6 +22,7 @@ impl Framebuffer {
             context: context.clone(),
             fbo,
             stencil_rbo: None,
+            owned: false,
         }
     }
     pub fn new(context: &Rc<glow::Context>, texture: &GlTexture) -> Result<Self, ErrorKind> {
@@ -84,6 +88,7 @@ impl Framebuffer {
             context: context.clone(),
             fbo,
             stencil_rbo: Some(stencil_rbo),
+            owned: true,
         })
     }
 
@@ -128,7 +133,9 @@ impl Framebuffer {
 impl Drop for Framebuffer {
     fn drop(&mut self) {
         unsafe {
-            self.context.delete_framebuffer(self.fbo);
+            if self.owned {
+                self.context.delete_framebuffer(self.fbo);
+            }
             if let Some(stencil_rbo) = self.stencil_rbo {
                 self.context.delete_renderbuffer(stencil_rbo);
             }
