@@ -51,11 +51,11 @@ BUILDS['pyr'] = (f'{BIN}/_logos_full_pyr', {})  # #325 pyramid, rebased on #372 
 BUILDS['mo'] = (f'{BIN}/_logos_full_mo', {})  # feMorphology + feOffset, on the pyramid (--cfg harness_blur_xy --cfg harness_morph)
 BUILDS['cp'] = (f'{BIN}/_logos_full_cp', {})  # chain-passes: no parity pass, fused matrices, on mo (same cfgs)
 BUILDS['ca'] = (f'{BIN}/_logos_full_ca', {})  # #346 tier 1: box and ellipse clips as fragment-shader coverage (clip-analytic, on master 9d574e0)
+BUILDS['ca3'] = (f'{BIN}/_logos_full_ca3', {})  # ca plus: a draw the clip holds whole is unclipped; a fill that covers the clip is a plain quad under the clip's coverage
 BUILDS['tf'] = (f'{BIN}/_logos_full_tf', {})  # #358 draft: exact-coverage fills on wgpu (thin-fills ec67485, on #356; clip/turbulence/blend cfgs)
-BUILDS['master'] = (f'{BIN}/_logos_full_master', {})  # upstream master 9d574e0 (#372, #373, #374 merged), final harness
-BUILDS['mo_big'] = (f'{BIN}/_logos_full_mo', {'TRANSIENT_BUDGET_MB': '16384'})  # #374 and #375 with the transient-image budget lifted
-BUILDS['cp_big'] = (f'{BIN}/_logos_full_cp', {'TRANSIENT_BUDGET_MB': '16384'})
-BUILDS['master_big'] = (f'{BIN}/_logos_full_master', {'TRANSIENT_BUDGET_MB': '16384'})  # master with the transient-image budget lifted: what the default 128 MiB costs
+BUILDS['master'] = (f'{BIN}/_logos_full_master', {})  # upstream master 9d574e0 (#372, #373, #374 merged), harness of 2026-10-04 (noise clamp fix)
+BUILDS['master_128'] = (f'{BIN}/_logos_full_master', {'TRANSIENT_BUDGET_MB': '128'})  # master at the library's default transient-image budget
+BUILDS['cp_128'] = (f'{BIN}/_logos_full_cp', {'TRANSIENT_BUDGET_MB': '128'})  # #375 at the default budget
 BUILDS['moh'] = (f'{BIN}/_logos_full_moh', {})  # mo with the 2026-10-03 harness: filter parameters through the element transform, all-or-nothing chains, offset-first shadows
 BUILDS['moh_partial'] = (f'{BIN}/_logos_full_moh', {'PARTIAL_CHAINS': '1'})  # the same binary with the partial-chain policy of before
 # "build#n" repeats a build under its own label, for run-to-run spread.
@@ -70,7 +70,10 @@ BUILDS['wgpu_pr_368_noslices'] = (f'{BIN}/_logos_full_wp_pr368', {'NO_SLICES': '
 for _b in list(BUILDS):
     for _i in (2, 3):
         BUILDS[f'{_b}#{_i}'] = BUILDS[_b]
-SWEEP_ENV = {'SKIP_UNSUPPORTED_FILTERS': '1', 'VIEWPORT_CLIP': '1', 'LAYER_STATS': '1'}
+# TRANSIENT_BUDGET_MB lifts the library's 128 MiB default: a conformance run measures rendering, and at 1080p the
+# layer-heavy portraits need up to 179 MiB (about 23 frames' worth at any size), so under the default seven frames
+# lost layers. The *_128 builds below keep the default, for what it costs.
+SWEEP_ENV = {'SKIP_UNSUPPORTED_FILTERS': '1', 'VIEWPORT_CLIP': '1', 'LAYER_STATS': '1', 'TRANSIENT_BUDGET_MB': '1024'}
 
 
 def files():

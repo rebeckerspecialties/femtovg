@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-"""Evidence sheet from a corpus run (CORPUS_RUN_OUT; frames kept with accuracy.py png=DIR): one row per frame with
+"""Evidence sheet from a corpus run (CORPUS_RUN_OUT; frames kept with accuracy.py png=DIR, others rendered): one row per frame with
 before | after | Chromium | before vs Chromium | after vs Chromium, and with --firefox the same three for Firefox.
 A difference panel is white where the frame is within 8/255 of the reference, orange from 9 to 20 and red beyond.
 
-  sheet.py OUT.png BEFORE[=label] AFTER[=label] [--firefox] ROW...
+  sheet.py OUT.png BEFORE[=label] AFTER[=label] [--firefox] [--refs=chr,chg,ff] [--diffs-only] ROW...
+
+--refs names the references (refs/PREFIX_*.png): chr Chromium rasterizing in software, chg Chromium rasterizing on
+the GPU (refs_gpu.py), ff Firefox. --diffs-only leaves the reference pictures out, for three references in a row.
 
 ROW is NAME:FRAMING followed by options, each after a colon:
   box=X,Y,W,H   the window, in frame pixels (default: the whole frame)
@@ -15,14 +18,22 @@ ROW is NAME:FRAMING followed by options, each after a colon:
   after=BUILD   another build for this row's after frame (and before=BUILD), e.g. one with a budget lifted
 and, after a semicolon, a note for the caption. The caption has the share of the whole frame beyond 20/255 for both
 builds against each reference."""
-import json, os, sys
+import json, os, subprocess, sys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-from common import OUT as R
+from common import BUILDS, FRAMINGS, SWEEP_ENV, OUT as R
 
+NAMES = {'chr': 'Chromium 131', 'chg': 'Chromium 131 on the GPU', 'ff': 'Firefox 158'}
+SHORT = {'chr': 'Chromium', 'chg': 'Chromium GPU', 'ff': 'Firefox'}
 args = sys.argv[1:]
-firefox = '--firefox' in args
-args = [a for a in args if a != '--firefox']
+browsers = ['chr', 'ff'] if '--firefox' in args else ['chr']
+for a in args:
+    if a.startswith('--refs='):
+        browsers = a.split('=', 1)[1].split(',')
+if len(browsers) > 1 and 'chg' in browsers:
+    NAMES['chr'], SHORT['chr'] = 'Chromium 131 in software', 'Chromium software'
+diffs_only = '--diffs-only' in args
+args = [a for a in args if not a.startswith('--')]
 out = args.pop(0)
 (before, before_label), (after, after_label) = ((a.split('=', 1) + [a])[:2] for a in args[:2])
 files = {f['key']: f for f in json.load(open(f'{R}/files.json'))}
@@ -33,11 +44,22 @@ def font(size):
 
 
 def frame(build, key, framing):
-    for d in ('png_wpt', 'png_nyt', 'png'):  # the directories accuracy.py png= was given
+    # The directories accuracy.py png= was given, then the frames rendered here and by ab_refs.py.
+    for d in ('png_wpt', 'png_nyt', 'png', 'png_changed'):
         p = f'{R}/{d}/{build}_{key}_{framing}.png'
         if os.path.exists(p):
             return np.asarray(Image.open(p).convert('RGB'), dtype=np.int16)
-    raise SystemExit(f'no frame {build} {key} {framing}')
+    binary, extra = BUILDS[build]
+    fr, z = FRAMINGS[framing]
+    os.makedirs(f'{R}/png_changed', exist_ok=True)
+    ppm = p[:-4] + '.ppm'
+    r = subprocess.run([binary, f'{z:g}', ppm, files[key]['path']], env={**os.environ, **fr, **SWEEP_ENV, **extra},
+                       capture_output=True, text=True, timeout=600)
+    if r.returncode != 0 or not os.path.exists(ppm):
+        raise SystemExit(f'no frame {build} {key} {framing}: {r.stderr[-300:]}')
+    Image.open(ppm).save(p)
+    os.remove(ppm)
+    return np.asarray(Image.open(p).convert('RGB'), dtype=np.int16)
 
 
 def reference(browser, key, framing):
@@ -76,7 +98,7 @@ for spec in args[2:]:
     opt = dict(o.split('=', 1) for o in options)
     key = [k for k in files if k.endswith('__' + name)][0]
     b, a = frame(opt.get('before', before), key, framing), frame(opt.get('after', after), key, framing)
-    refs = [('Chromium 131', reference('chr', key, framing))] + ([('Firefox 158', reference('ff', key, framing))] if firefox else [])
+    refs = [(b, reference(b, key, framing)) for b in browsers]
     H, W = b.shape[:2]
     zoom, shrink = int(opt.get('zoom', 1)), int(opt.get('shrink', 1))
     if 'box' in opt:
@@ -96,13 +118,13 @@ for spec in args[2:]:
         box = (min(max(cx - w // 2, 0), W - w), min(max(cy - h // 2, 0), H - h), w, h)
     panels = [(before_label, picture(b, box, zoom, shrink)), (after_label, picture(a, box, zoom, shrink))]
     caption = f'{name} at {framing}: beyond 20/255'
-    for label, ref in refs:
-        short = label.split()[0]
-        panels += [(label, picture(ref, box, zoom, shrink)), (f'{before_label} vs {short}', difference(b, ref, box, zoom, shrink)),
+    for browser, ref in refs:
+        short = SHORT[browser]
+        if not diffs_only:
+            panels.append((NAMES[browser], picture(ref, box, zoom, shrink)))
+        panels += [(f'{before_label} vs {short}', difference(b, ref, box, zoom, shrink)),
                    (f'{after_label} vs {short}', difference(a, ref, box, zoom, shrink))]
         caption += f', vs {short} {beyond(b, ref):.2f} % -> {beyond(a, ref):.2f} %'
-    if len(refs) == 2:
-        caption += f' (the browsers apart {beyond(refs[0][1], refs[1][1]):.2f} %)'
     caption += f'. {note}' if note else ''
     rows.append((caption, panels))
     print(caption)

@@ -1087,7 +1087,7 @@ fn turbulence_plan(canvas: &Canvas<WGPURenderer>, group: &usvg::Group) -> Option
         _ => return None,
     };
 
-    // The filter region in device pixels, clamped to the canvas, and the
+    // The filter region in device pixels, clamped to the frame, and the
     // transform that maps the group's user space (where the noise lives)
     // onto that image's pixels.
     let mut device = canvas.transform();
@@ -1102,6 +1102,18 @@ fn turbulence_plan(canvas: &Canvas<WGPURenderer>, group: &usvg::Group) -> Option
         (r.right(), r.bottom()),
     ]
     .map(|(x, y)| device.transform_point(x, y));
+    // Inside a layer the canvas transform carries the store's shift: a store
+    // that starts above or left of the frame (an ancestor's blur or shadow
+    // reach) puts the frame's corner at that shift, not at the origin of
+    // this device space. Clamping to the frame's size there cut the noise
+    // short by the shift on the far sides; the store reaches about as far
+    // past them, so the far clamp moves out by twice the shift.
+    let (shift_x, shift_y) = {
+        let mut root = *ROOT_DEVICE.lock().unwrap();
+        root.premultiply(&ts_to_t2d(group.abs_transform()));
+        let (root_x, root_y) = root.transform_point(r.x(), r.y());
+        (corners[0].0 - root_x, corners[0].1 - root_y)
+    };
     let x0 = corners
         .iter()
         .map(|c| c.0)
@@ -1119,13 +1131,13 @@ fn turbulence_plan(canvas: &Canvas<WGPURenderer>, group: &usvg::Group) -> Option
         .map(|c| c.0)
         .fold(f32::NEG_INFINITY, f32::max)
         .ceil()
-        .min(frame_w() as f32);
+        .min(frame_w() as f32 + (2.0 * shift_x).max(0.0).ceil());
     let y1 = corners
         .iter()
         .map(|c| c.1)
         .fold(f32::NEG_INFINITY, f32::max)
         .ceil()
-        .min(frame_h() as f32);
+        .min(frame_h() as f32 + (2.0 * shift_y).max(0.0).ceil());
     if !(x1 > x0 && y1 > y0) {
         return None;
     }
