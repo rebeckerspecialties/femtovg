@@ -12,6 +12,12 @@ All notable changes to this project will be documented in this file.
 - Fixed the OpenGL renderer deleting the framebuffer object handed to
   `OpenGl::set_screen_target` when the renderer was dropped or the screen
   target replaced. The FBO belongs to the caller and is now left alone.
+- The OpenGL backend now has headless tests: a surfaceless EGL context
+  (Mesa's llvmpipe works) runs the color-matrix filter checks on desktop
+  GL, OpenGL ES 3 and OpenGL ES 2, and a parity suite requires its frames to
+  match the WGPU backend's for every filter, chains, layers, clipping,
+  compositing, image formats and text. CI runs them on Mesa.
+
 - Added `ImageFilter::Morphology` and `ImageFilter::Offset`, the SVG
   `feMorphology` and `feOffset` primitives: a dilation grows the opaque
   regions of an image by a whole-pixel radius per axis and an erosion

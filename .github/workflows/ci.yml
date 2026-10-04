@@ -65,6 +65,40 @@ jobs:
         env:
           FEMTOVG_REQUIRE_GPU: metal
         run: cargo test --features wgpu --no-fail-fast -- --nocapture
+  # The OpenGL backend's tests (tests/*_gl.rs) need a GL context: Mesa's
+  # llvmpipe provides one without a display through surfaceless EGL, and
+  # lavapipe gives WGPU a Vulkan adapter for the GL-vs-WGPU parity tests.
+  # Mesa reports GLES 3 whatever version is requested, so the backend's
+  # GLES 2 paths need a second run with the version overridden.
+  # FEMTOVG_REQUIRE_GL names the flavors each run must exercise, so neither
+  # can go green by skipping.
+  gl-tests:
+    needs: [build, format]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Install system dependencies and Mesa's software drivers
+        run: >-
+          sudo apt-get update && sudo apt-get install libxkbcommon-dev libwayland-dev libfontconfig-dev
+          libegl1 libegl-mesa0 libgles2 libgl1-mesa-dri mesa-vulkan-drivers
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal
+      - name: Run the GL tests on desktop GL and GLES 3
+        env:
+          FEMTOVG_REQUIRE_GL: desktop,gles3
+          FEMTOVG_REQUIRE_GPU: vulkan
+        run: cargo test --features wgpu --no-fail-fast --test '*_gl' --test image_upload_stride -- --nocapture
+      - name: Run the GL tests on desktop GL and GLES 2
+        env:
+          MESA_GLES_VERSION_OVERRIDE: "2.0"
+          FEMTOVG_REQUIRE_GL: desktop,gles2
+          FEMTOVG_REQUIRE_GPU: vulkan
+        run: cargo test --features wgpu --no-fail-fast --test '*_gl' --test image_upload_stride -- --nocapture
   format:
     runs-on: ubuntu-latest
     steps:
