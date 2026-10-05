@@ -4,7 +4,7 @@ What a renderer draws in the pixels that a clip's edge crosses, and what it does
 content's, another clip's or the viewport's. Frames are 460 x 260 at the `harness/corpus_run` framings (`z1` is the
 fit, `z2` twice it); the references are Chromium 131 rasterizing in software (`--disable-gpu`, `refs.py`) and on the
 GPU (ANGLE on Metal, `refs_gpu.py`), Firefox 158 and WebKit (Safari 27, `refs_webkit.py`). femtovg with stencil
-clips is master 9d574e0; with shape clips, femtovg/femtovg#380 at 131597f, where the scissor the harness cuts to the
+clips is master 9d574e0; with shape clips, femtovg/femtovg#380 at 620b19c, where the scissor the harness cuts to the
 viewport with is a box like the clip.
 
 ## Ink against the exact area
@@ -18,8 +18,8 @@ multiplies two coverages on a shared edge is short by about a sixth of a pixel p
 | `rect-fill-fractional` | 1528 | +0.4 | +0.4 | +0.4 | +0.4 | +0.4 | -0.2 |
 | `rect-clip-fractional` | 1528 | +2.4 | +0.4 | -0.0 | +0.4 | -0.0 | +0.1 |
 | `rect-clip-coincident` | 1528 | -20.0 | +0.4 | -31.7 | +0.4 | -31.7 | -30.0 |
-| `rounded-clip-coincident` | 4727 | -34.8 | -48.8 | -52.5 | -48.2 | -53.3 | -48.1 |
-| `rotated-clip-coincident` | 4850 | -34.1 | -46.6 | -36.1 | -46.7 | -50.1 | -46.3 |
+| `rounded-clip-coincident` | 4727 | -34.8 | -2.6 | -52.5 | -48.2 | -53.3 | -48.1 |
+| `rotated-clip-coincident` | 4850 | -34.1 | +0.3 | -36.1 | -46.7 | -50.1 | -46.3 |
 | `rect-clip-path-edge` | 4850 | -8.2 | -32.1 | -32.7 | -31.7 | -32.9 | -32.1 |
 | `rect-clip-rect-inside` | 800 | -15.7 | +0.6 | -11.9 | +0.6 | -12.0 | -14.0 |
 | `rect-clip-path-inside` | 3196 | -23.9 | +0.1 | -18.8 | +0.1 | -19.0 | -24.9 |
@@ -45,7 +45,7 @@ about - next to that pixel's share inside (`harness/corpus_run/probe_edges.py`).
 | `rect-fill-fractional` | z1 | .70 .80 .40 .85 | .70 .80 .40 .85 | .70 .80 .40 .85 | .70 .80 .40 .85 | .70 .80 .40 .85 | .70 .80 .40 .85 | .70 .80 .40 .85 |
 | `rect-clip-fractional` | z1 | .70 .80 .40 .85 | 1 1 0 1 | .70 .80 .40 .85 | .70 .80 .50 .75 | .70 .80 .40 .85 | .70 .80 .50 .75 | .70 .80 .40 .85 |
 | `rect-clip-coincident` | z1 | .70 .80 .40 .85 | .70 .80 0 .85 | .70 .80 .40 .85 | .49 .64 .20 .64 | .70 .80 .40 .85 | .49 .64 .20 .64 | .49 .64 .16 .72 |
-| `rounded-clip-coincident` | z1 | .70 .80 .40 .85 | .70 .80 0 .85 | .49 .64 .16 .73 | .49 .64 .25 .57 | .49 .64 .16 .73 | .49 .64 .25 .57 | .49 .64 .16 .73 |
+| `rounded-clip-coincident` | z1 | .70 .80 .40 .85 | .70 .80 0 .85 | .70 .80 .40 .85 | .49 .64 .25 .57 | .49 .64 .16 .73 | .49 .64 .25 .57 | .49 .64 .16 .73 |
 | `rect-clip-rect-inside` | z1 | .70 .40 | .70 0 | .70 .40 | .49 .20 | .70 .40 | .49 .20 | .49 .16 |
 | `rect-clip-path-inside` | z1 | .70 .40 | .70 0 | .70 .40 | .49 .25 | .70 .40 | .48 .25 | .49 .16 |
 | `rounded-clip-rect-inside` | z1 | .70 | .70 | .70 | .49 | .70 | .49 | .49 |
@@ -78,10 +78,12 @@ about - next to that pixel's share inside (`harness/corpus_run/probe_edges.py`).
   at the fit - at 2x and 4x it counts the rounded twin once - and where a path that is no rect ends on a rect clip's
   edge and reaches past it elsewhere. Its tests are exact in floats and made per raster tile, so the same file can
   come out either way at another zoom.
-- The shape clip does what the GPU rasterizer does in each of these, by a tolerance of a 64th of a pixel: on all 19
-  probes its ink is within a pixel of that rasterizer's, and on 15 within a pixel of the exact area (stencil clips 3,
-  WebKit 3, software Chromium 3, Firefox 2). The four left multiply in every renderer: the rounded and the turned
-  twin, the path on a rect clip's edge, and a rect band across a rounded clip.
+- The shape clip does what the GPU rasterizer does in each of these, by a tolerance of a 64th of a pixel, and holds a
+  draw by the points of its outline as well, so that a rounded or a turned clip's twin is covered once at every
+  scale: on 17 of the 19 probes its ink is within a pixel of that rasterizer's - the other two are those twins - and
+  on 16 within a pixel of the exact area (stencil clips 3, WebKit 3, software Chromium 3, Firefox 2). Of the three
+  left, the rounded twin is drawn as without its clip to the bit, a fill that is itself 3 px short of its area; the
+  other two multiply in every renderer: the path on a rect clip's edge, and a rect band across a rounded clip.
 
 ## Against the exact area
 
