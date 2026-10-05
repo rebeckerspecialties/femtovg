@@ -56,6 +56,12 @@ BUILDS['master'] = (f'{BIN}/_logos_full_master', {})  # upstream master 9d574e0 
 BUILDS['master_128'] = (f'{BIN}/_logos_full_master', {'TRANSIENT_BUDGET_MB': '128'})  # master at the library's default transient-image budget
 BUILDS['master_lsm'] = (f'{BIN}/_logos_full_master_lsm', {})  # upstream master 9d574e0, harness merging a group shadow in linearRGB (shadow-merge-2026-10-04.md)
 BUILDS['master_lsm_single'] = (f'{BIN}/_logos_full_master_lsm', {'SINGLE_SHADOW_LAYER': '1'})  # the same binary with the previous shadow mapping, as 'master'
+BUILDS['master_lsm_128'] = (f'{BIN}/_logos_full_master_lsm', {'TRANSIENT_BUDGET_MB': '128'})  # master_lsm at the library's default transient budget
+# master 9d574e0 with shadow_merge/library.patch (a shadow coloured after its blur, a lone colour-space conversion run
+# in the layer composite) and the harness of 2026-10-05 (rule 4b): shadow-merge-library-2026-10-05.md
+BUILDS['master_sab'] = (f'{BIN}/_logos_full_master_sab', {})
+BUILDS['master_sab_128'] = (f'{BIN}/_logos_full_master_sab', {'TRANSIENT_BUDGET_MB': '128'})  # master_sab at the default budget
+BUILDS['master_sab_exact'] = (f'{BIN}/_logos_full_master_sab', {'EXACT_DROP_SHADOW': '1'})  # every shadow colour unrounded (no rule 4b)
 BUILDS['cp_128'] = (f'{BIN}/_logos_full_cp', {'TRANSIENT_BUDGET_MB': '128'})  # #375 at the default budget
 BUILDS['moh'] = (f'{BIN}/_logos_full_moh', {})  # mo with the 2026-10-03 harness: filter parameters through the element transform, all-or-nothing chains, offset-first shadows
 BUILDS['moh_partial'] = (f'{BIN}/_logos_full_moh', {'PARTIAL_CHAINS': '1'})  # the same binary with the partial-chain policy of before

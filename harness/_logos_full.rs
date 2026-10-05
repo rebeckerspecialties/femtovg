@@ -830,16 +830,41 @@ fn drop_shadow(group: &usvg::Group) -> Option<ShadowChain> {
     });
     if let Some((ds, linear)) = shorthand {
         let color = flood_color(ds.color(), ds.opacity());
+        let as_skia = |c: Color| {
+            if std::env::var("EXACT_DROP_SHADOW").is_ok() {
+                c
+            } else {
+                skia_drop_shadow_color(c)
+            }
+        };
         return Some(ShadowChain {
             dx: ds.dx(),
             dy: ds.dy(),
             sigma: ds.std_dev_x().get().max(ds.std_dev_y().get()),
-            color,
+            color: as_skia(color),
             merged: true,
-            linear_color: linear.then(|| linear_rgb(color)),
+            linear_color: linear.then(|| as_skia(linear_rgb(color))),
         });
     }
     shadow_chain(f.primitives())
+}
+
+/// The shadow colour of an `feDropShadow` as Chromium draws it. Skia's drop
+/// shadow colours its input before the blur, in 8 bits premultiplied, so the
+/// blur spreads the flood colour's 8-bit premultiplied value: a channel that
+/// is a fraction of a step there - a dark colour in linearRGB - spreads as a
+/// whole step or none. With `shadow_merge/library.patch` the library colours
+/// a shadow after its blur, as Canvas 2D, Firefox and Chromium's written-out
+/// chains do, so the harness hands it that value; master's pass rounds the
+/// colour to it before its blur anyway. `EXACT_DROP_SHADOW=1` hands it the
+/// colour as it is.
+fn skia_drop_shadow_color(c: Color) -> Color {
+    let alpha = (c.a * 255.0).round();
+    if alpha == 0.0 {
+        return Color::rgbaf(0.0, 0.0, 0.0, 0.0);
+    }
+    let channel = |x: f32| ((x * c.a * 255.0).round() / alpha).min(1.0);
+    Color::rgbaf(channel(c.r), channel(c.g), channel(c.b), alpha / 255.0)
 }
 
 /// A blur of `sigma` on both axes, whichever form the library has.

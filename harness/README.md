@@ -286,6 +286,22 @@ Firefox. `SRGB_SHADOW_MERGE=1` merges in sRGB with the same layers, and
 and the residuals are in `shadow-merge-2026-10-04.md`, the tools in
 `shadow_merge/`, the probes in `corpus/shadow-merge/`.
 
+**4b. An `feDropShadow` hands the library its flood colour as Skia rounds
+it (2026-10-05).** Chromium's `feDropShadow` colours its input before the
+blur, in 8 bits premultiplied. Its written-out chains (`feFlood` with
+`feComposite in`, or a colouring `feColorMatrix`, after the blur) colour the
+blurred alpha, and so do Firefox and Canvas 2D. The two differ where the flood
+colour is a fraction of an 8-bit step, a dark colour in linearRGB:
+`#0b0d10` at 0.6 is a flat grey (20, 20, 20) in Chromium's `feDropShadow`
+and black in its chain and in Firefox. With the library's shadow coloured
+after the blur (`shadow_merge/library.patch`), the harness gives an
+`feDropShadow` the flood colour's 8-bit premultiplied value, the one Skia
+blurs, and a written-out chain its colour as it is. On master, whose shadow
+pass colours first in 8 bits, the rounded colour is the one it blurs anyway.
+`EXACT_DROP_SHADOW=1` passes every shadow colour unrounded. The probe is
+`corpus/shadow-merge/drop-shadow-tint-rounding.svg`; the measurements are in
+`shadow-merge-library-2026-10-05.md`.
+
 ## Invalid filter references (rule 5, 2026-09-16)
 
 **5. A `filter` that references anything but a `<filter>` is no filter at

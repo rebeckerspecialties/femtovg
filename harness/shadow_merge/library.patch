@@ -1,0 +1,736 @@
+From 55c27d6ae46dbc0bc32997da296cb7d206145784 Mon Sep 17 00:00:00 2001
+From: Matt Hargett <plaztiksyke@gmail.com>
+Date: Mon, 5 Oct 2026 07:23:31 +0000
+Subject: [PATCH] Colour a shadow after its blur, and run a lone colour-space
+ conversion in the layer composite
+
+The shadow pass coloured the source's coverage with the shadow colour
+before the blur, in 8 bits premultiplied. A channel that is a fraction of
+a step there - a dark colour in linearRGB - rounded to a whole step or to
+none before the blur spread it. Canvas 2D sets the colour on the blurred
+alpha, and so do Firefox and Chromium's written-out SVG shadow chains. The
+coverage is now filled opaque white under SourceIn, so the image holds the
+source's alpha, and the shadow colour tints the blurred image as the
+composite lands, rounded once.
+
+A layer whose filter chain is a single LinearRgbToSrgb or SrgbToLinearRgb,
+without a blend mode, now converts each texel as its composite samples it,
+rounded to 8 bits as the conversion's pass stores its result. The pixels
+are the pass's; the layer reserves no result image and no filter work. A
+group shadow merged in linearRGB is two such layers, so it saves two
+full-layer images and two passes. The image paint carries the conversion
+in a uniform slot that was free (frag[13].y). The sRGB transfer curve is
+one function per shader language, shared by the pass and the paint.
+
+Tests: a shadow coloured after its blur (fails on the previous pass); a
+lone conversion's composite against the pass arithmetic, both directions;
+the layer's reservation and the composite's paint.
+---
+ src/layers.rs                        | 65 ++++++++++++++++++++++++++-
+ src/lib.rs                           |  6 +--
+ src/paint.rs                         | 23 ++++++++++
+ src/renderer/opengl/filters.glsl     | 17 ++-----
+ src/renderer/opengl/main-fs.glsl     | 44 ++++++++++++------
+ src/renderer/opengl/uniform_array.rs |  6 +++
+ src/renderer/params.rs               | 11 ++++-
+ src/renderer/wgpu.rs                 |  6 +++
+ src/renderer/wgpu/filters.wgsl       | 19 ++------
+ src/renderer/wgpu/shader.wgsl        | 50 ++++++++++++++-------
+ src/shadow.rs                        | 67 ++++++++++++++++++----------
+ tests/color_transfer_wgpu.rs         | 47 ++++++++++++++++++-
+ tests/shadow_wgpu.rs                 | 46 +++++++++++++++++++
+ 13 files changed, 319 insertions(+), 88 deletions(-)
+
+diff --git a/src/layers.rs b/src/layers.rs
+index 8085a15..989bb68 100644
+--- a/src/layers.rs
++++ b/src/layers.rs
+@@ -146,6 +146,23 @@ impl LayerEffects {
+         self.blend = Some(mode);
+         self
+     }
++
++    /// The colour-space conversion this layer's composite applies in place
++    /// of its filter chain: a chain that is one conversion and nothing else
++    /// converts each texel as the composite samples it, rounded to 8 bits as
++    /// the conversion's pass stores its result - the same pixels with no pass
++    /// and no image for the result. Not with a blend mode, whose pass reads
++    /// the chain's result.
++    pub(crate) fn composite_transfer(&self) -> Option<Transfer> {
++        if self.blend.is_some_and(|mode| mode != BlendMode::Normal) {
++            return None;
++        }
++        match *self.filters {
++            [ImageFilter::LinearRgbToSrgb] => Some(Transfer::ToSrgb),
++            [ImageFilter::SrgbToLinearRgb] => Some(Transfer::ToLinearRgb),
++            _ => None,
++        }
++    }
+ }
+ 
+ // Hand-written so the default is `new()`'s no-op effects: a derived Default
+@@ -493,7 +510,9 @@ where
+                 }
+             }
+ 
+-            if !record.discard && !effects.filters.is_empty() {
++            // A chain the composite runs (`composite_transfer`) needs no
++            // images and no filter work.
++            if !record.discard && !effects.filters.is_empty() && effects.composite_transfer().is_none() {
+                 let replacing = effects
+                     .filters
+                     .iter()
+@@ -674,7 +693,8 @@ where
+             record.height as f32,
+             0.0,
+             tint,
+-        );
++        )
++        .with_transfer(record.effects.composite_transfer());
+         layer_paint.set_anti_alias(false);
+ 
+         // Composite in plain device space at the captured origin; the state
+@@ -1195,6 +1215,47 @@ fn a_layer_short_of_its_chain_scratch_budget_keeps_its_capture() {
+     assert_eq!(canvas.transients.free.len(), 4);
+ }
+ 
++/// A layer whose chain is one colour-space conversion runs it in its
++/// composite: it holds its capture alone and no filter work, and the
++/// composite's image paint carries the conversion. With a blend mode the
++/// chain keeps its pass, whose result the blend reads.
++#[test]
++fn a_lone_conversion_runs_in_the_layer_composite() {
++    use crate::{BlendMode, ImageFilter};
++    let mut canvas = Canvas::new(RecordingRenderer::default()).unwrap();
++    canvas.set_size(64, 64, 1.0);
++    for (filter, transfer) in [(ImageFilter::LinearRgbToSrgb, 1.0), (ImageFilter::SrgbToLinearRgb, 2.0)] {
++        assert!(canvas.begin_layer(&LayerEffects::new().with_filters(&[filter])));
++        let record = canvas.layers.last().unwrap();
++        assert!(record.filter_images.is_none(), "{filter:?}");
++        assert_eq!(record.reserved_filter_work, 0, "{filter:?}");
++        assert_eq!(canvas.transients.images.len(), 1, "{filter:?}: the capture only");
++        canvas.end_layer();
++        let params = canvas
++            .commands
++            .iter()
++            .rev()
++            .find_map(|c| match (&c.cmd_type, c.image) {
++                (CommandType::ConvexFill { params } | CommandType::Triangles { params }, Some(_)) => Some(*params),
++                _ => None,
++            })
++            .expect("a composite was recorded");
++        assert_eq!(params.image_transfer, transfer, "{filter:?}");
++        canvas.flush_to_output(());
++    }
++
++    let blended = LayerEffects::new()
++        .with_filters(&[ImageFilter::LinearRgbToSrgb])
++        .with_blend(BlendMode::Multiply);
++    assert_eq!(blended.composite_transfer(), None);
++    assert!(canvas.begin_layer(&blended));
++    assert!(
++        canvas.layers.last().unwrap().filter_images.is_some(),
++        "the chain keeps its pass"
++    );
++    canvas.end_layer();
++}
++
+ /// A filtered layer's reservation is sized by its pass plan: the result, one
+ /// chain scratch when needed, and a blur scratch when needed. The layer's
+ /// result has the same storage convention as its scratch, so longer chains
+diff --git a/src/lib.rs b/src/lib.rs
+index 2046d04..21d79c7 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -84,7 +84,7 @@ use geometry::*;
+ mod paint;
+ pub use paint::Paint;
+ pub use paint::TextDecoration;
+-use paint::{GlyphTexture, PaintFlavor, StrokeSettings};
++use paint::{GlyphTexture, PaintFlavor, StrokeSettings, Transfer};
+ use renderer::BlendPass;
+ 
+ mod path;
+@@ -1992,8 +1992,8 @@ where
+             if self.shadow_could_be_visible(device) {
+                 let text = text.to_owned();
+                 // Draw the text with its *real* paint so the shadow is built from
+-                // the glyphs' true coverage/alpha; render_shadow recolors it by the
+-                // shadow color while preserving that alpha.
++                // the glyphs' true coverage/alpha; render_shadow keeps that alpha
++                // and colours it by the shadow color after the blur.
+                 let shadow_paint = paint.clone();
+                 self.render_shadow(device, move |canvas| {
+                     let _ = canvas.draw_text(x, y, &text, &shadow_paint, render_mode);
+diff --git a/src/paint.rs b/src/paint.rs
+index 20589cc..42223f7 100644
+--- a/src/paint.rs
++++ b/src/paint.rs
+@@ -263,6 +263,18 @@ impl GradientColors {
+     }
+ }
+ 
++/// A colour-space conversion an image paint applies to each texel it
++/// samples: the sRGB transfer curve on the unpremultiplied colour, alpha
++/// untouched, rounded to 8 bits - what
++/// [`ImageFilter::LinearRgbToSrgb`](crate::ImageFilter::LinearRgbToSrgb) and
++/// its inverse store as a pass. A layer whose chain is one conversion
++/// composites through it instead (see `LayerEffects::composite_transfer`).
++#[derive(Copy, Clone, Debug, PartialEq, Eq)]
++pub enum Transfer {
++    ToSrgb,
++    ToLinearRgb,
++}
++
+ #[derive(Clone, Debug)]
+ #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+ pub enum PaintFlavor {
+@@ -275,6 +287,7 @@ pub enum PaintFlavor {
+         height: f32,
+         angle: f32,
+         tint: Color,
++        transfer: Option<Transfer>,
+     },
+     LinearGradient {
+         start: Position,
+@@ -607,6 +620,7 @@ impl Paint {
+             height,
+             angle,
+             tint: Color::rgbaf(1.0, 1.0, 1.0, alpha),
++            transfer: None,
+         })
+     }
+ 
+@@ -620,9 +634,18 @@ impl Paint {
+             height,
+             angle,
+             tint,
++            transfer: None,
+         })
+     }
+ 
++    /// This image paint converting each texel by `transfer` as it samples it.
++    pub(crate) fn with_transfer(mut self, transfer: Option<Transfer>) -> Self {
++        if let PaintFlavor::Image { transfer: t, .. } = &mut self.flavor {
++            *t = transfer;
++        }
++        self
++    }
++
+     /// Creates and returns a linear gradient paint.
+     ///
+     /// The gradient is transformed by the current transform when it is passed to `fill_path()` or `stroke_path()`.
+diff --git a/src/renderer/opengl/filters.glsl b/src/renderer/opengl/filters.glsl
+index d930d2d..93b5a06 100644
+--- a/src/renderer/opengl/filters.glsl
++++ b/src/renderer/opengl/filters.glsl
+@@ -102,21 +102,10 @@ vec4 renderTurbulence() {
+     return vec4(c.rgb * c.a, c.a);
+ }
+ 
+-// The sRGB transfer curve (IEC 61966-2-1) on unpremultiplied color, alpha
+-// untouched: frag[0].x > 0.5 converts linearRGB to sRGB, otherwise the reverse.
++// The sRGB transfer curve as a pass (see transferColor): frag[0].x > 0.5
++// converts linearRGB to sRGB, otherwise the reverse.
+ vec4 renderTransfer() {
+-    vec4 c = texture2D(tex, fpos.xy / extent);
+-    if (c.a > 0.0) {
+-        c.rgb /= c.a;
+-    }
+-    vec3 x = clamp(c.rgb, 0.0, 1.0);
+-    vec3 y;
+-    if (frag[0].x > 0.5) {
+-        y = mix(x * 12.92, 1.055 * pow(x, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, x));
+-    } else {
+-        y = mix(x / 12.92, pow((x + 0.055) / 1.055, vec3(2.4)), step(0.04045, x));
+-    }
+-    return vec4(y * c.a, c.a);
++    return transferColor(texture2D(tex, fpos.xy / extent), frag[0].x > 0.5);
+ }
+ 
+ 
+diff --git a/src/renderer/opengl/main-fs.glsl b/src/renderer/opengl/main-fs.glsl
+index 0918dab..2eabcd3 100644
+--- a/src/renderer/opengl/main-fs.glsl
++++ b/src/renderer/opengl/main-fs.glsl
+@@ -26,6 +26,7 @@ uniform vec4 frag[UNIFORMARRAY_SIZE];
+ #define imageBlurFilterCoeff frag[12].xyz
+ #define scissorRadius frag[12].w
+ #define conicStartAngle frag[13].x
++#define imageTransfer int(frag[13].y)
+ 
+ uniform sampler2D tex;
+ uniform sampler2D glyphtex;
+@@ -223,27 +224,42 @@ vec4 renderImageGradientTwoPointRadial() {
+     return ditherGradient(texture2D(tex, vec2(d, 0.0)));
+ }
+ 
+-vec4 renderImage() {
+-    // Calculate color from texture
+-    vec2 pt = (paintMat * vec3(fpos, 1.0)).xy / extent;
+-
+-    vec4 color = texture2D(tex, pt);
++// The sRGB transfer curve (IEC 61966-2-1) on a premultiplied color, run on
++// the unpremultiplied color, alpha untouched: to sRGB when toSrgb, else to
++// linearRGB.
++vec4 transferColor(vec4 c, bool toSrgb) {
++    if (c.a > 0.0) {
++        c.rgb /= c.a;
++    }
++    vec3 x = clamp(c.rgb, 0.0, 1.0);
++    vec3 y;
++    if (toSrgb) {
++        y = mix(x * 12.92, 1.055 * pow(x, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, x));
++    } else {
++        y = mix(x / 12.92, pow((x + 0.055) / 1.055, vec3(2.4)), step(0.04045, x));
++    }
++    return vec4(y * c.a, c.a);
++}
+ 
++// A sampled image texel as the paint uses it: premultiplied, converted by
++// the paint's transfer if it has one - rounded to 8 bits, as the transfer's
++// pass stores its result - then tinted.
++vec4 paintTexel(vec4 color) {
+     if (texType == 1) color = vec4(color.xyz * color.w, color.w);
+     if (texType == 2) color = vec4(color.x);
+-
++    if (imageTransfer != 0) color = floor(transferColor(color, imageTransfer == 1) * 255.0 + 0.5) / 255.0;
+     // Apply color tint and alpha.
+-    color *= innerCol;
+-    return color;
++    return color * innerCol;
++}
++
++vec4 renderImage() {
++    // Calculate color from texture
++    vec2 pt = (paintMat * vec3(fpos, 1.0)).xy / extent;
++    return paintTexel(texture2D(tex, pt));
+ }
+ 
+ vec4 renderPlainTextureCopy() {
+-    vec4 color = texture2D(tex, ftcoord);
+-    if (texType == 1) color = vec4(color.xyz * color.w, color.w);
+-    if (texType == 2) color = vec4(color.x);
+-    // Apply color tint and alpha.
+-    color *= innerCol;
+-    return color;
++    return paintTexel(texture2D(tex, ftcoord));
+ }
+ 
+ // A blur tap, premultiplied: a straight-alpha source is converted per tap,
+diff --git a/src/renderer/opengl/uniform_array.rs b/src/renderer/opengl/uniform_array.rs
+index befdafd..e4e27b5 100644
+--- a/src/renderer/opengl/uniform_array.rs
++++ b/src/renderer/opengl/uniform_array.rs
+@@ -95,6 +95,11 @@ impl UniformArray {
+         // frag[13].x in the fragment shader; frag[12].w holds the scissor radius.
+         self.0[52] = angle;
+     }
++
++    pub fn set_image_transfer(&mut self, transfer: f32) {
++        // frag[13].y in the fragment shader.
++        self.0[53] = transfer;
++    }
+ }
+ 
+ impl From<&Params> for UniformArray {
+@@ -120,6 +125,7 @@ impl From<&Params> for UniformArray {
+         arr.set_image_blur_filter_sigma(params.image_blur_filter_sigma);
+         arr.set_image_blur_filter_coeff(params.image_blur_filter_coeff);
+         arr.set_conic_start_angle(params.conic_start_angle);
++        arr.set_image_transfer(params.image_transfer);
+ 
+         arr
+     }
+diff --git a/src/renderer/params.rs b/src/renderer/params.rs
+index c7f1ffb..c9228f6 100644
+--- a/src/renderer/params.rs
++++ b/src/renderer/params.rs
+@@ -1,6 +1,6 @@
+ use crate::{
+     geometry::Position,
+-    paint::{GlyphTexture, GradientColors},
++    paint::{GlyphTexture, GradientColors, Transfer},
+     ImageFlags, ImageStore, PaintFlavor, PixelFormat, Scissor, Transform2D,
+ };
+ 
+@@ -27,6 +27,9 @@ pub struct Params {
+     pub(crate) image_blur_filter_sigma: f32,
+     pub(crate) image_blur_filter_coeff: [f32; 3],
+     pub(crate) conic_start_angle: f32,
++    /// The colour-space conversion an image paint applies to each texel: 0
++    /// none, 1 to sRGB, 2 to linearRGB.
++    pub(crate) image_transfer: f32,
+ }
+ 
+ impl Params {
+@@ -98,6 +101,7 @@ impl Params {
+                 height,
+                 angle,
+                 tint,
++                transfer,
+             } => {
+                 let Some(image_info) = images.info(*id) else {
+                     return params;
+@@ -105,6 +109,11 @@ impl Params {
+ 
+                 params.extent[0] = *width;
+                 params.extent[1] = *height;
++                params.image_transfer = match transfer {
++                    None => 0.0,
++                    Some(Transfer::ToSrgb) => 1.0,
++                    Some(Transfer::ToLinearRgb) => 2.0,
++                };
+ 
+                 let color = tint;
+ 
+diff --git a/src/renderer/wgpu.rs b/src/renderer/wgpu.rs
+index 7371308..c2480d6 100644
+--- a/src/renderer/wgpu.rs
++++ b/src/renderer/wgpu.rs
+@@ -182,6 +182,11 @@ impl UniformArray {
+         // float 51 (byte offset 204) holds the scissor radius.
+         self.0[52] = angle;
+     }
++
++    pub fn set_image_transfer(&mut self, transfer: f32) {
++        // Byte offset 212 (`image_transfer` in the WGSL Params struct).
++        self.0[53] = transfer;
++    }
+ }
+ 
+ impl From<&Params> for UniformArray {
+@@ -207,6 +212,7 @@ impl From<&Params> for UniformArray {
+         arr.set_image_blur_filter_sigma(params.image_blur_filter_sigma);
+         arr.set_image_blur_filter_coeff(params.image_blur_filter_coeff);
+         arr.set_conic_start_angle(params.conic_start_angle);
++        arr.set_image_transfer(params.image_transfer);
+ 
+         arr
+     }
+diff --git a/src/renderer/wgpu/filters.wgsl b/src/renderer/wgpu/filters.wgsl
+index d852b7a..d38d423 100644
+--- a/src/renderer/wgpu/filters.wgsl
++++ b/src/renderer/wgpu/filters.wgsl
+@@ -114,22 +114,11 @@ fn renderTurbulence(vertex: VertexOutput, params: Params) -> vec4<f32> {
+     return vec4<f32>(c.rgb * c.a, c.a);
+ }
+ 
+-// The sRGB transfer curve (IEC 61966-2-1) on unpremultiplied color, alpha
+-// untouched: scissor_mat[0].x > 0.5 converts linearRGB to sRGB, otherwise the
+-// reverse.
++// The sRGB transfer curve as a pass (see transferColor): scissor_mat[0].x >
++// 0.5 converts linearRGB to sRGB, otherwise the reverse.
+ fn renderTransfer(vertex: VertexOutput, params: Params) -> vec4<f32> {
+-    var c: vec4<f32> = textureSample(image_texture, image_sampler, vertex.fpos.xy / params.extent);
+-    if (c.a > 0.0) {
+-        c = vec4<f32>(c.rgb / c.a, c.a);
+-    }
+-    let x = clamp(c.rgb, vec3<f32>(0.0), vec3<f32>(1.0));
+-    var y: vec3<f32>;
+-    if (params.scissor_mat[0].x > 0.5) {
+-        y = mix(x * 12.92, 1.055 * pow(x, vec3<f32>(1.0 / 2.4)) - 0.055, step(vec3<f32>(0.0031308), x));
+-    } else {
+-        y = mix(x / 12.92, pow((x + 0.055) / 1.055, vec3<f32>(2.4)), step(vec3<f32>(0.04045), x));
+-    }
+-    return vec4<f32>(y * c.a, c.a);
++    let c = textureSample(image_texture, image_sampler, vertex.fpos.xy / params.extent);
++    return transferColor(c, params.scissor_mat[0].x > 0.5);
+ }
+ 
+ 
+diff --git a/src/renderer/wgpu/shader.wgsl b/src/renderer/wgpu/shader.wgsl
+index ac16112..ac05f23 100644
+--- a/src/renderer/wgpu/shader.wgsl
++++ b/src/renderer/wgpu/shader.wgsl
+@@ -21,6 +21,8 @@ struct Params {
+     // is frag[13].x in the flat uniform array written from Rust.
+     scissor_radius: f32,
+     conic_start_angle: f32,
++    // frag[13].y: an image paint's transfer, 0 none, 1 to sRGB, 2 to linearRGB.
++    image_transfer: f32,
+ }
+ 
+ const SHADER_TYPE_FillGradient: i32 = 0;
+@@ -384,28 +386,46 @@ fn renderImageGradient(vertex: VertexOutput, params: Params) -> vec4<f32> {
+     return ditherGradient(textureSample(image_texture, image_sampler, vec2<f32>(d, 0.0)), vertex.position.xy);
+ }
+ 
+-fn renderImage(vertex: VertexOutput, params: Params) -> vec4<f32> {
+-    // Calculate color from texture
+-    let pt: vec2<f32> = (params.paint_mat * vec3<f32>(vertex.fpos, 1.0)).xy / params.extent;
+-
+-    var color: vec4<f32> = textureSample(image_texture, image_sampler, pt);
++// The sRGB transfer curve (IEC 61966-2-1) on a premultiplied color, run on
++// the unpremultiplied color, alpha untouched: to sRGB when to_srgb, else to
++// linearRGB.
++fn transferColor(color: vec4<f32>, to_srgb: bool) -> vec4<f32> {
++    var c: vec4<f32> = color;
++    if (c.a > 0.0) {
++        c = vec4<f32>(c.rgb / c.a, c.a);
++    }
++    let x = clamp(c.rgb, vec3<f32>(0.0), vec3<f32>(1.0));
++    var y: vec3<f32>;
++    if (to_srgb) {
++        y = mix(x * 12.92, 1.055 * pow(x, vec3<f32>(1.0 / 2.4)) - 0.055, step(vec3<f32>(0.0031308), x));
++    } else {
++        y = mix(x / 12.92, pow((x + 0.055) / 1.055, vec3<f32>(2.4)), step(vec3<f32>(0.04045), x));
++    }
++    return vec4<f32>(y * c.a, c.a);
++}
+ 
++// A sampled image texel as the paint uses it: premultiplied, converted by
++// the paint's transfer if it has one - rounded to 8 bits, as the transfer's
++// pass stores its result - then tinted.
++fn paintTexel(texel: vec4<f32>, params: Params) -> vec4<f32> {
++    var color: vec4<f32> = texel;
+     if (params.tex_type == 1) { color = vec4(color.xyz * color.w, color.w); }
+     if (params.tex_type == 2) { color = vec4(color.x); }
+-
++    if (params.image_transfer > 0.5) {
++        color = floor(transferColor(color, params.image_transfer < 1.5) * 255.0 + 0.5) / 255.0;
++    }
+     // Apply color tint and alpha.
+-    color *= params.inner_col;
+-    return color;
++    return color * params.inner_col;
+ }
+ 
+-fn renderPlainTextureCopy(vertex: VertexOutput, params: Params) -> vec4<f32> {
+-    var color: vec4<f32> = textureSample(image_texture, image_sampler, vertex.ftcoord);
++fn renderImage(vertex: VertexOutput, params: Params) -> vec4<f32> {
++    // Calculate color from texture
++    let pt: vec2<f32> = (params.paint_mat * vec3<f32>(vertex.fpos, 1.0)).xy / params.extent;
++    return paintTexel(textureSample(image_texture, image_sampler, pt), params);
++}
+ 
+-    if (params.tex_type == 1) { color = vec4(color.xyz * color.w, color.w); }
+-    if (params.tex_type == 2) { color = vec4(color.x); }
+-    // Apply color tint and alpha.
+-    color *= params.inner_col;
+-    return color;
++fn renderPlainTextureCopy(vertex: VertexOutput, params: Params) -> vec4<f32> {
++    return paintTexel(textureSample(image_texture, image_sampler, vertex.ftcoord), params);
+ }
+ 
+ // A blur tap, premultiplied: a straight-alpha source is converted per tap,
+diff --git a/src/shadow.rs b/src/shadow.rs
+index df0ce44..ecaf551 100644
+--- a/src/shadow.rs
++++ b/src/shadow.rs
+@@ -113,17 +113,26 @@ where
+     /// fill, or a gradient/image with transparent texels, must cast a
+     /// correspondingly weaker shadow. To achieve this the closure draws the real
+     /// source (its actual paint and per-pixel alpha) into a transient offscreen
+-    /// image, then a solid `shadowColor` is composited over it with
+-    /// `CompositeOperation::SourceIn`, which masks the shadow color by the source's
+-    /// alpha. The result carries `shadowColor.rgb` with alpha
+-    /// `source.alpha * shadowColor.a` per pixel. That image is then
+-    /// Gaussian-blurred (standard deviation `shadowBlur / 2`) through the
+-    /// chain planner's passes ([`blur_passes`]): a sigma above the shader's
+-    /// per-pass bound runs down the pyramid and back, and the result is
+-    /// composited into the current render target, translated by the
+-    /// device-space shadow offset and drawn *under* the actual shape. The
+-    /// current scissor, global alpha and composite operation are honored
+-    /// when compositing.
++    /// image, then opaque white is composited over it with
++    /// `CompositeOperation::SourceIn`, which leaves the source's alpha in every
++    /// channel. That image is then Gaussian-blurred (standard deviation
++    /// `shadowBlur / 2`) through the chain planner's passes ([`blur_passes`]):
++    /// a sigma above the shader's per-pass bound runs down the pyramid and
++    /// back, and the result is composited into the current render target,
++    /// translated by the device-space shadow offset, drawn *under* the actual
++    /// shape and tinted by `shadowColor` as it lands, so each pixel gets
++    /// `shadowColor.rgb` at alpha `blurred alpha * shadowColor.a`. The current
++    /// scissor, global alpha and composite operation are honored when
++    /// compositing.
++    ///
++    /// The colour goes on after the blur, rounded once into the target, in
++    /// Canvas 2D's order (copy the alpha, blur it, then colour it), as
++    /// Firefox applies it too. Coloured first, an 8-bit store
++    /// holds the colour premultiplied by the shadow's alpha at every blur
++    /// pass. That is a fraction of a step for a near-black colour, the more so
++    /// in linearRGB, where `#0b0d10` at alpha 0.6 is 0.5 to 0.8 of one. Each
++    /// pass rounds it to a whole step, and unpremultiplied the shadow comes out
++    /// up to twice its colour.
+     ///
+     /// `draw_coverage` is expected to issue the shape's normal draw command(s) with
+     /// its real paint; the canvas transform in effect during the call already maps
+@@ -250,20 +259,26 @@ where
+ 
+         // The coverage pass: the real source (its actual paint and per-pixel
+         // alpha) drawn into the coverage image, in device space translated so
+-        // the padded bbox origin maps to (0, 0), then recolored by the shadow
+-        // color under SourceIn so the image carries shadowColor.rgb with
+-        // alpha = source.alpha * shadowColor.a - a transparent source casts
+-        // nothing, a half-alpha source a half-strength shadow. Then the blur:
+-        // the planner's passes from the coverage image into the blurred one,
+-        // through the scratches reserved for them; a sharp shadow composites
+-        // the coverage directly.
++        // the padded bbox origin maps to (0, 0), then recolored opaque white
++        // under SourceIn so every channel carries source.alpha - a transparent
++        // source casts nothing, a half-alpha source a half-strength shadow.
++        // Then the blur: the planner's passes from the coverage image into the
++        // blurred one, through the scratches reserved for them; a sharp shadow
++        // composites the coverage directly. The colour comes in at the
++        // composite below.
+         let mut coverage_transform = Transform2D::translation(-minx, -miny);
+         coverage_transform.premultiply(&state.transform);
+         let source_image = self.offscreen_pass(RenderTarget::Image(coverage_image), coverage_transform, |canvas| {
+             canvas.clear_rect(0, 0, width as u32, height as u32, Color::rgbaf(0.0, 0.0, 0.0, 0.0));
+             draw_coverage(canvas);
+             canvas.state_mut().composite_operation = CompositeOperationState::new(CompositeOperation::SourceIn);
+-            canvas.fill_device_rect(0.0, 0.0, width as f32, height as f32, &PaintFlavor::Color(shadow_color));
++            canvas.fill_device_rect(
++                0.0,
++                0.0,
++                width as f32,
++                height as f32,
++                &PaintFlavor::Color(Color::white()),
++            );
+             let (Some(blurred_image), Some(scratch)) = (blurred_image, scratch) else {
+                 return coverage_image;
+             };
+@@ -275,10 +290,16 @@ where
+         let dst_x = minx + txx;
+         let dst_y = miny + txy;
+ 
+-        // The shadow image already carries shadowColor.rgb and per-pixel alpha
+-        // `source.alpha * shadowColor.a` (baked in by the SourceIn mask above), so
+-        // here we only fold in the current global alpha.
+-        let tint = Color::rgbaf(1.0, 1.0, 1.0, state.alpha);
++        // The shadow image carries the blurred source alpha in every channel
++        // (white, premultiplied); the tint, premultiplied by the paint, scales
++        // it to shadowColor at shadowColor.a times the current global alpha,
++        // computed per pixel and rounded once into the target.
++        let tint = Color::rgbaf(
++            shadow_color.r,
++            shadow_color.g,
++            shadow_color.b,
++            shadow_color.a * state.alpha,
++        );
+         let mut shadow_paint = Paint::image_tint(source_image, dst_x, dst_y, width as f32, height as f32, 0.0, tint);
+         shadow_paint.set_anti_alias(false);
+ 
+diff --git a/tests/color_transfer_wgpu.rs b/tests/color_transfer_wgpu.rs
+index 8562839..47def46 100644
+--- a/tests/color_transfer_wgpu.rs
++++ b/tests/color_transfer_wgpu.rs
+@@ -4,7 +4,7 @@
+ //! round trip that the chain folds away.
+ #![cfg(feature = "wgpu")]
+ 
+-use femtovg::{Color, ImageFilter, ImageFlags, Paint, Path, PixelFormat, RenderTarget};
++use femtovg::{Color, ImageFilter, ImageFlags, LayerEffects, Paint, Path, PixelFormat, RenderTarget};
+ 
+ mod common;
+ use common::headless_device;
+@@ -170,3 +170,48 @@ fn transfer_round_trip_folds_to_identity() {
+         .fold_with(ImageFilter::LinearRgbToSrgb)
+         .is_none());
+ }
++
++/// A layer whose chain is one conversion converts as its composite samples
++/// the layer, and lands where the conversion's pass would: each texel of the
++/// layer's 8-bit store converted, rounded to 8 bits as the pass stores its
++/// result, and composited.
++#[test]
++fn a_layer_of_one_conversion_composites_as_its_pass_would() {
++    let Some((device, queue)) = headless_device() else {
++        return;
++    };
++    let (w, h) = (96, 40);
++    let content = [40.0f64, 120.0, 200.0];
++    let alphas = [1.0f64, 0.5, 0.2];
++    let stored = |x: f64| (x * 255.0).round() / 255.0;
++    for (filter, convert) in [
++        (ImageFilter::LinearRgbToSrgb, linear_to_srgb as fn(f64) -> f64),
++        (ImageFilter::SrgbToLinearRgb, srgb_to_linear),
++    ] {
++        let px = common::render_rgba(&device, &queue, w, h, Color::rgb(128, 128, 128), |canvas| {
++            let _ = canvas.begin_layer(&LayerEffects::new().with_filters(&[filter]));
++            for (i, &alpha) in alphas.iter().enumerate() {
++                let mut path = Path::new();
++                path.rect(8.0 + 28.0 * i as f32, 8.0, 24.0, 24.0);
++                let mut color = Color::rgb(40, 120, 200);
++                color.set_alphaf(alpha as f32);
++                canvas.fill_path(&path, &Paint::color(color));
++            }
++            canvas.end_layer();
++        });
++        for (i, &alpha) in alphas.iter().enumerate() {
++            let at = ((20 * w + 20 + 28 * i as u32) * 4) as usize;
++            let a = stored(alpha);
++            for c in 0..3 {
++                let texel = stored(content[c] / 255.0 * alpha);
++                let result = stored(convert(texel / a) * a);
++                let expected = 128.0 * (1.0 - a) + 255.0 * result;
++                let got = px[at + c] as f64;
++                assert!(
++                    (got - expected).abs() <= 1.0,
++                    "{filter:?} at alpha {alpha}, channel {c}: {got} against {expected:.2}"
++                );
++            }
++        }
++    }
++}
+diff --git a/tests/shadow_wgpu.rs b/tests/shadow_wgpu.rs
+index d0ffe44..d4b1a9a 100644
+--- a/tests/shadow_wgpu.rs
++++ b/tests/shadow_wgpu.rs
+@@ -232,6 +232,52 @@ fn blur_spreads_coverage_beyond_edge() {
+     );
+ }
+ 
++/// The shadow's colour goes on after its blur, rounded once, as Canvas 2D
++/// orders it: a colour channel of one 8-bit step at alpha 0.6 is 0.6 of a
++/// step times the blurred coverage, so it rounds away where the coverage is
++/// under 0.83. Coloured before the blur, it would round to a whole step at
++/// full coverage and spread as one wherever the coverage is over a half.
++#[test]
++fn shadow_is_coloured_after_its_blur() {
++    let Some((device, queue)) = headless_device() else {
++        eprintln!("skipping: no wgpu adapter available");
++        return;
++    };
++
++    let mut rect = Path::new();
++    rect.rect(40.0, 10.0, 32.0, 32.0); // occupies [40,72) x [10,42)
++    let shadowed = |color: Color| {
++        render_to_pixels(&device, &queue, |canvas| {
++            canvas.set_shadow_color(color);
++            canvas.set_shadow_offset(0.0, 30.0);
++            canvas.set_shadow_blur(12.0);
++            canvas.fill_path(&rect, &Paint::color(Color::rgb(0, 0, 0)));
++        })
++    };
++    // The blurred coverage, from the shadow in opaque white.
++    let coverage = shadowed(Color::rgb(255, 255, 255));
++    let faint = shadowed(Color::rgbaf(1.0 / 255.0, 0.0, 0.0, 0.6));
++    let mut checked = 0;
++    for y in 0..H {
++        for x in 0..W {
++            if (40..72).contains(&x) && (10..42).contains(&y) {
++                continue;
++            }
++            let a = pixel(&coverage, x, y)[3] as f32 / 255.0;
++            if !(0.55..=0.78).contains(&a) {
++                continue;
++            }
++            assert_eq!(
++                pixel(&faint, x, y)[..3],
++                [0, 0, 0],
++                "({x}, {y}) at coverage {a:.3}: the colour was spread before the blur"
++            );
++            checked += 1;
++        }
++    }
++    assert!(checked > 0, "no pixel has coverage between 0.55 and 0.78");
++}
++
+ /// Drop shadows must also render under offscreen image render targets, not just
+ /// the screen. This also confirms shadows compose correctly when the current
+ /// render target is an image.
+-- 
+2.43.0
+

@@ -1,0 +1,55 @@
+# shadow_merge/cost.py --summary, lavapipe. master: the harness before 2026-10-04 on master 9d574e0; master_lsm: the harness
+# of 2026-10-04 (rule 4a); master_sab: shadow_merge/library.patch with the harness of 2026-10-05 (rule 4b). 'held' is the
+# transient pool's bytes at flush with TRANSIENT_BUDGET_MB=1024; 'lost at default' a frame the library's 128 MiB budget
+# renders differently; 'passed through' the layers LAYER_STATS counts at that budget.
+# The memory passes time one frame per run, pipeline compilation included: only the last section is a timing.
+
+## 1080p, the 36 files with a merged shadow, one frame per run: master against master_sab
+framing frames | frame ms (sum)   master master_sab ratio | held MiB mean / max        master    master_sab | over 128 MiB master/master_sab | lost at default master/master_sab | passed through at default
+hd          36 |                   58237    62274 1.069 |                       69.5 / 179.3   75.1 / 187.7 |     6/7     |     7/8     | 82 -> 105
+  lost at default: corpus/buseybench/claude-fable-5-1.svg hd: master LOST, master_sab LOST (held 168.0 / 177.9 MiB, passed through 53 / 54)
+  lost at default: corpus/buseybench/claude-opus-5.svg hd: master LOST, master_sab LOST (held 162.8 / 167.5 MiB, passed through 3 / 3)
+  lost at default: corpus/buseybench/gemini-3-1-pro-preview.svg hd: master kept, master_sab LOST (held 126.9 / 145.9 MiB, passed through 0 / 0)
+  lost at default: corpus/buseybench/glm-5-3-flash.svg hd: master LOST, master_sab LOST (held 129.0 / 133.3 MiB, passed through 0 / 0)
+  lost at default: corpus/buseybench/gpt-5-2-pro.svg hd: master LOST, master_sab LOST (held 144.1 / 160.3 MiB, passed through 1 / 6)
+  lost at default: corpus/buseybench/kimi-k3.svg hd: master LOST, master_sab LOST (held 124.8 / 124.8 MiB, passed through 0 / 0)
+  lost at default: corpus/buseybench/qwen3-8-2-4t-a95b.svg hd: master LOST, master_sab LOST (held 164.3 / 170.1 MiB, passed through 7 / 10)
+  lost at default: corpus/buseybench/qwen3-8-flash.svg hd: master LOST, master_sab LOST (held 179.3 / 187.7 MiB, passed through 18 / 32)
+
+## 1080p, the same frames: master_lsm against master_sab
+framing frames | frame ms (sum) master_lsm master_sab ratio | held MiB mean / max    master_lsm    master_sab | over 128 MiB master_lsm/master_sab | lost at default master_lsm/master_sab | passed through at default
+hd          36 |                   61554    62274 1.012 |                       85.8 / 205.1   75.1 / 187.7 |    12/7     |    13/8     | 180 -> 105
+  lost at default: corpus/buseybench/claude-fable-5-1.svg hd: master_lsm LOST, master_sab LOST (held 194.4 / 177.9 MiB, passed through 57 / 54)
+  lost at default: corpus/buseybench/claude-opus-5.svg hd: master_lsm LOST, master_sab LOST (held 178.5 / 167.5 MiB, passed through 5 / 3)
+  lost at default: corpus/buseybench/fugu-ultra.svg hd: master_lsm LOST, master_sab kept (held 124.3 / 107.5 MiB, passed through 0 / 0)
+  lost at default: corpus/buseybench/gemini-3-1-pro-preview-custom-tools.svg hd: master_lsm LOST, master_sab kept (held 136.5 / 119.2 MiB, passed through 0 / 0)
+  lost at default: corpus/buseybench/gemini-3-1-pro-preview.svg hd: master_lsm LOST, master_sab LOST (held 180.8 / 145.9 MiB, passed through 10 / 0)
+  lost at default: corpus/buseybench/glm-5-3-flash.svg hd: master_lsm LOST, master_sab LOST (held 143.2 / 133.3 MiB, passed through 2 / 0)
+  lost at default: corpus/buseybench/glm-5v-turbo.svg hd: master_lsm LOST, master_sab kept (held 133.2 / 121.6 MiB, passed through 1 / 0)
+  lost at default: corpus/buseybench/gpt-5-2-pro.svg hd: master_lsm LOST, master_sab LOST (held 194.4 / 160.3 MiB, passed through 35 / 6)
+  lost at default: corpus/buseybench/kimi-k3.svg hd: master_lsm LOST, master_sab LOST (held 131.8 / 124.8 MiB, passed through 0 / 0)
+  lost at default: corpus/buseybench/nex-n2-pro.svg hd: master_lsm LOST, master_sab kept (held 147.0 / 122.0 MiB, passed through 0 / 0)
+  lost at default: corpus/buseybench/qwen3-8-2-4t-a95b.svg hd: master_lsm LOST, master_sab LOST (held 182.9 / 170.1 MiB, passed through 39 / 10)
+  lost at default: corpus/buseybench/qwen3-8-flash.svg hd: master_lsm LOST, master_sab LOST (held 205.1 / 187.7 MiB, passed through 31 / 32)
+  lost at default: corpus/buseybench/qwen3-8-max.svg hd: master_lsm LOST, master_sab kept (held 129.7 / 117.0 MiB, passed through 0 / 0)
+
+## 4x, the same files: master_lsm against master_sab
+framing frames | frame ms (sum) master_lsm master_sab ratio | held MiB mean / max    master_lsm    master_sab | over 128 MiB master_lsm/master_sab | lost at default master_lsm/master_sab | passed through at default
+z4          36 |                   35184    36818 1.046 |                       17.9 /  53.7   16.4 /  52.9 |     0/0     |     0/0     | 108 -> 108
+
+## Frame time: the 18 portraits at 1080p, three frames per run, the faster of two runs, builds alternating
+framing frames | frame ms (sum) master_lsm master_sab ratio | held MiB mean / max    master_lsm    master_sab | over 128 MiB master_lsm/master_sab | lost at default master_lsm/master_sab | passed through at default
+hd          18 |                   33414    32726 0.979 |                      143.4 / 205.1  127.5 / 187.7 |    12/7     |    13/8     | 540 -> 315
+  lost at default: corpus/buseybench/claude-fable-5-1.svg hd: master_lsm LOST, master_sab LOST (held 194.4 / 177.9 MiB, passed through 171 / 162)
+  lost at default: corpus/buseybench/claude-opus-5.svg hd: master_lsm LOST, master_sab LOST (held 178.5 / 167.5 MiB, passed through 15 / 9)
+  lost at default: corpus/buseybench/fugu-ultra.svg hd: master_lsm LOST, master_sab kept (held 124.3 / 107.5 MiB, passed through 0 / 0)
+  lost at default: corpus/buseybench/gemini-3-1-pro-preview-custom-tools.svg hd: master_lsm LOST, master_sab kept (held 136.5 / 119.2 MiB, passed through 0 / 0)
+  lost at default: corpus/buseybench/gemini-3-1-pro-preview.svg hd: master_lsm LOST, master_sab LOST (held 180.8 / 145.9 MiB, passed through 30 / 0)
+  lost at default: corpus/buseybench/glm-5-3-flash.svg hd: master_lsm LOST, master_sab LOST (held 143.2 / 133.3 MiB, passed through 6 / 0)
+  lost at default: corpus/buseybench/glm-5v-turbo.svg hd: master_lsm LOST, master_sab kept (held 133.2 / 121.6 MiB, passed through 3 / 0)
+  lost at default: corpus/buseybench/gpt-5-2-pro.svg hd: master_lsm LOST, master_sab LOST (held 194.4 / 160.3 MiB, passed through 105 / 18)
+  lost at default: corpus/buseybench/kimi-k3.svg hd: master_lsm LOST, master_sab LOST (held 131.8 / 124.8 MiB, passed through 0 / 0)
+  lost at default: corpus/buseybench/nex-n2-pro.svg hd: master_lsm LOST, master_sab kept (held 147.0 / 122.0 MiB, passed through 0 / 0)
+  lost at default: corpus/buseybench/qwen3-8-2-4t-a95b.svg hd: master_lsm LOST, master_sab LOST (held 182.9 / 170.1 MiB, passed through 117 / 30)
+  lost at default: corpus/buseybench/qwen3-8-flash.svg hd: master_lsm LOST, master_sab LOST (held 205.1 / 187.7 MiB, passed through 93 / 96)
+  lost at default: corpus/buseybench/qwen3-8-max.svg hd: master_lsm LOST, master_sab kept (held 129.7 / 117.0 MiB, passed through 0 / 0)
