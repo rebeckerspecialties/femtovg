@@ -1014,13 +1014,14 @@ fn separable_filter(
     render_pass_builder.set_filter_target_image(images, horizontal_buffer, wgpu::LoadOp::Clear(wgpu::Color::default()));
 
     if let Some((start, count)) = command.triangles_verts {
+        let uniforms = pipeline_and_bindgroup_mapper.stage_uniforms(&params);
         pipeline_and_bindgroup_mapper.update_renderpass(
             render_pass_builder,
             blend_state,
             wgpu::PrimitiveTopology::TriangleList,
             StencilTest::Disabled,
             Some(wgpu::Face::Back),
-            &params,
+            uniforms,
             images,
             command.image,
             command.glyph_texture,
@@ -1037,13 +1038,14 @@ fn separable_filter(
     params.tex_type = 0.0;
 
     if let Some((start, count)) = command.triangles_verts {
+        let uniforms = pipeline_and_bindgroup_mapper.stage_uniforms(&params);
         pipeline_and_bindgroup_mapper.update_renderpass(
             render_pass_builder,
             blend_state,
             wgpu::PrimitiveTopology::TriangleList,
             StencilTest::Disabled,
             Some(wgpu::Face::Back),
-            &params,
+            uniforms,
             images,
             Some(horizontal_buffer),
             command.glyph_texture,
@@ -1155,13 +1157,14 @@ fn single_pass_filter(
     render_pass_builder.set_filter_target_image(images, target_image, wgpu::LoadOp::Clear(wgpu::Color::default()));
 
     if let Some((start, count)) = command.triangles_verts {
+        let uniforms = pipeline_and_bindgroup_mapper.stage_uniforms(&params);
         pipeline_and_bindgroup_mapper.update_renderpass(
             render_pass_builder,
             blend_state,
             wgpu::PrimitiveTopology::TriangleList,
             StencilTest::Disabled,
             Some(wgpu::Face::Back),
-            &params,
+            uniforms,
             images,
             command.image,
             command.glyph_texture,
@@ -1182,13 +1185,14 @@ fn triangles(
     let Some((start, count)) = command.triangles_verts else {
         return;
     };
+    let uniforms = pipeline_and_bindgroup_mapper.stage_uniforms(params);
     pipeline_and_bindgroup_mapper.update_renderpass(
         render_pass_builder,
         blend_state(command).into(),
         wgpu::PrimitiveTopology::TriangleList,
         clip_guard(command.clip_active),
         Some(wgpu::Face::Back),
-        params,
+        uniforms,
         images,
         command.image,
         command.glyph_texture,
@@ -1216,6 +1220,7 @@ fn stencil_stroke(
 
     // Fill the stroke base without overlap
 
+    let uniforms = pipeline_and_bindgroup_mapper.stage_uniforms(&params2);
     pipeline_and_bindgroup_mapper.update_renderpass(
         render_pass_builder,
         blend_state,
@@ -1242,7 +1247,7 @@ fn stencil_stroke(
             stencil_reference: if command.clip_active { 0x80 } else { 0 },
         },
         Some(wgpu::Face::Back),
-        &params2,
+        uniforms,
         images,
         command.image,
         command.glyph_texture,
@@ -1256,6 +1261,7 @@ fn stencil_stroke(
 
     // Draw anti-aliased pixels.
 
+    let uniforms = pipeline_and_bindgroup_mapper.stage_uniforms(&params1);
     pipeline_and_bindgroup_mapper.update_renderpass(
         render_pass_builder,
         blend_state,
@@ -1280,7 +1286,7 @@ fn stencil_stroke(
             stencil_reference: if command.clip_active { 0x80 } else { 0 },
         },
         Some(wgpu::Face::Back),
-        &params1,
+        uniforms,
         images,
         command.image,
         command.glyph_texture,
@@ -1319,7 +1325,7 @@ fn stencil_stroke(
             stencil_reference: 0,
         },
         Some(wgpu::Face::Back),
-        &params1,
+        uniforms,
         images,
         command.image,
         command.glyph_texture,
@@ -1339,6 +1345,7 @@ fn stroke(
     params: Params,
     images: &mut ImageStore<Image>,
 ) {
+    let uniforms = pipeline_and_bindgroup_mapper.stage_uniforms(&params);
     for drawable in &command.drawables {
         let Some((start, count)) = drawable.stroke_verts else {
             continue;
@@ -1349,7 +1356,7 @@ fn stroke(
             wgpu::PrimitiveTopology::TriangleStrip,
             clip_guard(command.clip_active),
             Some(wgpu::Face::Back),
-            &params,
+            uniforms,
             images,
             command.image,
             command.glyph_texture,
@@ -1367,6 +1374,7 @@ fn concave_fill(
     fill_params: &Params,
 ) {
     if command.drawables.iter().any(|drawable| drawable.fill_verts.is_some()) {
+        let uniforms = pipeline_and_bindgroup_mapper.stage_uniforms(stencil_params);
         pipeline_and_bindgroup_mapper.update_renderpass(
             render_pass_builder,
             None,
@@ -1401,7 +1409,7 @@ fn concave_fill(
                 stencil_reference: if command.clip_active { 0x80 } else { 0 },
             },
             None,
-            stencil_params,
+            uniforms,
             images,
             None,
             GlyphTexture::None,
@@ -1415,6 +1423,7 @@ fn concave_fill(
     }
 
     let blend_state = blend_state(command);
+    let uniforms = pipeline_and_bindgroup_mapper.stage_uniforms(fill_params);
 
     if command.drawables.iter().any(|drawable| drawable.stroke_verts.is_some()) {
         for drawable in &command.drawables {
@@ -1453,7 +1462,7 @@ fn concave_fill(
                     stencil_reference: if command.clip_active { 0x80 } else { 0 },
                 },
                 Some(wgpu::Face::Back),
-                fill_params,
+                uniforms,
                 images,
                 command.image,
                 command.glyph_texture,
@@ -1511,7 +1520,7 @@ fn concave_fill(
                 stencil_reference: if command.clip_active { 0x80 } else { 0 },
             },
             Some(wgpu::Face::Back),
-            fill_params,
+            uniforms,
             images,
             command.image,
             command.glyph_texture,
@@ -1528,7 +1537,7 @@ fn clip_fill(
     render_pass_builder: &mut RenderPassBuilder<'_>,
     images: &mut ImageStore<Image>,
 ) {
-    let stencil_params = Params::stencil();
+    let uniforms = pipeline_and_bindgroup_mapper.stage_uniforms(&Params::stencil());
 
     // Winding, only where the clip bit is currently set; bit 7 protected.
     pipeline_and_bindgroup_mapper.update_renderpass(
@@ -1555,7 +1564,7 @@ fn clip_fill(
             stencil_reference: 0x80,
         },
         None,
-        &stencil_params,
+        uniforms,
         images,
         None,
         GlyphTexture::None,
@@ -1599,7 +1608,7 @@ fn clip_fill(
             stencil_reference: 0x80,
         },
         None,
-        &stencil_params,
+        uniforms,
         images,
         None,
         GlyphTexture::None,
@@ -1631,7 +1640,7 @@ fn clip_fill(
             stencil_reference: 0,
         },
         None,
-        &stencil_params,
+        uniforms,
         images,
         None,
         GlyphTexture::None,
@@ -1648,7 +1657,7 @@ fn clip_reset(
     images: &mut ImageStore<Image>,
     visible: bool,
 ) {
-    let stencil_params = Params::stencil();
+    let uniforms = pipeline_and_bindgroup_mapper.stage_uniforms(&Params::stencil());
     pipeline_and_bindgroup_mapper.update_renderpass(
         render_pass_builder,
         None,
@@ -1673,7 +1682,7 @@ fn clip_reset(
             stencil_reference: if visible { 0x80 } else { 0x00 },
         },
         None,
-        &stencil_params,
+        uniforms,
         images,
         None,
         GlyphTexture::None,
@@ -1691,6 +1700,7 @@ fn convex_fill(
     images: &mut ImageStore<Image>,
 ) {
     let blend_state = blend_state(command).into();
+    let uniforms = pipeline_and_bindgroup_mapper.stage_uniforms(params);
 
     for drawable in &command.drawables {
         if let Some((start, count)) = drawable.fill_verts {
@@ -1700,7 +1710,7 @@ fn convex_fill(
                 wgpu::PrimitiveTopology::TriangleList,
                 clip_guard(command.clip_active),
                 Some(wgpu::Face::Back),
-                params,
+                uniforms,
                 images,
                 command.image,
                 command.glyph_texture,
@@ -1715,7 +1725,7 @@ fn convex_fill(
                 wgpu::PrimitiveTopology::TriangleStrip,
                 clip_guard(command.clip_active),
                 Some(wgpu::Face::Back),
-                params,
+                uniforms,
                 images,
                 command.image,
                 command.glyph_texture,
@@ -1745,6 +1755,7 @@ fn clear_rect(
     );
     params.shader_type = ShaderType::FillColorUnclipped;
     if let Some((start, count)) = command.triangles_verts {
+        let uniforms = pipeline_and_bindgroup_mapper.stage_uniforms(&params);
         pipeline_and_bindgroup_mapper.update_renderpass(
             render_pass_builder,
             Some(wgpu::BlendState {
@@ -1784,7 +1795,7 @@ fn clear_rect(
                 stencil_reference: 0,
             },
             None,
-            &params,
+            uniforms,
             images,
             None,
             Default::default(),
@@ -2334,6 +2345,20 @@ impl CommandToPipelineAndBindGroupMapper {
         }
     }
 
+    /// Stages `params` in the frame's uniform buffer, unless they are the ones staged last, and
+    /// returns the offset of their slot for the draws that use them.
+    fn stage_uniforms(&mut self, params: &Params) -> u32 {
+        let uniforms = UniformArray::from(params);
+        if self.current_uniforms.as_ref() != Some(&uniforms) {
+            let end = self.uniform_staging.len() + self.uniform_stride as usize;
+            self.uniform_staging
+                .extend_from_slice(bytemuck::cast_slice(uniforms.as_slice()));
+            self.uniform_staging.resize(end, 0);
+            self.current_uniforms = Some(uniforms);
+        }
+        (self.uniform_staging.len() - self.uniform_stride as usize) as u32
+    }
+
     /// The pipeline for `state`, built on first use.
     fn pipeline(&mut self, state: &PipelineState) -> &wgpu::RenderPipeline {
         let recent = self.recent_pipelines.iter().position(|(recent, _)| recent == state);
@@ -2359,7 +2384,7 @@ impl CommandToPipelineAndBindGroupMapper {
         primitive_topology: wgpu::PrimitiveTopology,
         stencil_test: StencilTest,
         cull_mode: Option<wgpu::Face>,
-        params: &Params,
+        uniform_offset: u32,
         images: &'a ImageStore<Image>,
         image: Option<ImageId>,
         glyph_texture: GlyphTexture,
@@ -2392,19 +2417,9 @@ impl CommandToPipelineAndBindGroupMapper {
             self.current_bind_group_state = Some(bind_group_state);
         }
 
-        let uniforms = UniformArray::from(params);
-        if self.current_uniforms.as_ref() != Some(&uniforms) {
-            let end = self.uniform_staging.len() + self.uniform_stride as usize;
-            self.uniform_staging
-                .extend_from_slice(bytemuck::cast_slice(uniforms.as_slice()));
-            self.uniform_staging.resize(end, 0);
-            self.current_uniforms = Some(uniforms);
-        }
-        // The current command's slot is the last one staged.
-        let offset = (self.uniform_staging.len() - self.uniform_stride as usize) as u32;
-        if bind_group_changed || render_pass_builder.current_bound_offset != Some(offset) {
-            render_pass.set_bind_group(1, self.current_bind_group.as_ref().unwrap(), &[offset]);
-            render_pass_builder.current_bound_offset = Some(offset);
+        if bind_group_changed || render_pass_builder.current_bound_offset != Some(uniform_offset) {
+            render_pass.set_bind_group(1, self.current_bind_group.as_ref().unwrap(), &[uniform_offset]);
+            render_pass_builder.current_bound_offset = Some(uniform_offset);
         }
 
         let pipeline_state = PipelineState::new(
