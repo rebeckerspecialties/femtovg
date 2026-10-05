@@ -76,14 +76,29 @@ float scissorMask(vec2 p) {
 }
 
 #ifdef CLIP_SHAPE
+// The share of a pixel inside a straight edge that lies `depth` fringe
+// widths past the pixel's center along `normal`, a unit vector: what a
+// half-plane leaves of the square. A ramp one fringe wide is that share
+// only where the edge lies along an axis; across a diagonal the square is
+// wider, and the share is not linear in the depth near its corners.
+float edgeShare(float depth, vec2 normal) {
+    vec2 n = abs(normal);
+    float a = max(n.x, n.y);
+    float b = min(n.x, n.y);
+    float t = max(0.5 * (a + b) - abs(depth), 0.0);
+    float cut = min(t < b ? t * t / (2.0 * a * max(b, 0.000001)) : (t - 0.5 * b) / a, 0.5);
+    return depth > 0.0 ? 1.0 - cut : cut;
+}
+
 // The clip taken as a shape, in the programs of the draws under one:
 // coverage of a box with elliptical corners, in a frame where one unit is
 // one fringe width across each side. clipInner is where the corners'
 // ellipses are centered and clipOuter the half extents plus half a fringe.
-// Past a corner's center the distance is the first-order one to its ellipse,
-// exact for a circle: k1 is one on the ellipse, and its gradient in device
-// pixels is g along the frame's rows - unit vectors, at a right angle only
-// without a skew. A box with square corners has their centers out of reach.
+// Past a corner's center the edge is the corner's ellipse, on which k1 is
+// one: `across` is the gradient of k1 in device pixels, short of a factor
+// of k1, so the first-order distance to the ellipse - exact for a circle -
+// is (k1 - 1) k1 over its length, and it points across the edge. A box
+// with square corners has their centers out of reach.
 float clipMask(vec2 p) {
     vec2 at = vec2(dot(clipLinear.xy, p), dot(clipLinear.zw, p)) + clipOffset;
     vec2 reach = abs(at);
@@ -92,9 +107,11 @@ float clipMask(vec2 p) {
         vec2 radii = clipOuter - vec2(0.5, 0.5) - clipInner;
         vec2 k = corner / radii;
         float k1 = length(k);
-        vec2 g = k / radii;
-        float lean = dot(clipLinear.xy, clipLinear.zw) * sign(at.x) * sign(at.y);
-        return clamp(0.5 - (k1 - 1.0) * k1 / sqrt(dot(g, g) + 2.0 * g.x * g.y * lean), 0.0, 1.0);
+        vec2 g = k / radii * sign(at);
+        vec2 across = g.x * clipLinear.xy + g.y * clipLinear.zw;
+        float slope = length(across);
+        // A row of the frame is as long as a device pixel is in fringe widths.
+        return edgeShare((1.0 - k1) * k1 * length(clipLinear.xy) / slope, across / slope);
     }
     vec2 cover = clamp(clipOuter - reach, 0.0, 1.0);
     return cover.x * cover.y;

@@ -74,9 +74,12 @@ fn shapes() -> Vec<(&'static str, Path, f32)> {
 }
 
 /// A shape as a clip covers what it covers as a fill, edge pixels included:
-/// as many partly covered pixels, none further from the fill than the
-/// quarter pixel a fill's flattened outline may stray. Under a rotation and
-/// at a device pixel ratio of two as well.
+/// none further from the fill than the quarter pixel a fill's flattened
+/// outline may stray, and as many partly covered - or up to a third more
+/// where the edge runs diagonally, since the clip covers every pixel its
+/// edge crosses by its share and a fill's fringe only those within half a
+/// pixel of the edge. Under a rotation and at a device pixel ratio of two
+/// as well.
 #[test]
 fn a_shape_clip_covers_its_edge_as_the_fill_of_the_shape_does() {
     let Some((device, queue)) = headless_device() else {
@@ -106,7 +109,7 @@ fn a_shape_clip_covers_its_edge_as_the_fill_of_the_shape_does() {
             assert!(worst <= 64, "{name} at dpr {dpr}: a pixel differs by {worst}");
             assert!(partial > 60, "{name} at dpr {dpr}: only {partial} edge pixels");
             assert!(
-                partial.abs_diff(partial_fill) * 20 <= partial_fill,
+                partial * 20 >= partial_fill * 19 && partial * 3 <= partial_fill * 4,
                 "{name} at dpr {dpr}: {partial} edge pixels against the fill's {partial_fill}"
             );
         }
@@ -162,6 +165,78 @@ fn clip_coverage_is_the_share_of_the_pixel_inside() {
             near(covered(&circle, x, 47), want),
             "circle x {x}: {}",
             covered(&circle, x, 47)
+        );
+    }
+}
+
+/// Round a corner, the clip's edge crosses pixels at every angle, and the
+/// coverage is still each pixel's share inside - the area a slanted edge
+/// leaves of the pixel, which a ramp one pixel wide across the edge misses
+/// by up to 13/255 on a diagonal: a circle, an ellipse and a rounded rect,
+/// each within 6/255 of the share at every pixel.
+#[test]
+fn a_round_corner_takes_each_pixels_share_at_any_angle() {
+    let Some((device, queue)) = headless_device() else {
+        eprintln!("skipping: no wgpu adapter available");
+        return;
+    };
+    for (name, center, extent, radii) in [
+        ("circle", [48.3, 47.6], [30.4, 30.4], [30.4, 30.4]),
+        ("small circle", [48.3, 47.6], [6.3, 6.3], [6.3, 6.3]),
+        ("ellipse", [48.0, 48.5], [40.25, 17.5], [40.25, 17.5]),
+        ("rounded rect", [47.4, 45.95], [35.0, 25.25], [14.0, 14.0]),
+    ] {
+        let frame = render(&device, &queue, |canvas| {
+            let mut clip = Path::new();
+            if radii == extent {
+                clip.ellipse(center[0], center[1], extent[0], extent[1]);
+            } else {
+                clip.rounded_rect(
+                    center[0] - extent[0],
+                    center[1] - extent[1],
+                    2.0 * extent[0],
+                    2.0 * extent[1],
+                    radii[0],
+                );
+            }
+            canvas.clip_path(&clip, FillRule::NonZero);
+            fill_everything(canvas);
+        });
+        // The share inside from 64 x 64 samples, to a 128th of a pixel.
+        let inside = |x: f32, y: f32| {
+            let side = [(x - center[0]).abs() - extent[0], (y - center[1]).abs() - extent[1]];
+            let corner = [side[0] + radii[0], side[1] + radii[1]];
+            if corner[0] > 0.0 && corner[1] > 0.0 {
+                (corner[0] / radii[0]).hypot(corner[1] / radii[1]) <= 1.0
+            } else {
+                side[0] <= 0.0 && side[1] <= 0.0
+            }
+        };
+        let (mut worst, mut at, mut partial) = (0.0f32, 0, 0);
+        for i in 0..(W * H) as usize {
+            let (left, top) = ((i as u32 % W) as f32, (i as u32 / W) as f32);
+            let hits = (0..4096)
+                .filter(|s| {
+                    inside(
+                        left + ((s % 64) as f32 + 0.5) / 64.0,
+                        top + ((s / 64) as f32 + 0.5) / 64.0,
+                    )
+                })
+                .count();
+            let share = hits as f32 / 4096.0;
+            partial += usize::from(share > 0.0 && share < 1.0);
+            let off = (1.0 - f32::from(frame[i * 4 + 1]) / 255.0 - share).abs();
+            if off > worst {
+                (worst, at) = (off, i);
+            }
+        }
+        assert!(partial > 30, "{name}: only {partial} edge pixels");
+        assert!(
+            worst < 6.0 / 255.0,
+            "{name}: ({}, {}) is {} of 255 from its share inside",
+            at as u32 % W,
+            at as u32 / W,
+            worst * 255.0
         );
     }
 }
