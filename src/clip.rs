@@ -2083,7 +2083,7 @@ fn a_clip_asked_for_as_before_has_its_mask_by_the_request() {
     let mut canvas = Canvas::new(RecordingRenderer::default()).unwrap();
     canvas.set_size(100, 100, 1.0);
     let clip = notched_rect(10.25, 20.5, 40.0, 30.0);
-    let mut frame = |canvas: &mut Canvas<RecordingRenderer>, dx: f32, twice: bool| {
+    let frame = |canvas: &mut Canvas<RecordingRenderer>, dx: f32, twice: bool| {
         for _ in 0..if twice { 2 } else { 1 } {
             canvas.save();
             canvas.translate(dx, 0.0);
