@@ -10,7 +10,7 @@ from common import *
 
 builds = [(a.split('=', 1) + [a])[:2] for a in sys.argv[1:] if not a.startswith('refs=')]
 refs = dict(a.split('=', 1) for a in sys.argv[1:] if a.startswith('refs=')).get('refs', 'chr,chg,ff').split(',')
-names = {'chr': 'Chromium software', 'chg': 'Chromium GPU', 'ff': 'Firefox'}
+names = {'chr': 'Chromium software', 'chg': 'Chromium GPU', 'ff': 'Firefox', 'wk': 'WebKit', 'id': 'area'}
 # probe -> (the clip's rect in its own units, the viewport, the viewBox, the sides read, framings)
 SQUARE, EXPORT, TALL = (200, 200), (173, 131), (200, 221)
 PROBES = [
@@ -21,6 +21,9 @@ PROBES = [
     ('rect-clip-rect-inside', (20.3, 30.6, 40, 20), SQUARE, SQUARE, 'lt', ['z1']),
     ('rect-clip-path-inside', (20.3, 30.6, 59.7, 49.4), SQUARE, SQUARE, 'lt', ['z1']),
     ('rounded-clip-rect-inside', (20.3, 46, 40, 28.4), SQUARE, SQUARE, 'l', ['z1']),
+    ('rounded-clip-rect-cover', (20.3, 30.6, 80.5, 60.25), SQUARE, SQUARE, 'lrtb', ['z1']),
+    ('rounded-clip-path-cover', (20.3, 30.6, 80.5, 60.25), SQUARE, SQUARE, 'lrtb', ['z1']),
+    ('rounded-clip-rect-band', (20.3, 30.6, 80.5, 29.65), SQUARE, SQUARE, 'lrt', ['z1']),
     ('nested-twin-clips', (20.3, 30.6, 50.5, 30.25), SQUARE, SQUARE, 'lrtb', ['z1']),
     ('nested-twin-rounded-clips', (20.3, 30.6, 80.5, 60.25), SQUARE, SQUARE, 'lrtb', ['z1']),
     ('viewport-fill', (0, 0, 173, 131), EXPORT, EXPORT, 'b', ['z1']),

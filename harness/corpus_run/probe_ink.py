@@ -14,7 +14,7 @@ builds = [(a.split('=', 1) + [a])[:2] for a in sys.argv[1:] if not a.startswith(
 opts = dict(a.split('=', 1) for a in sys.argv[1:] if a.startswith(('refs=', 'framing=')))
 refs = opts.get('refs', 'chr,chg,ff').split(',')
 framing = opts.get('framing', 'z1')
-names = {'chr': 'Chromium software', 'chg': 'Chromium GPU', 'ff': 'Firefox'}
+names = {'chr': 'Chromium software', 'chg': 'Chromium GPU', 'ff': 'Firefox', 'wk': 'WebKit', 'id': 'area'}
 ROUND = (4 - math.pi) * 12 * 12  # what four corners of radius 12 leave out
 
 
@@ -33,6 +33,9 @@ PROBES = {
     'rect-clip-rect-inside': (40 * 20, 200),
     'rect-clip-path-inside': (polygon((20.3, 30.6), (80, 30.6), (90, 50), (80, 80), (20.3, 80)), 200),
     'rounded-clip-rect-inside': (40 * 28.4, 200),
+    'rounded-clip-rect-cover': (80.5 * 60.25 - ROUND, 200),
+    'rounded-clip-path-cover': (80.5 * 60.25 - ROUND, 200),
+    'rounded-clip-rect-band': (80.5 * 29.65 - ROUND / 2, 200),
     'nested-twin-clips': (50.5 * 30.25, 200),
     'nested-twin-rounded-clips': (80.5 * 60.25 - ROUND, 200),
     'viewport-fill': (173 * 131, 173),

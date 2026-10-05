@@ -3,10 +3,12 @@
 before | after | Chromium | before vs Chromium | after vs Chromium, and with --firefox the same three for Firefox.
 A difference panel is white where the frame is within 8/255 of the reference, orange from 9 to 20 and red beyond.
 
-  sheet.py OUT.png BEFORE[=label] AFTER[=label] [--firefox] [--refs=chr,chg,ff] [--diffs-only] ROW...
+  sheet.py OUT.png BEFORE[=label] AFTER[=label] [--firefox] [--refs=chr,chg,ff] [--diffs-only] [--range=chr,chg,ff] ROW...
 
 --refs names the references (refs/PREFIX_*.png): chr Chromium rasterizing in software, chg Chromium rasterizing on
 the GPU (refs_gpu.py), ff Firefox. --diffs-only leaves the reference pictures out, for three references in a row.
+--range=chr,chg,ff adds a pair of panels for how far each build lies outside the range those references span:
+where the browsers disagree among themselves a build between them is white.
 
 ROW is NAME:FRAMING followed by options, each after a colon:
   box=X,Y,W,H   the window, in frame pixels (default: the whole frame)
@@ -33,6 +35,7 @@ for a in args:
 if len(browsers) > 1 and 'chg' in browsers:
     NAMES['chr'], SHORT['chr'] = 'Chromium 131 in software', 'Chromium software'
 diffs_only = '--diffs-only' in args
+span = next((a.split('=', 1)[1].split(',') for a in args if a.startswith('--range=')), [])
 args = [a for a in args if not a.startswith('--')]
 out = args.pop(0)
 (before, before_label), (after, after_label) = ((a.split('=', 1) + [a])[:2] for a in args[:2])
@@ -78,9 +81,15 @@ def picture(im, box, zoom, shrink):
     return im.resize((w * zoom, h * zoom), Image.NEAREST)
 
 
+def outside(a, refs):
+    """How far a frame lies outside the range the references span, per pixel: 0 where it is between them."""
+    low, high = np.minimum.reduce(refs), np.maximum.reduce(refs)
+    return np.maximum(np.maximum(low - a, a - high), 0).max(axis=2)
+
+
 def difference(a, b, box, zoom, shrink):
     x, y, w, h = box
-    d = np.abs(a - b).max(axis=2)[y:y + h, x:x + w]
+    d = (b if b.ndim == 2 else np.abs(a - b).max(axis=2))[y:y + h, x:x + w]
     if shrink > 1:
         hh, ww = h // shrink * shrink, w // shrink * shrink
         d = d[:hh, :ww].reshape(hh // shrink, shrink, ww // shrink, shrink).max(axis=(1, 3))
@@ -125,6 +134,12 @@ for spec in args[2:]:
         panels += [(f'{before_label} vs {short}', difference(b, ref, box, zoom, shrink)),
                    (f'{after_label} vs {short}', difference(a, ref, box, zoom, shrink))]
         caption += f', vs {short} {beyond(b, ref):.2f} % -> {beyond(a, ref):.2f} %'
+    if span:
+        among = [reference(r, key, framing) for r in span]
+        ob, oa = outside(b, among), outside(a, among)
+        panels += [(f'{before_label} outside the browsers', difference(b, ob, box, zoom, shrink)),
+                   (f'{after_label} outside the browsers', difference(a, oa, box, zoom, shrink))]
+        caption += f', outside all {len(span)} {100 * (ob > 20).mean():.2f} % -> {100 * (oa > 20).mean():.2f} %'
     caption += f'. {note}' if note else ''
     rows.append((caption, panels))
     print(caption)

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <!-- The same with the rect drawn as a path, as design tools export a frame's background -->
+  <clipPath id="c"><rect x="20.3" y="30.6" width="80.5" height="60.25" rx="12"/></clipPath>
+  <g clip-path="url(#c)"><path d="M100.8 30.6H20.3V90.85H100.8V30.6Z" fill="green"/></g>
+</svg>
