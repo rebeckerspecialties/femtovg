@@ -1725,6 +1725,113 @@ fn dump(children: &[usvg::Node], depth: usize) {
     }
 }
 
+/// Fills drawn through a coverage mask by the FILL_MASKS experiment, and all fills, over the run.
+static MASKED_FILLS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+static FILLS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
+/// Experiment (FILL_MASKS=T, device pixels; FILL_MASKS_MAX=N, the most pixels the fill's bounds may span, 65536 by
+/// default): a fill whose mean width on the target - twice its area over its perimeter - is under T is drawn as a
+/// rect over its bounds under the path as a clip, which the library takes as a coverage mask: each pixel by its
+/// share inside the path, where the fringes of a fill thinner than a pixel over-ink it (femtovg/femtovg#327).
+#[cfg(harness_clip_paths)]
+fn fill_through_mask<T: femtovg::Renderer>(
+    canvas: &mut Canvas<T>,
+    svg_path: &usvg::Path,
+    path: &Path,
+    paint: &Paint,
+    rule: usvg::FillRule,
+) -> bool {
+    use usvg::tiny_skia_path::PathSegment;
+    static LIMITS: std::sync::OnceLock<Option<(f32, f32)>> = std::sync::OnceLock::new();
+    let limits = LIMITS.get_or_init(|| {
+        let threshold = std::env::var("FILL_MASKS").ok()?.parse().ok()?;
+        let most = std::env::var("FILL_MASKS_MAX").ok().and_then(|v| v.parse().ok()).unwrap_or(65536.0);
+        Some((threshold, most))
+    });
+    let Some((threshold, most)) = *limits else {
+        return false;
+    };
+    FILLS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let t = canvas.transform();
+    let scale = (t[0] * t[3] - t[1] * t[2]).abs().sqrt();
+    // The path as chords, eight a curve, in its own units: the signed area of every contour - a fill closes each -
+    // and their length.
+    let (mut area, mut perimeter) = (0.0f32, 0.0f32);
+    let (mut start, mut last) = ((0.0f32, 0.0f32), (0.0f32, 0.0f32));
+    let mut edge = |from: (f32, f32), to: (f32, f32)| {
+        area += (from.0 * to.1 - to.0 * from.1) * 0.5;
+        perimeter += (to.0 - from.0).hypot(to.1 - from.1);
+    };
+    for seg in svg_path.data().segments() {
+        match seg {
+            PathSegment::MoveTo(p) => {
+                edge(last, start);
+                (start, last) = ((p.x, p.y), (p.x, p.y));
+            }
+            PathSegment::LineTo(p) => {
+                edge(last, (p.x, p.y));
+                last = (p.x, p.y);
+            }
+            PathSegment::QuadTo(a, p) => {
+                let from = last;
+                for i in 1..=8 {
+                    let (t, s) = (i as f32 / 8.0, 1.0 - i as f32 / 8.0);
+                    let at = (
+                        s * s * from.0 + 2.0 * s * t * a.x + t * t * p.x,
+                        s * s * from.1 + 2.0 * s * t * a.y + t * t * p.y,
+                    );
+                    edge(last, at);
+                    last = at;
+                }
+            }
+            PathSegment::CubicTo(a, b, p) => {
+                let from = last;
+                for i in 1..=8 {
+                    let (t, s) = (i as f32 / 8.0, 1.0 - i as f32 / 8.0);
+                    let at = (
+                        s * s * s * from.0 + 3.0 * s * s * t * a.x + 3.0 * s * t * t * b.x + t * t * t * p.x,
+                        s * s * s * from.1 + 3.0 * s * s * t * a.y + 3.0 * s * t * t * b.y + t * t * t * p.y,
+                    );
+                    edge(last, at);
+                    last = at;
+                }
+            }
+            PathSegment::Close => {
+                edge(last, start);
+                last = start;
+            }
+        }
+    }
+    edge(last, start);
+    let width = 2.0 * area.abs() / perimeter.max(f32::MIN_POSITIVE) * scale;
+    let bounds = svg_path.data().bounds();
+    let spans = (bounds.width() * scale + 2.0) * (bounds.height() * scale + 2.0);
+    if !(width < threshold && spans <= most) {
+        return false;
+    }
+    MASKED_FILLS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    // Two pixels around the path's bounds: the rect's own fringe stays clear of the mask.
+    let margin = 2.0 / scale.max(f32::MIN_POSITIVE);
+    let mut rect = Path::new();
+    rect.rect(
+        bounds.left() - margin,
+        bounds.top() - margin,
+        bounds.width() + 2.0 * margin,
+        bounds.height() + 2.0 * margin,
+    );
+    canvas.save();
+    canvas.clip_path(
+        path,
+        match rule {
+            usvg::FillRule::NonZero => FillRule::NonZero,
+            usvg::FillRule::EvenOdd => FillRule::EvenOdd,
+        },
+    );
+    canvas.fill_path(&rect, paint);
+    canvas.restore();
+    true
+}
+
 static PATH_COUNTER: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 static LAYERS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 static DEPTH: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
@@ -2198,7 +2305,13 @@ fn draw_nodes(canvas: &mut Canvas<WGPURenderer>, children: &[usvg::Node], scale:
                             usvg::FillRule::EvenOdd => FillRule::EvenOdd,
                         });
                         canvas.set_global_alpha(fill.opacity().get());
-                        canvas.fill_path(&path, &paint);
+                        #[cfg(harness_clip_paths)]
+                        let masked = fill_through_mask(canvas, svg_path, &path, &paint, fill.rule());
+                        #[cfg(not(harness_clip_paths))]
+                        let masked = false;
+                        if !masked {
+                            canvas.fill_path(&path, &paint);
+                        }
                         canvas.set_global_alpha(1.0);
                     }
                 }
@@ -2801,9 +2914,11 @@ fn main() {
     #[cfg(harness_clip_paths)]
     if std::env::var_os("MASK_STATS").is_some() {
         eprintln!(
-            "MASKS bytes={} budget={}",
+            "MASKS bytes={} budget={} fills={} through_masks={}",
             canvas.clip_mask_bytes(),
-            canvas.clip_mask_budget()
+            canvas.clip_mask_budget(),
+            FILLS.load(std::sync::atomic::Ordering::Relaxed),
+            MASKED_FILLS.load(std::sync::atomic::Ordering::Relaxed)
         );
     }
     if sampling {

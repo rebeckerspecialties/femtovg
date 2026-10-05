@@ -74,6 +74,7 @@ BUILDS['pc_cp'] = (f'{BIN}/_logos_full_pc_cp', {'SINGLE_SHADOW_LAYER': '1'})
 BUILDS['pc_sr'] = (f'{BIN}/_logos_full_pc_sr', {'SINGLE_SHADOW_LAYER': '1'})
 BUILDS['pc_sr_nocrop'] = (f'{BIN}/_logos_full_pc_sr', {'SINGLE_SHADOW_LAYER': '1', 'NO_CROP': '1'})
 BUILDS['cve'] = (f'{BIN}/_logos_full_cve', {'SINGLE_SHADOW_LAYER': '1'})  # #380 as pushed on 2026-10-05 (131597f); renders as cvf, whose frames stand for it
+BUILDS['flat'] = (f'{BIN}/_logos_full_flat', {'SINGLE_SHADOW_LAYER': '1'})  # branch finer-flattening (on master 9d574e0): curves flattened four times finer. Not `ff`: that prefix is Firefox's frames
 BUILDS['master_h'] = (f'{BIN}/_logos_full_master_h', {'SINGLE_SHADOW_LAYER': '1'})  # upstream master 9d574e0 with the harness the cv* builds of 2026-10-05 were made with
 # clip-coverage with masks: path clips as CPU-rasterized coverage masks, clipPath children unioned (Canvas::clip_paths,
 # --cfg harness_clip_paths). cm_stencil is the same binary with no mask budget and the children joined: the scissor
@@ -98,6 +99,22 @@ BUILDS['wgpu_pr'] = (f'{BIN}/_logos_full_wp_master', {})              # femtovg 
 BUILDS['wgpu_trunk_368'] = (f'{BIN}/_logos_full_wt_pr368', {})        # femtovg #368, slicing on
 BUILDS['wgpu_pr_368'] = (f'{BIN}/_logos_full_wp_pr368', {})           # femtovg #368, slicing on
 BUILDS['wgpu_pr_368_noslices'] = (f'{BIN}/_logos_full_wp_pr368', {'NO_SLICES': '1'})
+# Experiment (harness FILL_MASKS, femtovg/femtovg#327): fills whose mean width on the target is under T pixels drawn as
+# their bounds under the path as a clip, which clip-coverage takes as a coverage mask. cmx is clip-coverage with the
+# harness that has the switch (renders as cm without it); cmf the same tree with curves flattened four times finer.
+BUILDS['cmx'] = (f'{BIN}/_logos_full_cmx', {'SINGLE_SHADOW_LAYER': '1'})
+BUILDS['cmf'] = (f'{BIN}/_logos_full_cmf', {'SINGLE_SHADOW_LAYER': '1'})
+for _t in ('0.5', '1', '1.5', '2', '3'):
+    BUILDS[f'fm{_t}'] = (f'{BIN}/_logos_full_cmx', {'SINGLE_SHADOW_LAYER': '1', 'FILL_MASKS': _t})
+    BUILDS[f'fmf{_t}'] = (f'{BIN}/_logos_full_cmf', {'SINGLE_SHADOW_LAYER': '1', 'FILL_MASKS': _t})
+# The same switch gating on size alone, as Skia Graphite's small-path atlas does (Device::chooseRenderer: "Small paths
+# are rasterized on the CPU for higher quality"): every fill whose bounds span at most N x N pixels.
+for _n in (32, 64, 128):
+    BUILDS[f'fms{_n}'] = (f'{BIN}/_logos_full_cmx', {'SINGLE_SHADOW_LAYER': '1', 'FILL_MASKS': '1e9', 'FILL_MASKS_MAX': str(_n * _n)})
+    BUILDS[f'fmfs{_n}'] = (f'{BIN}/_logos_full_cmf', {'SINGLE_SHADOW_LAYER': '1', 'FILL_MASKS': '1e9', 'FILL_MASKS_MAX': str(_n * _n)})
+
+# A build's frames are kept as TAG_KEY_FRAMING.png, the references as PREFIX_KEY_FRAMING.png: a tag must not be a prefix.
+assert not set(BUILDS) & {'chr', 'chg', 'ff', 'wk', 'id'}, 'a build is named as a reference'
 for _b in list(BUILDS):
     for _i in (2, 3):
         BUILDS[f'{_b}#{_i}'] = BUILDS[_b]
