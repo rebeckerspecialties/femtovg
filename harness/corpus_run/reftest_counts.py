@@ -14,7 +14,7 @@ before, after = sys.argv[1:3]
 opts = dict(a.split('=', 1) for a in sys.argv[3:])
 group = opts.get('group', 'wpt-clip-path-reftests')
 suite = os.path.expanduser(opts.get('suite', '~/.gemini/antigravity/scratch/wpt_svg_reftests'))
-names = {'chr': 'Chromium software', 'chg': 'Chromium GPU', 'ff': 'Firefox'}
+names = {'chr': 'Chromium software', 'chg': 'Chromium GPU', 'ff': 'Firefox', 'wk': 'WebKit', 'id': 'the area reference'}
 fs = files()
 
 
@@ -42,10 +42,14 @@ def within(values):
 
 tests = sorted(f['key'] for f in fs if f['group'] == group and not f['key'].endswith('-ref'))
 print(f'{group}: {len(tests)} tests; within 0.15 % at every framing, {before} -> {after}')
-for browser in ('chr', 'chg', 'ff'):
+for browser in ('chr', 'chg', 'ff', 'wk', 'id'):
     counts = [sum(within([beyond(frame(b, k, fr), ref(browser, k, fr)) for fr in DEFAULT_FRAMINGS]) for k in tests)
               for b in (before, after)]
     print(f'  of {names[browser]}: {counts[0]} -> {counts[1]}')
+# The browsers themselves against the area reference (refs_ideal.py), where every framing has one.
+for browser in ('chr', 'chg', 'ff', 'wk'):
+    print(f'  {names[browser]} within 0.15 % of the area reference: '
+          f'{sum(within([beyond(ref(browser, k, fr), ref("id", k, fr)) for fr in DEFAULT_FRAMINGS]) for k in tests)}')
 for a, b in (('chr', 'chg'), ('chr', 'ff'), ('chg', 'ff')):
     agree = sum(within([beyond(ref(a, k, fr), ref(b, k, fr)) for fr in DEFAULT_FRAMINGS]) for k in tests)
     print(f'  {names[a]} and {names[b]} agree on {agree}')

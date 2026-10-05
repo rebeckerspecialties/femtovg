@@ -53,6 +53,34 @@ BUILDS['cp'] = (f'{BIN}/_logos_full_cp', {})  # chain-passes: no parity pass, fu
 BUILDS['ca'] = (f'{BIN}/_logos_full_ca', {})  # #380: box and ellipse clips as fragment-shader coverage, a draw clipped only where the shape cuts it (clip-analytic, on master 9d574e0)
 BUILDS['ca0'] = (f'{BIN}/_logos_full_ca0', {})  # #380 at f6c76d0, before the cover rule
 BUILDS['cv'] = (f'{BIN}/_logos_full_cv', {})  # clip-coverage: the scissor meets a draw as a clip shape does (on #380)
+BUILDS['cvf'] = (f'{BIN}/_logos_full_cvf', {'SINGLE_SHADOW_LAYER': '1'})  # #380 as extended on 2026-10-05 (ca9b192): cover rule, scissor rules, draws under a shape scissored to its reach
+# filter-crop (on #375): ImageFilter::Crop after each primitive's pass (--cfg harness_crop). sr_nocrop is the same
+# binary leaving the intermediate results whole, and cp_h is #375 with the same harness.
+BUILDS['sr'] = (f'{BIN}/_logos_full_sr', {'SINGLE_SHADOW_LAYER': '1'})
+BUILDS['sr_nocrop'] = (f'{BIN}/_logos_full_sr', {'SINGLE_SHADOW_LAYER': '1', 'NO_CROP': '1'})
+BUILDS['cp_h'] = (f'{BIN}/_logos_full_cp_h', {'SINGLE_SHADOW_LAYER': '1'})
+# Experiment: cvf with the flattening tolerance from FEMTOVG_TESS_TOL (0.25 is the library's): the sum of a cubic's
+# control distances from its chord is kept under the tolerance's square root, in device pixels.
+for _t in ('0.25', '0.0625', '0.015625'):
+    BUILDS[f'tt_{_t}'] = (f'{BIN}/_logos_full_tt', {'SINGLE_SHADOW_LAYER': '1', 'FEMTOVG_TESS_TOL': _t})
+# #380 with every clipped group drawn into a layer that the clip cuts once (CLIP_GROUP_LAYERS), sized to the group.
+BUILDS['cgl'] = (f'{BIN}/_logos_full_cgl', {'SINGLE_SHADOW_LAYER': '1', 'CLIP_GROUP_LAYERS': '1', 'LAYER_BBOX_SCISSOR': '1'})
+BUILDS['cgl_off'] = (f'{BIN}/_logos_full_cgl', {'SINGLE_SHADOW_LAYER': '1'})
+BUILDS['cvh'] = (f'{BIN}/_logos_full_cvh', {'SINGLE_SHADOW_LAYER': '1'})  # experiment (branch clip-twins): #380 and a draw held by the points of its outline (a rounded or turned twin of the clip is not clipped)
+BUILDS['cvg'] = (f'{BIN}/_logos_full_cvg', {'SINGLE_SHADOW_LAYER': '1'})  # experiment (branch clip-corner-area): #380 with a round corner's coverage as the area a slanted edge leaves of the pixel
+BUILDS['all'] = (f'{BIN}/_logos_full_all', {'SINGLE_SHADOW_LAYER': '1'})  # the trial merge of clip-coverage (masks, on #380) and filter-crop (on #375), every cfg
+# Builds with corpus_run/pass_count.py applied to the tree (--cfg harness_pass_count): `passes=` counts render passes.
+BUILDS['pc_cp'] = (f'{BIN}/_logos_full_pc_cp', {'SINGLE_SHADOW_LAYER': '1'})
+BUILDS['pc_sr'] = (f'{BIN}/_logos_full_pc_sr', {'SINGLE_SHADOW_LAYER': '1'})
+BUILDS['pc_sr_nocrop'] = (f'{BIN}/_logos_full_pc_sr', {'SINGLE_SHADOW_LAYER': '1', 'NO_CROP': '1'})
+BUILDS['cve'] = (f'{BIN}/_logos_full_cve', {'SINGLE_SHADOW_LAYER': '1'})  # #380 as pushed on 2026-10-05 (131597f); renders as cvf, whose frames stand for it
+BUILDS['master_h'] = (f'{BIN}/_logos_full_master_h', {'SINGLE_SHADOW_LAYER': '1'})  # upstream master 9d574e0 with the harness the cv* builds of 2026-10-05 were made with
+# clip-coverage with masks: path clips as CPU-rasterized coverage masks, clipPath children unioned (Canvas::clip_paths,
+# --cfg harness_clip_paths). cm_stencil is the same binary with no mask budget and the children joined: the scissor
+# rules alone. SINGLE_SHADOW_LAYER keeps the group-shadow mapping the earlier builds were made with.
+BUILDS['cm'] = (f'{BIN}/_logos_full_cm', {'SINGLE_SHADOW_LAYER': '1'})
+BUILDS['cm_stencil'] = (f'{BIN}/_logos_full_cm', {'SINGLE_SHADOW_LAYER': '1', 'CLIP_MASK_BUDGET_MB': '0', 'CLIP_JOINED': '1'})
+BUILDS['cmn'] = (f'{BIN}/_logos_full_cmn', {'SINGLE_SHADOW_LAYER': '1'})  # masks without the scissor to a mask's bounds (e936fe0)
 BUILDS['tf'] = (f'{BIN}/_logos_full_tf', {})  # #358 draft: exact-coverage fills on wgpu (thin-fills ec67485, on #356; clip/turbulence/blend cfgs)
 BUILDS['master'] = (f'{BIN}/_logos_full_master', {})  # upstream master 9d574e0 (#372, #373, #374 merged), harness of 2026-10-04 (noise clamp fix)
 BUILDS['master_128'] = (f'{BIN}/_logos_full_master', {'TRANSIENT_BUDGET_MB': '128'})  # master at the library's default transient-image budget

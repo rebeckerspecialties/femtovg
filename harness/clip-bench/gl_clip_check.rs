@@ -157,6 +157,67 @@ impl ApplicationHandler for App {
             canvas.flush_to_output(());
             canvas.delete_image(image);
         }
+        // A draw under a small shape is scissored to the pixels the shape reaches, its stencil draws with it: a
+        // concave fill that spans the target leaves no winding outside the shape for the next fill to take as its
+        // own, and the scissor ends with the draw. In an image and in the window's own framebuffer.
+        for on_image in [true, false] {
+            let image = on_image.then(|| {
+                canvas
+                    .create_image_empty(W as usize, H as usize, PixelFormat::Rgba8, ImageFlags::empty())
+                    .unwrap()
+            });
+            canvas.save();
+            if let Some(image) = image {
+                canvas.set_render_target(RenderTarget::Image(image));
+            }
+            canvas.clear_rect(0, 0, W, H, Color::white());
+            let mut clip = Path::new();
+            clip.rounded_rect(8.0, 10.0, 30.0, 20.0, 6.0);
+            let mut dented = Path::new();
+            dented.move_to(-8.0, -8.0);
+            dented.line_to(104.0, -8.0);
+            dented.line_to(104.0, 104.0);
+            dented.line_to(-8.0, 104.0);
+            dented.line_to(4.0, 48.0);
+            dented.close();
+            let mut ring = Path::new();
+            ring.rect(44.0, 34.0, 48.0, 58.0);
+            ring.rect(54.0, 44.0, 28.0, 38.0);
+            canvas.save();
+            canvas.clip_path(&clip, FillRule::NonZero);
+            canvas.fill_path(&dented, &Paint::color(Color::rgb(255, 0, 0)));
+            canvas.restore();
+            canvas.fill_path(&ring, &Paint::color(Color::rgb(0, 0, 255)).with_fill_rule(FillRule::EvenOdd));
+            canvas.flush_to_output(());
+            let shot = canvas.screenshot().unwrap();
+            let pixels: Vec<_> = shot.pixels().collect();
+            let px = |x: u32, y: u32| {
+                let p = pixels[(y * W + x) as usize];
+                [p.r, p.g, p.b]
+            };
+            let hole = (46..80).all(|y| (56..80).all(|x| px(x, y) == [255, 255, 255]));
+            let ok = px(22, 20) == [255, 0, 0]
+                && px(22, 60) == [255, 255, 255]
+                && px(48, 60) == [0, 0, 255]
+                && px(88, 88) == [0, 0, 255]
+                && hole;
+            println!(
+                "a fill under a small shape, {}: {} (inside {:?}, below {:?}, ring {:?} {:?}, hole clear: {hole})",
+                if on_image { "in an image" } else { "in the window" },
+                if ok { "ok" } else { "FAILED" },
+                px(22, 20),
+                px(22, 60),
+                px(48, 60),
+                px(88, 88),
+            );
+            failed |= !ok;
+            canvas.restore();
+            if let Some(image) = image {
+                canvas.set_render_target(RenderTarget::Screen);
+                canvas.flush_to_output(());
+                canvas.delete_image(image);
+            }
+        }
         println!("{}", if failed { "GL CLIP CHECK FAILED" } else { "GL CLIP CHECK OK" });
         event_loop.exit();
     }

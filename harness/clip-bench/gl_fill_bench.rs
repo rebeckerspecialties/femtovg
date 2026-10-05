@@ -1,8 +1,10 @@
 //! Fill-rate cost on the OpenGL backend, without a visible window. `gl_fill_bench <scene> <frames>` draws into a
 //! 1920 x 1080 image target and prints the mean frame time once the last frame has been read back. Scenes: `none`
 //! (40 full-screen translucent fills), `rect` and `rounded` (the same under one clip), `cards` (200 small cards)
-//! and `cards_rounded` (each card under a rounded-rect clip of its own). Copy to `examples/` of a femtovg
-//! checkout and `cargo build --release --example gl_fill_bench`; glpaired.py compares two builds.
+//! and `cards_rounded` (each card under a rounded-rect clip of its own). A fill scene takes `paths_` before its
+//! name for fills that are no rects and `_small` after it for a 400 x 300 clip in the middle of the target; `ellipse`
+//! clips to the ellipse in the clip's rect and `star` to a ten-pointed star, which is no box. Copy to `examples/` of a femtovg checkout and
+//! `cargo build --release --example gl_fill_bench`; glpaired.py compares two builds.
 use std::num::NonZeroU32;
 
 use femtovg::{renderer::OpenGl, Canvas, Color, FillRule, ImageFlags, Paint, Path, PixelFormat, RenderTarget};
@@ -89,18 +91,50 @@ impl ApplicationHandler for App {
                     canvas.restore();
                 }
             } else {
-                if scene != "none" {
-                    let mut clip = Path::new();
-                    if scene == "rect" {
-                        clip.rect(10.5, 10.5, 1899.0, 1059.0);
+                let paths = scene.starts_with("paths_");
+                let small = scene.ends_with("_small");
+                let clip_kind = scene.trim_start_matches("paths_").trim_end_matches("_small");
+                if clip_kind != "none" {
+                    let (x, y, w, h, r) = if small {
+                        (760.5, 390.5, 400.0, 300.0, 40.0)
                     } else {
-                        clip.rounded_rect(10.5, 10.5, 1899.0, 1059.0, 80.0);
+                        (10.5, 10.5, 1899.0, 1059.0, 80.0)
+                    };
+                    let mut clip = Path::new();
+                    match clip_kind {
+                        "rect" => clip.rect(x, y, w, h),
+                        "star" => {
+                            let (cx, cy, outer) = (x + w * 0.5, y + h * 0.5, w.min(h) * 0.5);
+                            for i in 0..20 {
+                                let a = i as f32 * std::f32::consts::PI / 10.0;
+                                let radius = if i % 2 == 0 { outer } else { outer * 0.45 };
+                                let (px, py) = (cx + radius * a.sin(), cy - radius * a.cos());
+                                if i == 0 {
+                                    clip.move_to(px, py);
+                                } else {
+                                    clip.line_to(px, py);
+                                }
+                            }
+                            clip.close();
+                        }
+                        "ellipse" => clip.ellipse(x + w * 0.5, y + h * 0.5, w * 0.5, h * 0.5),
+                        _ => clip.rounded_rect(x, y, w, h, r),
                     }
                     canvas.clip_path(&clip, FillRule::NonZero);
                 }
                 for i in 0..40 {
+                    let (x, y) = (-5.0 + (i % 3) as f32, -5.0 + (i % 2) as f32);
                     let mut fill = Path::new();
-                    fill.rect(-5.0 + (i % 3) as f32, -5.0 + (i % 2) as f32, 1930.0, 1090.0);
+                    if paths {
+                        fill.move_to(x, y);
+                        fill.line_to(x + 1930.0, y);
+                        fill.line_to(x + 1930.0, y + 1090.0);
+                        fill.line_to(x, y + 1090.0);
+                        fill.line_to(x - 20.0, y + 545.0);
+                        fill.close();
+                    } else {
+                        fill.rect(x, y, 1930.0, 1090.0);
+                    }
                     canvas.fill_path(&fill, &Paint::color(Color::rgba((i * 6) as u8, 120, 200 - (i * 4) as u8, 51)));
                 }
             }

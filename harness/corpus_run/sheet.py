@@ -3,12 +3,17 @@
 before | after | Chromium | before vs Chromium | after vs Chromium, and with --firefox the same three for Firefox.
 A difference panel is white where the frame is within 8/255 of the reference, orange from 9 to 20 and red beyond.
 
-  sheet.py OUT.png BEFORE[=label] AFTER[=label] [--firefox] [--refs=chr,chg,ff] [--diffs-only] [--range=chr,chg,ff] ROW...
+  sheet.py OUT.png BEFORE[=label] AFTER[=label] [--firefox] [--refs=chr,chg,ff] [--diffs-only] [--others=chg,wk]
+           [--range=chr,chg,ff] [--bold] ROW...
 
 --refs names the references (refs/PREFIX_*.png): chr Chromium rasterizing in software, chg Chromium rasterizing on
-the GPU (refs_gpu.py), ff Firefox. --diffs-only leaves the reference pictures out, for three references in a row.
+the GPU (refs_gpu.py), ff Firefox, wk WebKit (refs_webkit.py), id the area reference (refs_ideal.py). --diffs-only
+leaves the reference pictures out, for three references in a row. --others=chg,wk adds a panel for each of those
+renderers against the first reference: what a browser at one device pixel is itself off by.
 --range=chr,chg,ff adds a pair of panels for how far each build lies outside the range those references span:
-where the browsers disagree among themselves a build between them is white.
+where the browsers disagree among themselves a build between them is white. --bold marks a deviating pixel's eight
+neighbours with it in the difference panels, so that an edge one pixel wide still shows when a whole frame is
+scaled down to fit a page.
 
 ROW is NAME:FRAMING followed by options, each after a colon:
   box=X,Y,W,H   the window, in frame pixels (default: the whole frame)
@@ -25,8 +30,9 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from common import BUILDS, FRAMINGS, SWEEP_ENV, OUT as R
 
-NAMES = {'chr': 'Chromium 131', 'chg': 'Chromium 131 on the GPU', 'ff': 'Firefox 158'}
-SHORT = {'chr': 'Chromium', 'chg': 'Chromium GPU', 'ff': 'Firefox'}
+NAMES = {'chr': 'Chromium 131', 'chg': 'Chromium 131 on the GPU', 'ff': 'Firefox 158', 'wk': 'WebKit (Safari 27)',
+         'id': 'area reference: Chromium at 8x, averaged'}
+SHORT = {'chr': 'Chromium', 'chg': 'Chromium GPU', 'ff': 'Firefox', 'wk': 'WebKit', 'id': 'the area'}
 args = sys.argv[1:]
 browsers = ['chr', 'ff'] if '--firefox' in args else ['chr']
 for a in args:
@@ -35,7 +41,9 @@ for a in args:
 if len(browsers) > 1 and 'chg' in browsers:
     NAMES['chr'], SHORT['chr'] = 'Chromium 131 in software', 'Chromium software'
 diffs_only = '--diffs-only' in args
+bold = '--bold' in args
 span = next((a.split('=', 1)[1].split(',') for a in args if a.startswith('--range=')), [])
+others = next((a.split('=', 1)[1].split(',') for a in args if a.startswith('--others=')), [])
 args = [a for a in args if not a.startswith('--')]
 out = args.pop(0)
 (before, before_label), (after, after_label) = ((a.split('=', 1) + [a])[:2] for a in args[:2])
@@ -90,6 +98,10 @@ def outside(a, refs):
 def difference(a, b, box, zoom, shrink):
     x, y, w, h = box
     d = (b if b.ndim == 2 else np.abs(a - b).max(axis=2))[y:y + h, x:x + w]
+    if bold:
+        padded = np.pad(d, 1)
+        d = np.maximum.reduce([padded[1 + dy:1 + dy + d.shape[0], 1 + dx:1 + dx + d.shape[1]]
+                               for dy in (-1, 0, 1) for dx in (-1, 0, 1)])
     if shrink > 1:
         hh, ww = h // shrink * shrink, w // shrink * shrink
         d = d[:hh, :ww].reshape(hh // shrink, shrink, ww // shrink, shrink).max(axis=(1, 3))
@@ -105,7 +117,7 @@ for spec in args[2:]:
     spec, _, note = spec.partition(';')
     name, framing, *options = spec.split(':')
     opt = dict(o.split('=', 1) for o in options)
-    key = [k for k in files if k.endswith('__' + name)][0]
+    key = [k for k in files if k == name or k.endswith('__' + name)][0]
     b, a = frame(opt.get('before', before), key, framing), frame(opt.get('after', after), key, framing)
     refs = [(b, reference(b, key, framing)) for b in browsers]
     H, W = b.shape[:2]
@@ -134,6 +146,11 @@ for spec in args[2:]:
         panels += [(f'{before_label} vs {short}', difference(b, ref, box, zoom, shrink)),
                    (f'{after_label} vs {short}', difference(a, ref, box, zoom, shrink))]
         caption += f', vs {short} {beyond(b, ref):.2f} % -> {beyond(a, ref):.2f} %'
+    for other in others:
+        # Another renderer against the first reference: what a browser at one device pixel is off by itself.
+        first, theirs = refs[0][1], reference(other, key, framing)
+        panels.append((f'{SHORT[other]} vs {SHORT[browsers[0]]}', difference(theirs, first, box, zoom, shrink)))
+        caption += f'; {SHORT[other]} {beyond(theirs, first):.2f} %'
     if span:
         among = [reference(r, key, framing) for r in span]
         ob, oa = outside(b, among), outside(a, among)
