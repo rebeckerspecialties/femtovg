@@ -113,6 +113,14 @@ for _n in (32, 64, 128):
     BUILDS[f'fms{_n}'] = (f'{BIN}/_logos_full_cmx', {'SINGLE_SHADOW_LAYER': '1', 'FILL_MASKS': '1e9', 'FILL_MASKS_MAX': str(_n * _n)})
     BUILDS[f'fmfs{_n}'] = (f'{BIN}/_logos_full_cmf', {'SINGLE_SHADOW_LAYER': '1', 'FILL_MASKS': '1e9', 'FILL_MASKS_MAX': str(_n * _n)})
 
+# The crop PR against the master it now sits on: mstr is upstream master 485c665 (#375 and #370 merged), crp the
+# merged filter-crop branch (5b6e8e3, --cfg harness_crop); pc_* the same trees with pass_count.py applied.
+BUILDS['mstr'] = (f'{BIN}/_logos_full_mstr', {'SINGLE_SHADOW_LAYER': '1'})
+BUILDS['crp'] = (f'{BIN}/_logos_full_crp', {'SINGLE_SHADOW_LAYER': '1'})
+BUILDS['crp_nocrop'] = (f'{BIN}/_logos_full_crp', {'SINGLE_SHADOW_LAYER': '1', 'NO_CROP': '1'})
+BUILDS['pc_mstr'] = (f'{BIN}/_logos_full_pc_mstr', {'SINGLE_SHADOW_LAYER': '1'})
+BUILDS['pc_crp'] = (f'{BIN}/_logos_full_pc_crp', {'SINGLE_SHADOW_LAYER': '1'})
+
 # A build's frames are kept as TAG_KEY_FRAMING.png, the references as PREFIX_KEY_FRAMING.png: a tag must not be a prefix.
 assert not set(BUILDS) & {'chr', 'chg', 'ff', 'wk', 'id'}, 'a build is named as a reference'
 for _b in list(BUILDS):
