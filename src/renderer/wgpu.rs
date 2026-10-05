@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
+use fnv::FnvHashMap;
 use rgb::bytemuck;
 use wgpu::util::DeviceExt;
 
@@ -257,6 +258,9 @@ struct CachedPipeline {
     accessed: bool,
 }
 
+// FNV hashes a key, two dozen small fields, in about half the time the default hasher takes.
+type PipelineCache = Rc<RefCell<FnvHashMap<PipelineState, CachedPipeline>>>;
+
 /// WGPU renderer.
 #[derive(Debug)]
 pub struct WGPURenderer {
@@ -277,7 +281,7 @@ pub struct WGPURenderer {
     bind_group_layout: wgpu::BindGroupLayout,
     viewport_bind_group_layout: wgpu::BindGroupLayout,
     pipeline_layout: wgpu::PipelineLayout,
-    pipeline_cache: Rc<RefCell<HashMap<PipelineState, CachedPipeline>>>,
+    pipeline_cache: PipelineCache,
 }
 
 /// Rasterizes an image element into an offscreen canvas at the given size.
@@ -2275,6 +2279,10 @@ impl<'a> RenderPassBuilder<'a> {
     }
 }
 
+// How many of the pipelines a frame looked up last it compares a key with before hashing it:
+// enough for the states that a page's fills, strokes and clips rotate through.
+const RECENT_PIPELINES: usize = 16;
+
 struct CommandToPipelineAndBindGroupMapper {
     device: wgpu::Device,
     empty_texture_view: wgpu::TextureView,
@@ -2288,7 +2296,11 @@ struct CommandToPipelineAndBindGroupMapper {
     current_bind_group_state: Option<BindGroupState>,
     current_bind_group: Option<wgpu::BindGroup>,
     bind_group_layout: wgpu::BindGroupLayout,
-    pipeline_cache: Rc<RefCell<HashMap<PipelineState, CachedPipeline>>>,
+    pipeline_cache: PipelineCache,
+    // The pipelines this frame looked up last, newest first, each marked accessed by its lookup.
+    // Draws rotate through a few states (a convex fill binds a triangle list, then a strip for
+    // its fringe), and comparing a key with these costs a fraction of hashing it for the cache.
+    recent_pipelines: Vec<(PipelineState, wgpu::RenderPipeline)>,
     pipeline_layout: wgpu::PipelineLayout,
 }
 
@@ -2302,7 +2314,7 @@ impl CommandToPipelineAndBindGroupMapper {
         shader_module: Rc<wgpu::ShaderModule>,
         bind_group_layout: wgpu::BindGroupLayout,
         pipeline_layout: wgpu::PipelineLayout,
-        pipeline_cache: Rc<RefCell<HashMap<PipelineState, CachedPipeline>>>,
+        pipeline_cache: PipelineCache,
     ) -> Self {
         Self {
             device: device.clone(),
@@ -2317,8 +2329,27 @@ impl CommandToPipelineAndBindGroupMapper {
             current_bind_group: None,
             bind_group_layout,
             pipeline_cache,
+            recent_pipelines: Vec::with_capacity(RECENT_PIPELINES),
             pipeline_layout,
         }
+    }
+
+    /// The pipeline for `state`, built on first use.
+    fn pipeline(&mut self, state: &PipelineState) -> &wgpu::RenderPipeline {
+        let recent = self.recent_pipelines.iter().position(|(recent, _)| recent == state);
+        let index = recent.unwrap_or_else(|| {
+            let mut pipeline_cache = self.pipeline_cache.borrow_mut();
+            let cached = pipeline_cache.entry(state.clone()).or_insert_with(|| CachedPipeline {
+                pipeline: state.materialize(&self.device, &self.pipeline_layout, &self.shader_module),
+                accessed: false,
+            });
+            cached.accessed = true;
+            self.recent_pipelines.truncate(RECENT_PIPELINES - 1);
+            self.recent_pipelines
+                .insert(0, (state.clone(), cached.pipeline.clone()));
+            0
+        });
+        &self.recent_pipelines[index].1
     }
 
     fn update_renderpass<'a>(
@@ -2388,16 +2419,7 @@ impl CommandToPipelineAndBindGroupMapper {
 
         // An unchanged pipeline was looked up, and marked accessed, when it was bound.
         if render_pass_builder.current_pipeline_state.as_ref() != Some(&pipeline_state) {
-            let mut pipeline_cache = self.pipeline_cache.borrow_mut();
-            let render_pipeline = pipeline_cache.entry(pipeline_state.clone()).or_insert_with(|| {
-                let pipeline = pipeline_state.materialize(&self.device, &self.pipeline_layout, &self.shader_module);
-                CachedPipeline {
-                    pipeline,
-                    accessed: false,
-                }
-            });
-            render_pipeline.accessed = true;
-            render_pass.set_pipeline(&render_pipeline.pipeline);
+            render_pass.set_pipeline(self.pipeline(&pipeline_state));
             render_pass_builder.current_pipeline_state = Some(pipeline_state);
         }
     }
