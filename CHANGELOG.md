@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- Curves are flattened four times finer: the chords of a filled or stroked
+  curve stay within a tenth of a pixel of it, where they lay up to a fifth
+  of a pixel inside it, so a curved edge's pixels are covered within 0.02 of
+  their share inside the shape on average and 0.08 at worst, where they
+  were 0.07 and 0.21 off. A curve takes 1.4 times the line segments it took.
 - Added `ImageFilter::Morphology` and `ImageFilter::Offset`, the SVG
   `feMorphology` and `feOffset` primitives: a dilation grows the opaque
   regions of an image by a whole-pixel radius per axis and an erosion
