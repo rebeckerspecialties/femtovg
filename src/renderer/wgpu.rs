@@ -60,7 +60,7 @@ impl std::fmt::Debug for WGPURenderOutput {
 
 use super::Params;
 use super::Vertex;
-use crate::clip::ClipCoverage;
+use crate::clip::{ClipCoverage, MaskCoverage};
 
 const UNIFORMARRAY_SIZE: usize = 16;
 const UNIFORM_BYTES: u64 = (UNIFORMARRAY_SIZE * 4 * 4) as u64;
@@ -187,6 +187,20 @@ impl UniformArray {
             self.0[54..64].copy_from_slice(&clip.uniform_rows());
         }
     }
+
+    /// The coverage mask, read by the shader variant of a draw under one:
+    /// where its corner lies, the pixels it spans and what one of them is
+    /// of its image, in the halves of the scissor matrix's columns that no
+    /// shader reads, and beside the conic angle whether it takes a pixel
+    /// whole or not at all.
+    pub fn set_clip_mask(&mut self, mask: Option<&MaskCoverage>) {
+        if let Some(mask) = mask {
+            self.0[2..4].copy_from_slice(&mask.origin);
+            self.0[6..8].copy_from_slice(&mask.size);
+            self.0[10..12].copy_from_slice(&mask.texel);
+            self.0[53] = f32::from(u8::from(mask.hard));
+        }
+    }
 }
 
 impl From<&Params> for UniformArray {
@@ -213,6 +227,7 @@ impl From<&Params> for UniformArray {
         arr.set_image_blur_filter_coeff(params.image_blur_filter_coeff);
         arr.set_conic_start_angle(params.conic_start_angle);
         arr.set_clip(params.clip.as_ref());
+        arr.set_clip_mask(params.clip_mask.as_ref());
 
         arr
     }
@@ -472,6 +487,17 @@ impl WGPURenderer {
                     binding: 4,
                     visibility: wgpu::ShaderStages::FRAGMENT,
                     ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                },
+                // The coverage mask of a clip, read texel by texel.
+                wgpu::BindGroupLayoutEntry {
+                    binding: 5,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
                     count: None,
                 },
             ],
@@ -1839,6 +1865,8 @@ struct PipelineState {
     stencil_state: Option<wgpu::StencilState>,
     /// The draw is under a clip shape, which only its fragment entry point evaluates.
     clip_shape: bool,
+    /// The draw is under a coverage mask, which only its fragment entry point reads.
+    clip_mask: bool,
 }
 
 impl PipelineState {
@@ -1885,6 +1913,7 @@ impl PipelineState {
             cull_mode,
             stencil_state: has_stencil_buffer.then_some(stencil_state),
             clip_shape: false,
+            clip_mask: false,
         }
     }
 
@@ -1903,13 +1932,19 @@ impl PipelineState {
             cull_mode,
             stencil_state,
             clip_shape,
+            clip_mask,
         } = self;
         let vertex_entry_point = if *render_to_texture {
             "vs_main_texture"
         } else {
             "vs_main"
         };
-        let fragment_entry_point = if *clip_shape { "fs_main_clip" } else { "fs_main" };
+        let fragment_entry_point = match (*clip_shape, *clip_mask) {
+            (false, false) => "fs_main",
+            (true, false) => "fs_main_clip",
+            (false, true) => "fs_main_mask",
+            (true, true) => "fs_main_clip_mask",
+        };
 
         device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: None,
@@ -1958,6 +1993,7 @@ impl PipelineState {
 struct BindGroupState {
     image: Option<ImageId>,
     glyph_texture: GlyphTexture,
+    clip_mask: Option<ImageId>,
 }
 
 impl BindGroupState {
@@ -1985,7 +2021,15 @@ impl BindGroupState {
             sampler_cache,
         );
 
-        if main_texture_view.is_external() || glyph_texture_view.is_external() {
+        let (clip_mask_view, _) = RenderPassBuilder::create_binding_resource_and_sampler(
+            device,
+            images,
+            self.clip_mask.as_ref(),
+            empty_texture_view,
+            sampler_cache,
+        );
+
+        if main_texture_view.is_external() || glyph_texture_view.is_external() || clip_mask_view.is_external() {
             unimplemented!("External texture shaders and bind groups are not implemented yet");
         }
 
@@ -2015,6 +2059,10 @@ impl BindGroupState {
                 wgpu::BindGroupEntry {
                     binding: 4,
                     resource: wgpu::BindingResource::Sampler(&glyph_sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 5,
+                    resource: (&clip_mask_view).into(),
                 },
             ],
             label: None,
@@ -2375,7 +2423,11 @@ impl CommandToPipelineAndBindGroupMapper {
             render_pass_builder.current_stencil_reference = Some(stencil_reference);
         }
 
-        let bind_group_state = BindGroupState { image, glyph_texture };
+        let bind_group_state = BindGroupState {
+            image,
+            glyph_texture,
+            clip_mask: params.clip_mask.map(|mask| mask.image),
+        };
 
         let bind_group_changed = self.current_bind_group_state != Some(bind_group_state.clone());
         if bind_group_changed {
@@ -2416,9 +2468,10 @@ impl CommandToPipelineAndBindGroupMapper {
             cull_mode,
             render_pass_builder.stencil_buffer.is_some(),
         );
-        // Set in place: a copy of the state with the flag changed was slower
+        // Set in place: a copy of the state with the flags changed was slower
         // to hash, by 1.3 % of the time 600 unclipped fills take to encode.
         pipeline_state.clip_shape = params.clip.is_some();
+        pipeline_state.clip_mask = params.clip_mask.is_some();
 
         // An unchanged pipeline was looked up, and marked accessed, when it was bound.
         if render_pass_builder.current_pipeline_state.as_ref() != Some(&pipeline_state) {

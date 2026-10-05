@@ -341,6 +341,17 @@ impl PathCache {
         vertices
     }
 
+    /// Each contour's points in order: its outline, closed from the last
+    /// point to the first.
+    pub(crate) fn outlines(&self) -> impl Iterator<Item = Vec<[f32; 2]>> + '_ {
+        self.contours.iter().map(|contour| {
+            self.points[contour.point_range.clone()]
+                .iter()
+                .map(|point| [point.pos.x, point.pos.y])
+                .collect()
+        })
+    }
+
     fn add_contour(&mut self) {
         let mut contour = Contour::default();
 
