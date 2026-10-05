@@ -337,15 +337,10 @@ where
             return false;
         }
         let transform = self.state().transform;
-        let mut outline = MaskOutline::default();
-        for &(path, fill_rule) in paths {
-            // Flattened finer than a fill's outline, whose fringe hides what
-            // a mask's exact area would show: the path's own cache, kept at
-            // the fill's tolerance, is not used.
-            let tolerance = self.tess_tol * MASK_TESSELLATION;
-            let path_cache = path::PathCache::new(path.verbs(), &transform, tolerance, self.dist_tol);
-            outline.child(fill_rule, path_cache.outlines());
-        }
+        // Flattened finer than a fill's outline, whose fringe hides what a
+        // mask's exact area would show: the path's own cache, kept at the
+        // fill's tolerance, is not used.
+        let tolerance = self.tess_tol * MASK_TESSELLATION;
         let target = self.current_render_target;
         let (width, height) = self.render_target_size();
         let mut within = [0, 0, width as i32, height as i32];
@@ -362,6 +357,31 @@ where
                 within[2].min(at[0] + parent_width as i32),
                 within[3].min(at[1] + parent_height as i32),
             ];
+        }
+        // The clip bit for bit: asked for as before, it has its mask.
+        let mut request = vec![paths.len() as u32];
+        for &(path, fill_rule) in paths {
+            request.push(u32::from(fill_rule == FillRule::EvenOdd));
+            path.words(&mut request);
+        }
+        request.extend(transform.0.map(f32::to_bits));
+        request.extend([tolerance.to_bits(), self.dist_tol.to_bits()]);
+        request.extend(within.map(|side| side as u32));
+        if let Some((parent, at)) = &parent {
+            request.extend([parent.id as u32, (parent.id >> 32) as u32, at[0] as u32, at[1] as u32]);
+        }
+        if let Some((mask, origin)) = self.clip_masks.asked(&request) {
+            self.clip_stack.push(ClipEntry {
+                target,
+                kind: ClipKind::Mask { mask, origin },
+            });
+            self.state_mut().clip_depth = self.clip_stack.len();
+            return true;
+        }
+        let mut outline = MaskOutline::default();
+        for &(path, fill_rule) in paths {
+            let path_cache = path::PathCache::new(path.verbs(), &transform, tolerance, self.dist_tol);
+            outline.child(fill_rule, path_cache.outlines());
         }
         let rect = outline.rect(within);
         let origin = [rect[0], rect[1]];
@@ -420,6 +440,7 @@ where
                 self.clip_masks.keep(key, image, pixels)
             }
         };
+        self.clip_masks.remember(request, &mask, origin);
         self.clip_stack.push(ClipEntry {
             target,
             kind: ClipKind::Mask { mask, origin },
@@ -1995,6 +2016,65 @@ fn a_path_clip_is_a_mask_found_again_by_its_outline() {
     let moved = masks[2].unwrap();
     assert_eq!(moved.image, first.image, "the same mask");
     assert_eq!((moved.origin, moved.size), ([16.0, 16.0], [43.0, 33.0]));
+}
+
+/// A clip asked for bit for bit as before - the same path, transform and
+/// surroundings - has its mask by the request alone; moved by whole pixels
+/// it asks anew and finds the mask by its outline; and a request that goes
+/// a frame unasked is forgotten, as a mask no clip took is.
+#[test]
+fn a_clip_asked_for_as_before_has_its_mask_by_the_request() {
+    let mut canvas = Canvas::new(RecordingRenderer::default()).unwrap();
+    canvas.set_size(100, 100, 1.0);
+    let clip = notched_rect(10.25, 20.5, 40.0, 30.0);
+    let mut frame = |canvas: &mut Canvas<RecordingRenderer>, dx: f32, twice: bool| {
+        for _ in 0..if twice { 2 } else { 1 } {
+            canvas.save();
+            canvas.translate(dx, 0.0);
+            canvas.clip_path(&clip, FillRule::NonZero);
+            assert!(matches!(canvas.clip_stack.last().unwrap().kind, ClipKind::Mask { .. }));
+            canvas.restore();
+        }
+        let masks = (canvas.clip_masks.len(), canvas.clip_masks.asked_len());
+        canvas.flush_to_output(());
+        masks
+    };
+    assert_eq!(
+        frame(&mut canvas, 0.0, true),
+        (1, 1),
+        "asked twice, one request and one mask"
+    );
+    assert_eq!(frame(&mut canvas, 0.0, false), (1, 1), "and the same a frame later");
+    assert_eq!(
+        frame(&mut canvas, 3.0, false),
+        (1, 2),
+        "three pixels on: another request, the same mask"
+    );
+    assert_eq!(
+        frame(&mut canvas, 3.5, false),
+        (2, 2),
+        "half a pixel more: another mask, and the first request, a frame unasked, is forgotten"
+    );
+    assert_eq!(
+        frame(&mut canvas, 3.5, false),
+        (1, 1),
+        "as are the first mask and the second request"
+    );
+    canvas.flush_to_output(());
+    canvas.flush_to_output(());
+    assert_eq!((canvas.clip_masks.len(), canvas.clip_masks.asked_len()), (0, 0));
+
+    // A request is the clip bit for bit: another path at the same place,
+    // the same path under another rule or inside another mask asks anew.
+    canvas.clip_path(&clip, FillRule::NonZero);
+    canvas.reset();
+    canvas.clip_path(&clip, FillRule::EvenOdd);
+    canvas.reset();
+    canvas.clip_path(&notched_rect(10.25, 20.5, 40.0, 30.5), FillRule::NonZero);
+    canvas.reset();
+    canvas.clip_path(&notched_rect(0.0, 0.0, 90.0, 90.0), FillRule::NonZero);
+    canvas.clip_path(&clip, FillRule::NonZero);
+    assert_eq!(canvas.clip_masks.asked_len(), 5);
 }
 
 /// A mask nests in the one in force as what both cover, cut to its bounds;

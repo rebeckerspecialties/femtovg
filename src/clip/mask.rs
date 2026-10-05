@@ -3,9 +3,14 @@
 //! kept as an image and read by the fragment shader of each draw under the
 //! clip. A mask is found again by its outline - the children's points to a
 //! 256th of a pixel, counted from the mask's corner - so a clip that has
-//! not changed, or has moved by whole pixels, costs a lookup.
+//! moved by whole pixels costs its flattening and a lookup, and one that is
+//! asked for bit for bit as before ([`ClipMasks::asked`]) not even that.
 
-use std::{cell::Cell, collections::HashMap, rc::Rc};
+use std::{
+    cell::Cell,
+    collections::HashMap,
+    rc::{Rc, Weak},
+};
 
 use super::coverage::{self, Coverage, SUBPIXELS};
 use crate::{FillRule, ImageId};
@@ -183,12 +188,22 @@ impl MaskImage {
 #[derive(Debug)]
 pub(crate) struct ClipMasks {
     masks: HashMap<MaskKey, Rc<MaskImage>>,
+    asked: HashMap<Vec<u32>, Asked>,
     bytes: usize,
     budget: usize,
     frame: u64,
     next_id: u64,
     spare: Vec<(ImageId, [usize; 2])>,
     pub(crate) coverage: Coverage,
+}
+
+/// What a clip came to when it was asked for: its mask, and where the
+/// mask's corner lies on the target.
+#[derive(Debug)]
+struct Asked {
+    mask: Weak<MaskImage>,
+    origin: [i32; 2],
+    used: Cell<u64>,
 }
 
 /// How many frames a mask is kept after the last clip that took it.
@@ -222,6 +237,7 @@ impl Default for ClipMasks {
     fn default() -> Self {
         Self {
             masks: HashMap::new(),
+            asked: HashMap::new(),
             bytes: 0,
             budget: DEFAULT_MASK_BUDGET,
             frame: 0,
@@ -253,6 +269,30 @@ impl ClipMasks {
         let mask = self.masks.get(key)?;
         mask.used.set(self.frame);
         Some(mask.clone())
+    }
+
+    /// The mask that `request` came to when a clip last asked with it, and
+    /// where the mask's corner lies, if the mask is still kept; both are
+    /// marked as used in this frame. A request is the clip bit for bit -
+    /// its paths, the transform, the tolerances, the rect the mask may span
+    /// and the mask around it - so the same request is the same mask, and
+    /// no path has to be flattened to find it.
+    pub(crate) fn asked(&self, request: &[u32]) -> Option<(Rc<MaskImage>, [i32; 2])> {
+        let asked = self.asked.get(request)?;
+        let mask = asked.mask.upgrade()?;
+        asked.used.set(self.frame);
+        mask.used.set(self.frame);
+        Some((mask, asked.origin))
+    }
+
+    /// Remembers that `request` came to `mask`, its corner at `origin`.
+    pub(crate) fn remember(&mut self, request: Vec<u32>, mask: &Rc<MaskImage>, origin: [i32; 2]) {
+        let asked = Asked {
+            mask: Rc::downgrade(mask),
+            origin,
+            used: Cell::new(self.frame),
+        };
+        self.asked.insert(request, asked);
     }
 
     /// Whether a mask of `size` fits the budget beside the masks this frame
@@ -358,12 +398,21 @@ impl ClipMasks {
             }
             keep
         });
+        // A request goes with its mask, or after as long unasked: a clip
+        // that moves asks anew every frame.
+        self.asked
+            .retain(|_, asked| asked.used.get() + IDLE_FRAMES > frame && asked.mask.strong_count() > 0);
         dropped
     }
 
     #[cfg(test)]
     pub(crate) fn len(&self) -> usize {
         self.masks.len()
+    }
+
+    #[cfg(test)]
+    pub(crate) fn asked_len(&self) -> usize {
+        self.asked.len()
     }
 }
 
@@ -439,6 +488,38 @@ mod tests {
             [0, 255, 255, 255, 255, 0, 0, 255, 255, 0],
             "the hole's right half"
         );
+    }
+
+    /// A request finds the mask it came to while that mask is kept and the
+    /// request has not gone a frame unasked; a mask found by a request
+    /// counts as used.
+    #[test]
+    fn a_request_finds_its_mask_while_both_are_kept() {
+        let mut canvas = crate::Canvas::new(crate::RecordingRenderer::default()).unwrap();
+        let image = canvas
+            .create_image_empty(64, 64, crate::PixelFormat::Gray8, crate::ImageFlags::empty())
+            .unwrap();
+        let mut masks = ClipMasks::default();
+        let mut outline = MaskOutline::default();
+        outline.child(FillRule::NonZero, std::iter::once(square(1.25, 1.0, 8.0)));
+        let key = outline.key(outline.rect([0, 0, 100, 100]), None);
+        let pixels = key.rasterize(&mut Coverage::default());
+        let mask = masks.keep(key, image, pixels);
+        masks.remember(vec![1, 2, 3], &mask, [4, 5]);
+        drop(mask);
+        assert!(masks.asked(&[1, 2, 4]).is_none(), "another request");
+        let (found, origin) = masks.asked(&[1, 2, 3]).unwrap();
+        assert_eq!((found.image, origin), (image, [4, 5]));
+        drop(found);
+        // Asked in every frame, the request keeps its mask in use.
+        for _ in 0..4 {
+            masks.end_frame();
+            assert!(masks.asked(&[1, 2, 3]).is_some());
+        }
+        masks.end_frame();
+        masks.end_frame();
+        assert_eq!((masks.len(), masks.asked_len()), (0, 0), "a frame unasked");
+        assert!(masks.asked(&[1, 2, 3]).is_none());
     }
 
     /// Masks are kept up to the budget: one that no clip holds and this
