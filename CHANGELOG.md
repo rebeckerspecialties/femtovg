@@ -8,6 +8,19 @@ All notable changes to this project will be documented in this file.
   of a pixel inside it, so a curved edge's pixels are covered within 0.02 of
   their share inside the shape on average and 0.08 at worst, where they
   were 0.07 and 0.21 off. A curve takes 1.4 times the line segments it took.
+- Fixed the WGPU backend ignoring `ImageFlags::GENERATE_MIPMAPS`: an image
+  created with it now gets its mip levels, filled after every upload the way
+  the OpenGL backend's `glGenerateMipmap` fills them, and is sampled with
+  mipmap filtering, so a raster drawn smaller than its size is box-filtered
+  instead of point-sampled from the base level. Both backends now sample an
+  image half a level toward the larger mip, where the browsers' minification
+  sits (Chromium samples the larger level, Firefox downsamples directly).
+  The levels cost a third more texture memory for those images only; the
+  downsample pipeline is built on the first such upload.
+- Fixed a panic with the `swash` and `textlayout` features when text with PNG
+  bitmap glyphs (color emoji) is drawn outside the glyph atlas: under a
+  rotated, skewed, flipped or non-uniformly scaled transform, larger than 92
+  pixels, or scaled with a gradient or image paint.
 - Added `ImageFilter::Morphology` and `ImageFilter::Offset`, the SVG
   `feMorphology` and `feOffset` primitives: a dilation grows the opaque
   regions of an image by a whole-pixel radius per axis and an erosion
@@ -26,8 +39,8 @@ All notable changes to this project will be documented in this file.
   its image along that axis until the sigma fits one pass, blurs there and
   scales the result back up bilinearly,
   instead of running `(sigma / 8)^2` full-size passes. A sigma-77 blur of a
-  1080p layer is four halvings, a blur over a sixteenth of the pixels and
-  one copy where it was 93 full-size blurs, so it no longer exceeds the
+  1080p layer is four halvings, a blur over a sixteenth of the pixels
+  where it was 93 full-size blurs, so it no longer exceeds the
   filter work budget, which had left the layer unblurred; the sigma ceiling
   rises from 128 to 512; blurs within the bound render as before. The blur
   shader also reads transparent beyond the image it samples instead of
