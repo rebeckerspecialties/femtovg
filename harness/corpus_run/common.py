@@ -121,6 +121,13 @@ BUILDS['crp_nocrop'] = (f'{BIN}/_logos_full_crp', {'SINGLE_SHADOW_LAYER': '1', '
 BUILDS['pc_mstr'] = (f'{BIN}/_logos_full_pc_mstr', {'SINGLE_SHADOW_LAYER': '1'})
 BUILDS['pc_crp'] = (f'{BIN}/_logos_full_pc_crp', {'SINGLE_SHADOW_LAYER': '1'})
 
+# 2026-10-06: #380 at 74776e0 (master 485c665 merged in by Matt); m6 is master 6dd5543, whose library is 485c665's.
+# Both built without debug info (CARGO_PROFILE_RELEASE_DEBUG=0), as a pair for timing.
+BUILDS['c380'] = (f'{BIN}/_logos_full_c380', {'SINGLE_SHADOW_LAYER': '1'})
+BUILDS['m6'] = (f'{BIN}/_logos_full_m6', {'SINGLE_SHADOW_LAYER': '1'})
+BUILDS['c380f'] = (f'{BIN}/_logos_full_c380f', {'SINGLE_SHADOW_LAYER': '1'})  # c380 and the finer-flattening commit (e66f057)
+BUILDS['c380x'] = (f'{BIN}/_logos_full_c380x', {'SINGLE_SHADOW_LAYER': '1'})  # experiment: c380 with cuts (a rect clip that cuts a rounded shape, and paths rounded on one side, clip beside it in the scissor's place)
+
 # A build's frames are kept as TAG_KEY_FRAMING.png, the references as PREFIX_KEY_FRAMING.png: a tag must not be a prefix.
 assert not set(BUILDS) & {'chr', 'chg', 'ff', 'wk', 'id'}, 'a build is named as a reference'
 for _b in list(BUILDS):

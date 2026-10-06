@@ -8,6 +8,7 @@ import json, os, sys
 import numpy as np
 from PIL import Image
 from common import *
+BASE = os.environ.get('BASE', 'master')  # the build the residual is measured against
 R = OUT
 os.makedirs(f'{R}/tmp/forensics', exist_ok=True)
 files_ = {f['key']: f for f in json.load(open(f'{R}/files.json'))}
@@ -31,7 +32,7 @@ print(f"{'frame':46s} {'px':>7s} | beyond 20/255 of the area: master {build:>4s}
 for row in sys.argv[2:]:
     sub, framing = row.split(':')
     key = next((k for k in files_ if k.endswith('__' + sub)), None) or next(k for k in files_ if sub in k)
-    m, a, idr = frame('master', key, framing), frame(build, key, framing), ref('id', key, framing)
+    m, a, idr = frame(BASE, key, framing), frame(build, key, framing), ref('id', key, framing)
     h, w = idr.shape[:2]
     m, a = m[:h, :w], a[:h, :w]
     bad = dist(a, idr) > 20

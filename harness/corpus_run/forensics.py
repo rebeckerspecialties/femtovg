@@ -5,6 +5,7 @@ import json, os, sys
 import numpy as np
 from PIL import Image
 from common import *
+BASE = os.environ.get('BASE', 'master')  # the build the residual is measured against
 R = OUT
 os.makedirs(f'{R}/tmp/forensics', exist_ok=True)
 files_ = {f['key']: f for f in json.load(open(f'{R}/files.json'))}
@@ -27,7 +28,7 @@ def frame(b):
 def refimg(b):
     p = f'{R}/refs/{b}_{key}_{framing}.png'
     return np.asarray(Image.open(p).convert('RGB'), dtype=np.int16) if os.path.exists(p) else None
-imgs = {'master': frame('master'), build: frame(build)}
+imgs = {BASE: frame(BASE), build: frame(build)}
 for b in ('id', 'chg', 'chr', 'wk', 'ff'):
     im = refimg(b)
     if im is not None: imgs[b] = im
