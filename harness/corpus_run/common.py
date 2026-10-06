@@ -125,6 +125,7 @@ BUILDS['pc_crp'] = (f'{BIN}/_logos_full_pc_crp', {'SINGLE_SHADOW_LAYER': '1'})
 # Both built without debug info (CARGO_PROFILE_RELEASE_DEBUG=0), as a pair for timing.
 BUILDS['c380'] = (f'{BIN}/_logos_full_c380', {'SINGLE_SHADOW_LAYER': '1'})
 BUILDS['m6'] = (f'{BIN}/_logos_full_m6', {'SINGLE_SHADOW_LAYER': '1'})
+BUILDS['m6f'] = (f'{BIN}/_logos_full_m6f', {'SINGLE_SHADOW_LAYER': '1'})  # finer-flattening (7f59edb, master 6dd5543 merged in)
 BUILDS['c380f'] = (f'{BIN}/_logos_full_c380f', {'SINGLE_SHADOW_LAYER': '1'})  # c380 and the finer-flattening commit (e66f057)
 BUILDS['c380x'] = (f'{BIN}/_logos_full_c380x', {'SINGLE_SHADOW_LAYER': '1'})  # experiment: c380 with cuts (a rect clip that cuts a rounded shape, and paths rounded on one side, clip beside it in the scissor's place)
 
