@@ -170,3 +170,9 @@ BUILDS['cm7x'] = (f'{BIN}/_logos_full_cm7x', {'SINGLE_SHADOW_LAYER': '1'})  # cm
 # Masks with the mask texture bound only under a mask (separate draw layouts): cm8 = all cfgs, cm8n = master's cfgs.
 BUILDS['cm8'] = (f'{BIN}/_logos_full_cm8', {'SINGLE_SHADOW_LAYER': '1'})
 BUILDS['cm8n'] = (f'{BIN}/_logos_full_cm8n', {'SINGLE_SHADOW_LAYER': '1'})
+# The lean straddle (one pending vertex; bit-identical to s25m at k=0.375 and to master at k=0).
+for _n, _k in {'l25m': '0.375', 'l25z': '0'}.items():
+    BUILDS[_n] = (f'{BIN}/_logos_full_fxl', {'SINGLE_SHADOW_LAYER': '1', 'FEMTOVG_TESS_TOL': '0.25', 'FEMTOVG_JOIN_TOL': '0.25', 'FEMTOVG_STRADDLE2': _k})
+BUILDS['cm8_stencil'] = (f'{BIN}/_logos_full_cm8', {'SINGLE_SHADOW_LAYER': '1', 'CLIP_MASK_BUDGET_MB': '0', 'CLIP_JOINED': '1'})  # the masks build on the stencil, as master
+BUILDS['cm8b'] = (f'{BIN}/_logos_full_cm8b', {'SINGLE_SHADOW_LAYER': '1'})  # experiment: cm8n with the per-draw mask boxed (Params 264 bytes)
+BUILDS['m7pad'] = (f'{BIN}/_logos_full_m7pad', {'SINGLE_SHADOW_LAYER': '1'})  # experiment: master with Params padded to the masks' size (292 bytes)

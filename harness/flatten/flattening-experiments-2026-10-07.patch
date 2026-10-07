@@ -1,0 +1,297 @@
+diff --git a/src/lib.rs b/src/lib.rs
+index 938597e..dc07fa7 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -2487,6 +2487,9 @@ where
+ 
+ impl<T: Renderer> Drop for Canvas<T> {
+     fn drop(&mut self) {
++        if std::env::var_os("FEMTOVG_COUNT").is_some() {
++            eprintln!("flattened points {} in {} caches", crate::path::cache::FLAT_POINTS.load(std::sync::atomic::Ordering::Relaxed), crate::path::cache::FLAT_CACHES.load(std::sync::atomic::Ordering::Relaxed));
++        }
+         self.images.clear(&mut self.renderer);
+     }
+ }
+diff --git a/src/path.rs b/src/path.rs
+index ef8eeaf..19cd690 100644
+--- a/src/path.rs
++++ b/src/path.rs
+@@ -8,7 +8,7 @@ use crate::geometry::{Position, Transform2D, Vector};
+ #[cfg(feature = "textlayout")]
+ use rustybuzz::ttf_parser;
+ 
+-mod cache;
++pub(crate) mod cache;
+ pub use cache::{Convexity, PathCache};
+ 
+ // Length proportional to radius of a cubic bezier handle for 90deg arcs.
+diff --git a/src/path/cache.rs b/src/path/cache.rs
+index ed63733..8e66c14 100644
+--- a/src/path/cache.rs
++++ b/src/path/cache.rs
+@@ -184,6 +184,8 @@ pub struct PathCache {
+     // whether it bounds a hole under either fill rule. Computed once per
+     // cache (per transform), not per fill.
+     contour_sides: Option<Vec<(i32, u32, i32)>>,
++    straddle_scratch: Vec<[f32; 4]>,
++    straddle_pending: Option<[f32; 4]>,
+ }
+ 
+ impl PathCache {
+@@ -207,21 +209,53 @@ impl PathCache {
+                         let (c1x, c1y) = transform.transform_point(c1x, c1y);
+                         let (c2x, c2y) = transform.transform_point(c2x, c2y);
+                         let (x, y) = transform.transform_point(x, y);
++                        if dump() {
++                            eprintln!("CUBIC {} {} {} {} {} {} {} {}", last.pos.x, last.pos.y, c1x, c1y, c2x, c2y, x, y);
++                        }
+ 
+-                        cache.tesselate_bezier(
+-                            last.pos.x,
+-                            last.pos.y,
+-                            c1x,
+-                            c1y,
+-                            c2x,
+-                            c2y,
+-                            x,
+-                            y,
+-                            0,
+-                            PointFlags::CORNER,
+-                            tess_tol,
+-                            dist_tol,
+-                        );
++                        match experiment() {
++                            (Some(dev), _) => cache.flatten_nway(
++                                [last.pos.x, last.pos.y, c1x, c1y, c2x, c2y, x, y],
++                                0,
++                                PointFlags::CORNER,
++                                dev,
++                                dist_tol,
++                            ),
++                            (None, tol) if straddle2().is_some() => {
++                                cache.straddle_pending = None;
++                                cache.tesselate_bezier_lean(
++                                    [last.pos.x, last.pos.y, c1x, c1y, c2x, c2y, x, y],
++                                    0,
++                                    tol.unwrap_or(tess_tol),
++                                    straddle2().unwrap_or(0.0),
++                                    dist_tol,
++                                );
++                                if let Some([px, py, _, _]) = cache.straddle_pending.take() {
++                                    cache.add_point(px, py, PointFlags::CORNER, dist_tol);
++                                }
++                            }
++                            (None, tol) if straddle().is_some() => cache.flatten_straddle(
++                                [last.pos.x, last.pos.y, c1x, c1y, c2x, c2y, x, y],
++                                tol.unwrap_or(tess_tol),
++                                straddle().unwrap_or(0.5),
++                                PointFlags::CORNER,
++                                dist_tol,
++                            ),
++                            (None, tol) => cache.tesselate_bezier(
++                                last.pos.x,
++                                last.pos.y,
++                                c1x,
++                                c1y,
++                                c2x,
++                                c2y,
++                                x,
++                                y,
++                                0,
++                                PointFlags::CORNER,
++                                tol.unwrap_or(tess_tol),
++                                dist_tol,
++                            ),
++                        }
+ 
+                         // cache.tesselate_bezier_afd(
+                         //     last.pos.x,
+@@ -256,6 +290,8 @@ impl PathCache {
+             }
+         }
+ 
++        FLAT_POINTS.fetch_add(cache.points.len() as u64, std::sync::atomic::Ordering::Relaxed);
++        FLAT_CACHES.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+         let all_points = &mut cache.points;
+         let bounds = &mut cache.bounds;
+ 
+@@ -372,6 +408,97 @@ impl PathCache {
+         }
+     }
+ 
++    /// Experiment: tesselate_bezier's bisection, each accepted chord's end held back until the next chord's shift is
++    /// known, then moved by the mean of the two (k times the mean of each chord's control distances).
++    fn tesselate_bezier_lean(&mut self, p: [f32; 8], level: usize, tol: f32, k: f32, dist_tol: f32) {
++        if level > 10 {
++            return;
++        }
++        let [x1, y1, x2, y2, x3, y3, x4, y4] = p;
++        let x12 = (x1 + x2) * 0.5;
++        let y12 = (y1 + y2) * 0.5;
++        let x23 = (x2 + x3) * 0.5;
++        let y23 = (y2 + y3) * 0.5;
++        let x34 = (x3 + x4) * 0.5;
++        let y34 = (y3 + y4) * 0.5;
++        let x123 = (x12 + x23) * 0.5;
++        let y123 = (y12 + y23) * 0.5;
++        let dx = x4 - x1;
++        let dy = y4 - y1;
++        let c2 = (x2 - x4) * dy - (y2 - y4) * dx;
++        let c3 = (x3 - x4) * dy - (y3 - y4) * dx;
++        let (d2, d3) = (c2.abs(), c3.abs());
++        let len2 = dx * dx + dy * dy;
++        if (d2 + d3) * (d2 + d3) < tol * len2 {
++            // c2, c3 are the control points' signed distances times the chord's length, to its right.
++            let s = if len2 > 0.0 { -k * 0.5 * (c2 + c3) / len2 } else { 0.0 };
++            let (sx, sy) = (s * -dy, s * dx);
++            if let Some([px, py, psx, psy]) = self.straddle_pending {
++                self.add_point(px + (psx + sx) * 0.5, py + (psy + sy) * 0.5, PointFlags::empty(), dist_tol);
++            }
++            self.straddle_pending = Some([x4, y4, sx, sy]);
++            return;
++        }
++        let x234 = (x23 + x34) * 0.5;
++        let y234 = (y23 + y34) * 0.5;
++        let x1234 = (x123 + x234) * 0.5;
++        let y1234 = (y123 + y234) * 0.5;
++        self.tesselate_bezier_lean([x1, y1, x12, y12, x123, y123, x1234, y1234], level + 1, tol, k, dist_tol);
++        self.tesselate_bezier_lean([x1234, y1234, x234, y234, x34, y34, x4, y4], level + 1, tol, k, dist_tol);
++    }
++
++    /// Experiment: bisect as tesselate_bezier does, then move each vertex inside the curve by the mean of its two
++    /// chords' shifts toward their control points, k times the mean of the control points' signed distances.
++    fn flatten_straddle(&mut self, p: [f32; 8], tol: f32, k: f32, flags: PointFlags, dist_tol: f32) {
++        let mut segs = std::mem::take(&mut self.straddle_scratch);
++        segs.clear();
++        straddle_collect(p, 0, tol, k, &mut segs);
++        let n = segs.len();
++        for i in 0..n {
++            let [x, y, sx, sy] = segs[i];
++            if i + 1 < n {
++                let [_, _, tx, ty] = segs[i + 1];
++                self.add_point(x + (sx + tx) * 0.5, y + (sy + ty) * 0.5, PointFlags::empty(), dist_tol);
++            } else {
++                self.add_point(x, y, flags, dist_tol);
++            }
++        }
++        self.straddle_scratch = segs;
++    }
++
++    /// Experiment: split a cubic into as many pieces as its flatness bound asks for, not the next power of two.
++    fn flatten_nway(&mut self, p: [f32; 8], level: usize, flags: PointFlags, dev: f32, dist_tol: f32) {
++        let [x1, y1, x2, y2, x3, y3, x4, y4] = p;
++        let dx = x4 - x1;
++        let dy = y4 - y1;
++        let len = dx.hypot(dy);
++        // The curve lies within 3/4 of its farther control point's distance from the chord.
++        let far = if len > dist_tol {
++            ((x2 - x1) * dy - (y2 - y1) * dx).abs().max(((x3 - x1) * dy - (y3 - y1) * dx).abs()) / len
++        } else {
++            (x2 - x1).hypot(y2 - y1).max((x3 - x1).hypot(y3 - y1))
++        };
++        let bound = 0.75 * far;
++        if !(bound > dev) || level > 10 {
++            self.add_point(x4, y4, flags, dist_tol);
++            return;
++        }
++        let n = ((bound / dev).sqrt().ceil() as usize).clamp(2, 16);
++        let mut rest = p;
++        for i in 0..n {
++            let last = i + 1 == n;
++            let piece = if last {
++                rest
++            } else {
++                let t = 1.0 / (n - i) as f32;
++                let (a, b) = split_cubic(rest, t);
++                rest = b;
++                a
++            };
++            self.flatten_nway(piece, level + 1, if last { flags } else { PointFlags::empty() }, dev, dist_tol);
++        }
++    }
++
+     #[allow(clippy::too_many_arguments)]
+     fn tesselate_bezier(
+         &mut self,
+@@ -852,7 +979,7 @@ impl PathCache {
+         miter_limit: f32,
+         tess_tol: f32,
+     ) {
+-        let ncap = curve_divisions(stroke_width, PI, tess_tol);
++        let ncap = curve_divisions(stroke_width, PI, join_tol(tess_tol));
+ 
+         let stroke_width = stroke_width + (fringe_width * 0.5);
+ 
+@@ -1447,3 +1574,72 @@ fn main() {
+     }
+ }
+ */
++
++fn split_cubic(p: [f32; 8], t: f32) -> ([f32; 8], [f32; 8]) {
++    let lerp = |a: f32, b: f32| a + (b - a) * t;
++    let [x1, y1, x2, y2, x3, y3, x4, y4] = p;
++    let (x12, y12, x23, y23, x34, y34) = (lerp(x1, x2), lerp(y1, y2), lerp(x2, x3), lerp(y2, y3), lerp(x3, x4), lerp(y3, y4));
++    let (x123, y123, x234, y234) = (lerp(x12, x23), lerp(y12, y23), lerp(x23, x34), lerp(y23, y34));
++    let (xm, ym) = (lerp(x123, x234), lerp(y123, y234));
++    ([x1, y1, x12, y12, x123, y123, xm, ym], [xm, ym, x234, y234, x34, y34, x4, y4])
++}
++
++/// Experiment switches, read once: FEMTOVG_FLAT_DEV=d flattens n-way to a deviation of d px; FEMTOVG_TESS_TOL=t sets
++/// the bisection test's tolerance; FEMTOVG_JOIN_TOL=t the round joins' and caps' deviation.
++fn experiment() -> (Option<f32>, Option<f32>) {
++    static E: std::sync::OnceLock<(Option<f32>, Option<f32>)> = std::sync::OnceLock::new();
++    *E.get_or_init(|| {
++        let f = |k: &str| std::env::var(k).ok().and_then(|v| v.parse::<f32>().ok());
++        (f("FEMTOVG_FLAT_DEV"), f("FEMTOVG_TESS_TOL"))
++    })
++}
++
++fn join_tol(tess_tol: f32) -> f32 {
++    static J: std::sync::OnceLock<Option<f32>> = std::sync::OnceLock::new();
++    J.get_or_init(|| std::env::var("FEMTOVG_JOIN_TOL").ok().and_then(|v| v.parse::<f32>().ok())).unwrap_or(tess_tol)
++}
++
++pub static FLAT_POINTS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
++pub static FLAT_CACHES: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
++
++fn dump() -> bool {
++    static D: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
++    *D.get_or_init(|| std::env::var_os("FEMTOVG_DUMP").is_some())
++}
++
++fn straddle_collect(p: [f32; 8], level: usize, tol: f32, k: f32, out: &mut Vec<[f32; 4]>) {
++    if level > 10 {
++        return;
++    }
++    let [x1, y1, x2, y2, x3, y3, x4, y4] = p;
++    let dx = x4 - x1;
++    let dy = y4 - y1;
++    let d2 = ((x2 - x4) * dy - (y2 - y4) * dx).abs();
++    let d3 = ((x3 - x4) * dy - (y3 - y4) * dx).abs();
++    if (d2 + d3) * (d2 + d3) < tol * (dx * dx + dy * dy) {
++        let len2 = dx * dx + dy * dy;
++        let (sx, sy) = if len2 > 0.0 {
++            // a + b, the control points' signed distances from the chord, times its length
++            let ab = ((x2 - x1) * -dy + (y2 - y1) * dx) + ((x3 - x1) * -dy + (y3 - y1) * dx);
++            let s = k * 0.5 * ab / len2;
++            (s * -dy, s * dx)
++        } else {
++            (0.0, 0.0)
++        };
++        out.push([x4, y4, sx, sy]);
++        return;
++    }
++    let (a, b) = split_cubic(p, 0.5);
++    straddle_collect(a, level + 1, tol, k, out);
++    straddle_collect(b, level + 1, tol, k, out);
++}
++
++fn straddle() -> Option<f32> {
++    static S: std::sync::OnceLock<Option<f32>> = std::sync::OnceLock::new();
++    *S.get_or_init(|| std::env::var("FEMTOVG_STRADDLE").ok().and_then(|v| v.parse::<f32>().ok()))
++}
++
++fn straddle2() -> Option<f32> {
++    static S: std::sync::OnceLock<Option<f32>> = std::sync::OnceLock::new();
++    *S.get_or_init(|| std::env::var("FEMTOVG_STRADDLE2").ok().and_then(|v| v.parse::<f32>().ok()))
++}

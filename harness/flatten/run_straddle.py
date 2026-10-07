@@ -1,0 +1,15 @@
+import sys
+sys.path.insert(0, '/Users/matt/src/femtovg-wt/runs/pr/tmp/flat')
+from analyze_flat import *
+cs = load(sys.argv[1:])
+print(len(cs), 'cubics')
+def rep(name, polys):
+    segs = sum(len(p) - 1 for p in polys)
+    r = np.array([polyline_dev(c, p) for c, p in zip(cs, polys)])
+    sa = np.array([signed_area(c, p) for c, p in zip(cs, polys)])
+    print(f"{name:26s} segs {segs:6d}  per-curve max dev: mean {r[:, 0].mean():.4f} p90 {np.percentile(r[:, 0], 90):.4f} max {r[:, 0].max():.4f}  |area| {r[:, 1].sum():8.1f}  |net area| {np.abs(sa).sum():8.1f}")
+for tol in (0.25, 0.0625):
+    rep(f'bisection {tol}', [bisect_poly(c, tol) for c in cs])
+for tol in (0.25,):
+    for k in (0.375, 0.5):
+        rep(f'straddle {tol} k={k}', [bisect_straddle(c, tol, k) for c in cs])
