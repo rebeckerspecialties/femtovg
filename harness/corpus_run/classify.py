@@ -36,13 +36,14 @@ for row in sys.argv[2:]:
     h, w = idr.shape[:2]
     m, a = m[:h, :w], a[:h, :w]
     bad = dist(a, idr) > 20
-    br = {b: ref(b, key, framing)[:h, :w] for b in ('chg', 'chr', 'wk', 'ff')}
+    # a browser without a reference for this frame is left out
+    br = {b: im[:h, :w] for b in ('chg', 'chr', 'wk', 'ff') if (im := ref(b, key, framing)) is not None}
     near_all = np.ones((h, w), bool)
     for b, im in br.items():
         near_all &= dist(a, im) <= 12
     shared = bad & near_all
     fill = bad & ~shared & (dist(a, m) <= 2)
     clip = bad & ~shared & ~fill
-    bb = ' '.join(f"{(dist(im, idr) > 20).sum():5d}" for im in br.values())
+    bb = ' '.join(f"{b} {(dist(im, idr) > 20).sum()}" for b, im in br.items())
     print(f"{sub[:38] + ' ' + framing:46s} {h*w:7d} | {(dist(m, idr) > 20).sum():6d} {bad.sum():6d} | {shared.sum():6d} {fill.sum():5d} {clip.sum():5d} | {bb}")
     np.save(f'{R}/tmp/forensics/clip_{sub}_{framing}.npy', clip)

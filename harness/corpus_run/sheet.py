@@ -50,7 +50,10 @@ out = args.pop(0)
 files = {f['key']: f for f in json.load(open(f'{R}/files.json'))}
 
 
-def font(size):
+def font(size, text=''):
+    # Helvetica has no CJK glyphs: a caption naming such a file is set in a face that has them.
+    if any(ord(c) > 0x2e7f for c in text):
+        return ImageFont.truetype('/System/Library/Fonts/Hiragino Sans GB.ttc', size)
     return ImageFont.truetype('/System/Library/Fonts/Helvetica.ttc', size)
 
 
@@ -168,7 +171,7 @@ sheet = Image.new('RGB', (max(width, len(rows[0][1]) * column + gap), sum(max(p.
 draw = ImageDraw.Draw(sheet)
 y = gap
 for caption, panels in rows:
-    draw.text((gap, y), caption, fill=(0, 0, 0), font=font(13))
+    draw.text((gap, y), caption, fill=(0, 0, 0), font=font(13, caption))
     for i, (label, p) in enumerate(panels):
         x = gap + i * column
         draw.text((x, y + 19), label, fill=(90, 90, 90), font=font(11))

@@ -129,6 +129,12 @@ BUILDS['m6f'] = (f'{BIN}/_logos_full_m6f', {'SINGLE_SHADOW_LAYER': '1'})  # fine
 BUILDS['c380f'] = (f'{BIN}/_logos_full_c380f', {'SINGLE_SHADOW_LAYER': '1'})  # c380 and the finer-flattening commit (e66f057)
 BUILDS['c380x'] = (f'{BIN}/_logos_full_c380x', {'SINGLE_SHADOW_LAYER': '1'})  # experiment: c380 with cuts (a rect clip that cuts a rounded shape, and paths rounded on one side, clip beside it in the scissor's place)
 
+# 2026-10-07, on master cc0d841 (#380, #385 merged): m7 master, m7f finer flattening rebased (08d020f), cm7 coverage
+# masks and clip_paths for #377 (038a549, --cfg harness_clip_paths). No debug info, as a set for timing.
+BUILDS['m7'] = (f'{BIN}/_logos_full_m7', {'SINGLE_SHADOW_LAYER': '1'})
+BUILDS['m7f'] = (f'{BIN}/_logos_full_m7f', {'SINGLE_SHADOW_LAYER': '1'})
+BUILDS['cm7'] = (f'{BIN}/_logos_full_cm7', {'SINGLE_SHADOW_LAYER': '1'})
+
 # A build's frames are kept as TAG_KEY_FRAMING.png, the references as PREFIX_KEY_FRAMING.png: a tag must not be a prefix.
 assert not set(BUILDS) & {'chr', 'chg', 'ff', 'wk', 'id'}, 'a build is named as a reference'
 for _b in list(BUILDS):
@@ -146,3 +152,21 @@ def files():
 
 def ref_png(browser, key, framing):
     return f'{REFS}/{browser}_{key}_{framing}.png'
+# Flattening experiment (2026-10-07): one binary (finer-flattening-rebased 08d020f + an n-way split switched by
+# FEMTOVG_FLAT_DEV) emulating master (fx_m, bit-identical to m7), the PR (fx_p, = m7f) and n-way deviations.
+for _n, _e in {'fx_m': {'FEMTOVG_TESS_TOL': '0.25', 'FEMTOVG_JOIN_TOL': '0.25'}, 'fx_p': {},
+               'nw10': {'FEMTOVG_FLAT_DEV': '0.10', 'FEMTOVG_JOIN_TOL': '0.10'},
+               'nw08': {'FEMTOVG_FLAT_DEV': '0.08', 'FEMTOVG_JOIN_TOL': '0.08'},
+               'nw06': {'FEMTOVG_FLAT_DEV': '0.06', 'FEMTOVG_JOIN_TOL': '0.06'}}.items():
+    BUILDS[_n] = (f'{BIN}/_logos_full_fx', {'SINGLE_SHADOW_LAYER': '1', **_e})
+for _n, _e in {'s25': {'FEMTOVG_TESS_TOL': '0.25', 'FEMTOVG_STRADDLE': '0.5', 'FEMTOVG_JOIN_TOL': '0.25'},
+               's25m': {'FEMTOVG_TESS_TOL': '0.25', 'FEMTOVG_STRADDLE': '0.375', 'FEMTOVG_JOIN_TOL': '0.25'},
+               's125': {'FEMTOVG_TESS_TOL': '0.125', 'FEMTOVG_STRADDLE': '0.5', 'FEMTOVG_JOIN_TOL': '0.125'},
+               'fxs_m': {'FEMTOVG_TESS_TOL': '0.25', 'FEMTOVG_JOIN_TOL': '0.25'}}.items():
+    BUILDS[_n] = (f'{BIN}/_logos_full_fxs', {'SINGLE_SHADOW_LAYER': '1', **_e})
+# The masks tree (038a549) built with master's cfgs (no harness_clip_paths), to tell the library's cost from the harness's.
+BUILDS['cm7n'] = (f'{BIN}/_logos_full_cm7n', {'SINGLE_SHADOW_LAYER': '1'})
+BUILDS['cm7x'] = (f'{BIN}/_logos_full_cm7x', {'SINGLE_SHADOW_LAYER': '1'})  # cm7n without the mask texture binding (experiment)
+# Masks with the mask texture bound only under a mask (separate draw layouts): cm8 = all cfgs, cm8n = master's cfgs.
+BUILDS['cm8'] = (f'{BIN}/_logos_full_cm8', {'SINGLE_SHADOW_LAYER': '1'})
+BUILDS['cm8n'] = (f'{BIN}/_logos_full_cm8n', {'SINGLE_SHADOW_LAYER': '1'})
