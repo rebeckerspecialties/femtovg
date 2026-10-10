@@ -2,10 +2,16 @@
 """Writes files.json, the run's file list: every SVG of the demo-assets corpus and top level, plus any
 extra directories given as GROUP=DIR arguments (searched recursively) or GROUP=FILE.
 
-  files.py svgenius=~/src/SVGenius tiger=~/Ghostscript_Tiger.svg
+  files.py [GROUP=DIR|GROUP=FILE ...]
+
+The SVGenius icons and the Ghostscript tiger live in corpus/svgenius and corpus/tiger; they keep the keys they
+had when they were read from outside (GROUP__name), so earlier runs' references and results still match.
 """
 import glob, json, os, sys
 from common import *
+
+# Imported sets keyed by file name, as GROUP=DIR arguments are.
+NAME_KEYED = {'svgenius', 'tiger'}
 
 
 def group(rel):
@@ -18,7 +24,9 @@ def group(rel):
 out = []
 for p in sorted(glob.glob(f'{DA}/corpus/**/*.svg', recursive=True)) + sorted(glob.glob(f'{DA}/*.svg')):
     rel = os.path.relpath(p, DA)
-    out.append({'path': p, 'key': rel[:-4].replace('/', '__'), 'group': group(rel)})
+    g = group(rel)
+    key = f'{g}__{os.path.basename(p)[:-4]}' if g in NAME_KEYED else rel[:-4].replace('/', '__')
+    out.append({'path': p, 'key': key, 'group': g})
 for arg in sys.argv[1:]:
     name, path = arg.split('=', 1)
     path = os.path.expanduser(path)
