@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+<defs>
+<clipPath id="c11"><path d="M0 0L1024 0L1024 768L0 768Z"/></clipPath>
+<clipPath id="c12"><path d="M0 234L1024 234L1024 534L0 534Z"/></clipPath>
+<clipPath id="c13"><path d="M0 234L271 234L271 252L0 252Z"/></clipPath>
+<clipPath id="c14"><path d="M-4 226L275 226L275 260L-4 260Z"/></clipPath>
+<filter id="s15" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceAlpha" stdDeviation="2"/><feOffset dx="0" dy="0" result="o"/><feFlood flood-color="#000000" flood-opacity="1"/><feComposite in2="o" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<clipPath id="c16"><path d="M0 252L219 252L219 267L0 267Z"/></clipPath>
+<clipPath id="c17"><path d="M-4.8 244L223.8 244L223.8 275L-4.8 275Z"/></clipPath>
+<filter id="s18" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceAlpha" stdDeviation="2"/><feOffset dx="0" dy="0" result="o"/><feFlood flood-color="#000000" flood-opacity="1"/><feComposite in2="o" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<clipPath id="c19"><path d="M0 267L326 267L326 288L0 288Z"/></clipPath>
+<clipPath id="c20"><path d="M-3.2 259L329.2 259L329.2 296L-3.2 296Z"/></clipPath>
+<filter id="s21" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceAlpha" stdDeviation="2"/><feOffset dx="0" dy="0" result="o"/><feFlood flood-color="#000000" flood-opacity="1"/><feComposite in2="o" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<g clip-path="url(#c11)">
+<g clip-path="url(#c12)">
+<g clip-path="url(#c13)">
+<path d="M0 234L271 234L271 252L0 252Z" fill="rgb(255,0,0)" fill-opacity="0.4"/>
+<g clip-path="url(#c14)">
+<g filter="url(#s15)"><text x="4" y="248" font-family="Arial" font-size="15px" fill="#ffffff" xml:space="preserve">Hello world, I shouldn't be wrapped 123</text></g>
+</g>
+</g>
+<g clip-path="url(#c16)">
+<path d="M0 252L219 252L219 267L0 267Z" fill="rgb(255,0,0)" fill-opacity="0.4"/>
+<g clip-path="url(#c17)">
+<g filter="url(#s18)"><text x="3.2" y="263" font-family="Arial" font-size="12px" fill="#ffffff" xml:space="preserve">Hello world, I shouldn't be wrapped 123</text></g>
+</g>
+</g>
+<g clip-path="url(#c19)">
+<path d="M0 267L326 267L326 288L0 288Z" fill="rgb(255,0,0)" fill-opacity="0.4"/>
+<g clip-path="url(#c20)">
+<g filter="url(#s21)"><text x="4.8" y="283" font-family="Arial" font-size="18px" fill="#ffffff" xml:space="preserve">Hello world, I shouldn't be wrapped 123</text></g>
+</g>
+</g>
+</g>
+</g>
+</svg>

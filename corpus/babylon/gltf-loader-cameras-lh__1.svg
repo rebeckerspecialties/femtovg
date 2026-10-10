@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+<defs>
+<clipPath id="c10"><path d="M0 0L1024 0L1024 768L0 768Z"/></clipPath>
+<clipPath id="c11"><path d="M0 0L1024 0L1024 758L0 758Z"/></clipPath>
+</defs>
+<g clip-path="url(#c10)">
+<g clip-path="url(#c11)">
+<text x="293.738" y="749" font-family="Arial" font-size="40px" fill="#ffffff" xml:space="preserve">R(15, 135, -30) at X+, Z-</text>
+</g>
+</g>
+</svg>

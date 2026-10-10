@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<defs>
+<clipPath id="c15"><path d="M0 0L512 0L512 512L0 512Z"/></clipPath>
+<clipPath id="c16"><path d="M-119 -119L631 -119L631 631L-119 631Z"/></clipPath>
+<clipPath id="c17"><path d="M-118 -118L630 -118L630 630L-118 630Z"/></clipPath>
+<clipPath id="c18"><path d="M-118 -118L610 -118L610 630L-118 630Z"/></clipPath>
+<clipPath id="c19"><path d="M-118 -118L610 -118L610 1382L-118 1382Z"/></clipPath>
+<clipPath id="c20"><path d="M-118 -118L610 -118L610 1382L-118 1382Z"/></clipPath>
+<clipPath id="c21"><path d="M-44.4 332L536.4 332L536.4 932L-44.4 932Z"/></clipPath>
+<clipPath id="c22"><path d="M-34.4 342L528.4 342L528.4 924L-34.4 924Z"/></clipPath>
+<clipPath id="c23"><path d="M610 -118L630 -118L630 630L610 630Z"/></clipPath>
+<clipPath id="c24"><path d="M610 -118L630 -118L630 630L610 630Z"/></clipPath>
+<clipPath id="c25"><path d="M629 629L611 629L611 -117L629 -117Z"/></clipPath>
+<clipPath id="c26"><path d="M-118 630L610 630L610 630L-118 630Z"/></clipPath>
+<clipPath id="c27"><path d="M-118 630L610 630L610 630L-118 630Z"/></clipPath>
+<clipPath id="c28"><path d="M610 630L630 630L630 630L610 630Z"/></clipPath>
+<clipPath id="c29"><path d="M610 630L630 630L630 630L610 630Z"/></clipPath>
+</defs>
+<path d="M0 0L512 0L512 512L0 512Z" fill="#008000"/>
+<g clip-path="url(#c15)">
+<g clip-path="url(#c16)">
+<path d="M-118.5 -118.5L630.5 -118.5L630.5 630.5L-118.5 630.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+<g clip-path="url(#c17)">
+<g clip-path="url(#c18)">
+<g clip-path="url(#c19)">
+<g clip-path="url(#c20)">
+<path d="M-117.5 -117.5L609.5 -117.5L609.5 1381.5L-117.5 1381.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+<g clip-path="url(#c21)">
+<path d="M-44.4 332L536.4 332L536.4 932L-44.4 932Z" fill="#222222"/>
+<g clip-path="url(#c22)">
+<text x="-34.4" y="391" font-family="Arial" font-size="54px" fill="#ffffff" xml:space="preserve">Some text</text>
+</g>
+<path d="M-43.9 332.5L535.9 332.5L535.9 931.5L-43.9 931.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+</g>
+</g>
+</g>
+</g>
+<g clip-path="url(#c23)">
+<g clip-path="url(#c24)">
+<path d="M610.5 -117.5L629.5 -117.5L629.5 629.5L610.5 629.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+<g clip-path="url(#c25)">
+<path d="M611 -117L629 -117L629 629L611 629Z" transform="matrix(-1 0 0 -1 1240 512)" fill="rgb(0,0,0)" fill-opacity="0"/>
+<path d="M611 292.4L629 292.4L629 629L611 629Z" transform="matrix(-1 0 0 -1 1240 512)" fill="#808080"/>
+</g>
+</g>
+</g>
+<g clip-path="url(#c26)">
+<g clip-path="url(#c27)">
+<path d="M-117.5 630.5L609.5 630.5L609.5 629.5L-117.5 629.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+</g>
+</g>
+<g clip-path="url(#c28)">
+<g clip-path="url(#c29)">
+<path d="M610 630L630 630L630 630L610 630Z" fill="rgb(0,0,0)" fill-opacity="0"/>
+<path d="M610.5 630.5L629.5 630.5L629.5 629.5L610.5 629.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+</g>
+</g>
+</g>
+</g>
+</g>
+</svg>

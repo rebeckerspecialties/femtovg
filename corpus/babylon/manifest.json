@@ -1,0 +1,1774 @@
+[
+ {
+  "playgroundId": "#SLV8LW#3",
+  "title": "Advanced shadows",
+  "titles": [
+   "Advanced shadows"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "advancedShadows.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "advanced-shadows.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 480,
+    "warnings": [
+     "a partial clearRect left out (-4,449,942,180 of 1024x768)"
+    ],
+    "check": {
+     "px20": 0.002,
+     "px8": 0.002,
+     "max": 65
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#B48X7G#64",
+  "title": "Advanced shadows (right handed)",
+  "titles": [
+   "Advanced shadows (right handed)"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "advancedShadows2.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "advanced-shadows-right-handed.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 480,
+    "warnings": [
+     "a partial clearRect left out (87,449,942,180 of 1024x768)"
+    ],
+    "check": {
+     "px20": 0.024,
+     "px8": 0.029,
+     "max": 96
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#5NFRVE#161",
+  "title": "Asset Container Instantiate to Scene 2",
+  "titles": [
+   "Asset Container Instantiate to Scene 2"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "Asset-Container-Instantiate-to-Scene-2",
+   "Asset-Container-Instantiate-to-Scene-2.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "asset-container-instantiate-to-scene-2.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 22,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#QFK9K4#25",
+  "title": "Child overriding parent font properties",
+  "titles": [
+   "Child overriding parent font properties"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "Childoverridingparentfontproperties.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "child-overriding-parent-font-properties.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 76,
+    "warnings": [],
+    "check": {
+     "px20": 0.001,
+     "px8": 0.001,
+     "max": 65
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#Y6W087#0",
+  "title": "Clip planes",
+  "titles": [
+   "Clip planes"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "clipplanes.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "clip-planes.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 108,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 4
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#GAFR36#0",
+  "title": "default-render-pipeline",
+  "titles": [
+   "default-render-pipeline"
+  ],
+  "suites": [
+   "babylonjs"
+  ],
+  "referenceImages": [],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "default-render-pipeline.svg",
+    "width": 1536,
+    "height": 1152,
+    "ops": 2260,
+    "warnings": [],
+    "check": {
+     "px20": 0.003,
+     "px8": 0.006,
+     "max": 48
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#FU0ES5#47",
+  "title": "Dynamic Texture context clip",
+  "titles": [
+   "Dynamic Texture context clip"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "dynamicTextureClip.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "dynamic-texture-context-clip.svg",
+    "width": 512,
+    "height": 512,
+    "ops": 12,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#QFK9K4#24",
+  "title": "Font size inheritance",
+  "titles": [
+   "Font size inheritance"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "Fontsizeinheritance.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "font-size-inheritance.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 76,
+    "warnings": [],
+    "check": {
+     "px20": 0.001,
+     "px8": 0.001,
+     "max": 65
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#QFK9K4#26",
+  "title": "Font style inheritance",
+  "titles": [
+   "Font style inheritance"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "Font-style-inheritance.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "font-style-inheritance.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 76,
+    "warnings": [],
+    "check": {
+     "px20": 0.001,
+     "px8": 0.001,
+     "max": 65
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#RM56RY#25",
+  "title": "FrameGraph custom rendering",
+  "titles": [
+   "FrameGraph custom rendering"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "FrameGraph-custom-rendering.png"
+  ],
+  "engine": "webgl",
+  "error": null,
+  "canvases": []
+ },
+ {
+  "playgroundId": "#RM56RY#26",
+  "title": "FrameGraph gui bloom",
+  "titles": [
+   "FrameGraph gui bloom"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "FrameGraph-gui-bloom.png"
+  ],
+  "engine": "webgl",
+  "error": null,
+  "canvases": [
+   {
+    "file": "framegraph-gui-bloom.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 78,
+    "warnings": [],
+    "check": {
+     "px20": 0.013,
+     "px8": 0.014,
+     "max": 88
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#933H4X#11",
+  "title": "glTF Loader Cameras LH",
+  "titles": [
+   "glTF Loader Cameras LH",
+   "glTF Loader Cameras RH"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "glTFLoaderCameras.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "gltf-loader-cameras-lh__0.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 46,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   },
+   {
+    "file": "gltf-loader-cameras-lh__1.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 46,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   },
+   {
+    "file": "gltf-loader-cameras-lh__2.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 46,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   },
+   {
+    "file": "gltf-loader-cameras-lh__3.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 46,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#3A00GJ#42",
+  "title": "GLTF Serializer camera rotation animation, LH -> LH",
+  "titles": [
+   "GLTF Serializer camera rotation animation, LH -> LH",
+   "GLTF Serializer camera rotation animation, LH -> RH",
+   "GLTF Serializer camera rotation animation, RH -> LH",
+   "GLTF Serializer camera rotation animation, RH -> RH"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "glTFSerializerCameraRotationAnimation.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "gltf-serializer-camera-rotation-animation-lh-lh__0.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 46,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   },
+   {
+    "file": "gltf-serializer-camera-rotation-animation-lh-lh__1.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 46,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   },
+   {
+    "file": "gltf-serializer-camera-rotation-animation-lh-lh__2.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 46,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   },
+   {
+    "file": "gltf-serializer-camera-rotation-animation-lh-lh__3.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 46,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   },
+   {
+    "file": "gltf-serializer-camera-rotation-animation-lh-lh__4.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 46,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   },
+   {
+    "file": "gltf-serializer-camera-rotation-animation-lh-lh__5.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 46,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   },
+   {
+    "file": "gltf-serializer-camera-rotation-animation-lh-lh__6.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 46,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   },
+   {
+    "file": "gltf-serializer-camera-rotation-animation-lh-lh__7.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 46,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#ZUAPLL#2",
+  "title": "GUI for Mesh cloning",
+  "titles": [
+   "GUI for Mesh cloning"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "GUI-for-Mesh-cloning.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "gui-for-mesh-cloning__0.svg",
+    "width": 512,
+    "height": 512,
+    "ops": 236,
+    "warnings": [],
+    "check": {
+     "px20": 0.179,
+     "px8": 0.181,
+     "max": 65
+    }
+   },
+   {
+    "file": "gui-for-mesh-cloning__1.svg",
+    "width": 512,
+    "height": 512,
+    "ops": 220,
+    "warnings": [],
+    "check": {
+     "px20": 0.179,
+     "px8": 0.181,
+     "max": 65
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#XCPP9Y#17259",
+  "title": "GUI Force Resize Width",
+  "titles": [
+   "GUI Force Resize Width"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "GUI-Force-Resize-Width.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "gui-force-resize-width.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 360,
+    "warnings": [],
+    "check": {
+     "px20": 0.007,
+     "px8": 0.013,
+     "max": 70
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#XCPP9Y#17227",
+  "title": "GUI Gradient Linear",
+  "titles": [
+   "GUI Gradient Linear"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "GUI-Gradient-Linear.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "gui-gradient-linear.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 296,
+    "warnings": [],
+    "check": {
+     "px20": 0.03,
+     "px8": 0.039,
+     "max": 142
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#PFK1Z5",
+  "title": "GUI Gradient Linear with transparency",
+  "titles": [
+   "GUI Gradient Linear with transparency"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "GUI-Gradient-Linear-with-transparency.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "gui-gradient-linear-with-transparency.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 54,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 1
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#4Z7EK3",
+  "title": "GUI Gradient Radial",
+  "titles": [
+   "GUI Gradient Radial"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "GUI-Gradient-Radial.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "gui-gradient-radial.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 54,
+    "warnings": [],
+    "check": {
+     "px20": 0.001,
+     "px8": 0.001,
+     "max": 65
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#XCPP9Y#17811",
+  "title": "GUI Horizontal Stack Panel and Text Block with resizeToFit and forceResizeWidth",
+  "titles": [
+   "GUI Horizontal Stack Panel and Text Block with resizeToFit and forceResizeWidth"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "GUI-Horizontal-Stack-Panel-and-Text-Block-with-resizeToFit-and-forceResizeWidth.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "gui-horizontal-stack-panel-and-text-block-with-resizetofit-a.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 160,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.115,
+     "max": 20
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#8Y0XJL#8",
+  "title": "GUI Images in Grid",
+  "titles": [
+   "GUI Images in Grid"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "GUI-Images-in-Grid.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "gui-images-in-grid.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 466,
+    "warnings": [],
+    "check": {
+     "px20": 1.199,
+     "px8": 1.975,
+     "max": 173
+    },
+    "left_out": "raster: ten embedded PNGs, 5.6 MB"
+   }
+  ]
+ },
+ {
+  "playgroundId": "#A3RC6I#0",
+  "title": "GUI Input Test",
+  "titles": [
+   "GUI Input Test"
+  ],
+  "suites": [
+   "babylonjs"
+  ],
+  "referenceImages": [
+   "guiInputTest.png"
+  ],
+  "engine": "webgl",
+  "error": null,
+  "canvases": [
+   {
+    "file": "gui-input-test.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 745,
+    "warnings": [],
+    "check": {
+     "px20": 0.045,
+     "px8": 0.065,
+     "max": 105
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#UB4F3B#8",
+  "title": "GUI Input Test",
+  "titles": [
+   "GUI Input Test"
+  ],
+  "suites": [
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "guiInputTest.png"
+  ],
+  "engine": "null",
+  "error": "TypeError: Cannot read properties of null (reading 'x')\n    at s.callback (file:///var/folders/_c/krb2zmbx2ss6b1xhpydpxcr80000gn/T/tmpcr2j_by6/test.html:167:39)\n    at a.notifyObservers (file:///Users/matt/src/BabylonNative/Apps/node_modules/babylonjs/babylon.max.js:303:223)\n    at Vl.render (file:///Users/matt/src/BabylonNative/Apps/node_modules/babylonjs/babylon.max.js:15672:90)\n    at main (file:///var/folders/_c/krb2zmbx2ss6b1xhpydpxcr80000gn/T/tmpcr2j_by6/test.html:249:39)",
+  "canvases": [
+   {
+    "file": "gui-input-test--ub4f3b-8.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 297,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.012,
+     "max": 21
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#NVAEWD#69",
+  "title": "GUI Input Text Area Inside ScrollViewer",
+  "titles": [
+   "GUI Input Text Area Inside ScrollViewer"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "GUI-Input-Text-Area-Inside-ScrollViewer.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "gui-input-text-area-inside-scrollviewer.svg",
+    "width": 512,
+    "height": 512,
+    "ops": 504,
+    "warnings": [],
+    "check": {
+     "px20": 0.036,
+     "px8": 0.051,
+     "max": 85
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#NVAEWD#364",
+  "title": "GUI Input Text Area with Placeholder",
+  "titles": [
+   "GUI Input Text Area with Placeholder"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "gui-inputtextarea-withplaceholder.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "gui-input-text-area-with-placeholder.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 70,
+    "warnings": [],
+    "check": {
+     "px20": 0.017,
+     "px8": 0.024,
+     "max": 63
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#UDLHJ3#0",
+  "title": "GUI Slate",
+  "titles": [
+   "GUI Slate"
+  ],
+  "suites": [
+   "babylonjs"
+  ],
+  "referenceImages": [
+   "guiSlate.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "gui-slate__0.svg",
+    "width": 3379,
+    "height": 102,
+    "ops": 28,
+    "warnings": [
+     "a partial clearRect left out (-25,0,538,129 of 3379x102)"
+    ],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   },
+   {
+    "file": "gui-slate__1.svg",
+    "width": 512,
+    "height": 512,
+    "ops": 45,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   },
+   {
+    "file": "gui-slate__2.svg",
+    "width": 512,
+    "height": 512,
+    "ops": 45,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#LLVZ90#0",
+  "title": "GUI StackPanel",
+  "titles": [
+   "GUI StackPanel"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "StackPanel.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "gui-stackpanel.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 172,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.001,
+     "max": 20
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#XCPP9Y#17810",
+  "title": "GUI Text Block with resizeToFit and forceResizeWidth",
+  "titles": [
+   "GUI Text Block with resizeToFit and forceResizeWidth"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "GUI-Text-Block-with-resizeToFit-and-forceResizeWidth.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "gui-text-block-with-resizetofit-and-forceresizewidth.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 256,
+    "warnings": [],
+    "check": {
+     "px20": 0.013,
+     "px8": 0.069,
+     "max": 68
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#BS60AB#0",
+  "title": "GUI Transform StackPanel",
+  "titles": [
+   "GUI Transform StackPanel"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "TransformStackPanel.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "gui-transform-stackpanel.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 564,
+    "warnings": [],
+    "check": {
+     "px20": 0.062,
+     "px8": 0.223,
+     "max": 81
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#ND10JJ#0",
+  "title": "Havok FloatingOrigin Multi-Region",
+  "titles": [
+   "Havok FloatingOrigin Multi-Region"
+  ],
+  "suites": [
+   "babylonjs"
+  ],
+  "referenceImages": [],
+  "engine": "null",
+  "error": "ReferenceError: HK is not defined\n    at new mUe (file:///Users/matt/src/BabylonNative/Apps/node_modules/babylonjs/babylon.max.js:148572:17)\n    at createScene (file:///var/folders/_c/krb2zmbx2ss6b1xhpydpxcr80000gn/T/tmp8x847qjw/test.html:128:25)\n    at main (file:///var/folders/_c/krb2zmbx2ss6b1xhpydpxcr80000gn/T/tmp8x847qjw/test.html:236:61)\n    at file:///var/folders/_c/krb2zmbx2ss6b1xhpydpxcr80000gn/T/tmp8x847qjw/test.html:253:3",
+  "canvases": []
+ },
+ {
+  "playgroundId": "#BEDCVY",
+  "title": "Havok FloatingOrigin Multi-Region",
+  "titles": [
+   "Havok FloatingOrigin Multi-Region"
+  ],
+  "suites": [
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "Havok-FloatingOrigin-Multi-Region.png"
+  ],
+  "engine": "null",
+  "error": "ReferenceError: HK is not defined\n    at new mUe (file:///Users/matt/src/BabylonNative/Apps/node_modules/babylonjs/babylon.max.js:148572:17)\n    at createScene (file:///var/folders/_c/krb2zmbx2ss6b1xhpydpxcr80000gn/T/tmpmsttjevo/test.html:162:23)\n    at main (file:///var/folders/_c/krb2zmbx2ss6b1xhpydpxcr80000gn/T/tmpmsttjevo/test.html:287:61)\n    at file:///var/folders/_c/krb2zmbx2ss6b1xhpydpxcr80000gn/T/tmpmsttjevo/test.html:304:3",
+  "canvases": []
+ },
+ {
+  "playgroundId": "#EIJH8L#27",
+  "title": "KTX2 decoder test",
+  "titles": [
+   "KTX2 decoder test"
+  ],
+  "suites": [
+   "babylonjs"
+  ],
+  "referenceImages": [
+   "ktx2decoder.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "ktx2-decoder-test.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 1717,
+    "warnings": [
+     "a partial clearRect left out (174,259,779,483 of 1024x768)"
+    ],
+    "check": {
+     "px20": 0.052,
+     "px8": 0.065,
+     "max": 82
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#YS93KY",
+  "title": "Load GUI snippet with unicode",
+  "titles": [
+   "Load GUI snippet with unicode"
+  ],
+  "suites": [
+   "babylonjs"
+  ],
+  "referenceImages": [
+   "loadGuiSnippetWithUnicode.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "load-gui-snippet-with-unicode.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 106,
+    "warnings": [],
+    "check": {
+     "px20": 0.001,
+     "px8": 0.001,
+     "max": 51
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#YS93KY#1",
+  "title": "Load GUI snippet with unicode",
+  "titles": [
+   "Load GUI snippet with unicode"
+  ],
+  "suites": [
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "loadGuiSnippetWithUnicode.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "load-gui-snippet-with-unicode--ys93ky-1.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 106,
+    "warnings": [],
+    "check": {
+     "px20": 0.001,
+     "px8": 0.001,
+     "max": 51
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#YD2TXP#35",
+  "title": "Loading glTF model with KTX2 textures",
+  "titles": [
+   "Loading glTF model with KTX2 textures"
+  ],
+  "suites": [
+   "babylonjs"
+  ],
+  "referenceImages": [],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "loading-gltf-model-with-ktx2-textures.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 184,
+    "warnings": [],
+    "check": {
+     "px20": 0.012,
+     "px8": 0.016,
+     "max": 81
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#RNASML#4",
+  "title": "Local cubemaps",
+  "titles": [
+   "Local cubemaps"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "local-cubemaps.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "local-cubemaps.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 100,
+    "warnings": [],
+    "check": {
+     "px20": 0.001,
+     "px8": 0.001,
+     "max": 48
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#TKVFSA#8",
+  "title": "Native Canvas",
+  "titles": [
+   "Native Canvas"
+  ],
+  "suites": [
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "native-canvas.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "native-canvas.svg",
+    "width": 512,
+    "height": 512,
+    "ops": 649,
+    "warnings": [],
+    "check": {
+     "px20": 0.089,
+     "px8": 0.192,
+     "max": 68
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#QJ71C6#5",
+  "title": "Node material 1",
+  "titles": [
+   "Node material 1"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "node-material1.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "node-material-1.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 420,
+    "warnings": [],
+    "check": {
+     "px20": 0.006,
+     "px8": 0.006,
+     "max": 88
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#PJ5JXH#121",
+  "title": "OpenPBR Subsurface SSS Frame Graph - Analytic Lights",
+  "titles": [
+   "OpenPBR Subsurface SSS Frame Graph - Analytic Lights"
+  ],
+  "suites": [
+   "babylonjs"
+  ],
+  "referenceImages": [],
+  "engine": "webgl",
+  "error": null,
+  "canvases": []
+ },
+ {
+  "playgroundId": "#PJ5JXH#122",
+  "title": "OpenPBR Subsurface SSS Frame Graph - Shadows - Combination Lights",
+  "titles": [
+   "OpenPBR Subsurface SSS Frame Graph - Shadows - Combination Lights"
+  ],
+  "suites": [
+   "babylonjs"
+  ],
+  "referenceImages": [],
+  "engine": "webgl",
+  "error": null,
+  "canvases": []
+ },
+ {
+  "playgroundId": "#PJ5JXH#120",
+  "title": "OpenPBR Subsurface SSS Frame Graph - Shadows - IBL",
+  "titles": [
+   "OpenPBR Subsurface SSS Frame Graph - Shadows - IBL"
+  ],
+  "suites": [
+   "babylonjs"
+  ],
+  "referenceImages": [],
+  "engine": "webgl",
+  "error": null,
+  "canvases": []
+ },
+ {
+  "playgroundId": "#ERVGT5",
+  "title": "Parse GUI json with unicode",
+  "titles": [
+   "Parse GUI json with unicode"
+  ],
+  "suites": [
+   "babylonjs"
+  ],
+  "referenceImages": [
+   "parseGuiJsonWithUnicode.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "parse-gui-json-with-unicode.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 106,
+    "warnings": [],
+    "check": {
+     "px20": 0.001,
+     "px8": 0.001,
+     "max": 51
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#ERVGT5#1",
+  "title": "Parse GUI json with unicode",
+  "titles": [
+   "Parse GUI json with unicode"
+  ],
+  "suites": [
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "parseGuiJsonWithUnicode.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "parse-gui-json-with-unicode--ervgt5-1.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 106,
+    "warnings": [],
+    "check": {
+     "px20": 0.001,
+     "px8": 0.001,
+     "max": 51
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#1GLEJK#5",
+  "title": "Pointers",
+  "titles": [
+   "Pointers"
+  ],
+  "suites": [
+   "babylonjs"
+  ],
+  "referenceImages": [
+   "pointers.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "pointers.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 328,
+    "warnings": [],
+    "check": {
+     "px20": 0.021,
+     "px8": 0.026,
+     "max": 143
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#Y6W087#71",
+  "title": "Prepass SSAO + clip planes",
+  "titles": [
+   "Prepass SSAO + clip planes"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "prepass-ssao-clip-planes.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "prepass-ssao-clip-planes.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 108,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 4
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#8F5HYV#72",
+  "title": "Prepass SSAO + depth of field",
+  "titles": [
+   "Prepass SSAO + depth of field"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "prepass-ssao-dof.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": []
+ },
+ {
+  "playgroundId": "#LLVZ90#4",
+  "title": "Prepass SSAO + GUI",
+  "titles": [
+   "Prepass SSAO + GUI"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "prepass-ssao-gui.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "prepass-ssao-gui.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 172,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.001,
+     "max": 20
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#PQ4G5G#2",
+  "title": "Rounding cell widths on Grid",
+  "titles": [
+   "Rounding cell widths on Grid"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "Rounding-cell-widths-on-Grid.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "rounding-cell-widths-on-grid.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 142,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#XCPP9Y#18325",
+  "title": "Rounding values on controls inside StackPanel",
+  "titles": [
+   "Rounding values on controls inside StackPanel"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "Rounding-values-on-controls-inside-StackPanel.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "rounding-values-on-controls-inside-stackpanel.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 308,
+    "warnings": [],
+    "check": {
+     "px20": 0.002,
+     "px8": 0.02,
+     "max": 65
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#6X9UMD#12",
+  "title": "show-multiple-guis",
+  "titles": [
+   "show-multiple-guis"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "show-multiple-guis.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "show-multiple-guis__0.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 1256,
+    "warnings": [
+     "a partial clearRect left out (0,0,876,432 of 1024x768)"
+    ],
+    "check": {
+     "px20": 0.327,
+     "px8": 0.387,
+     "max": 255
+    }
+   },
+   {
+    "file": "show-multiple-guis__1.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 280,
+    "warnings": [],
+    "check": {
+     "px20": 0.004,
+     "px8": 0.017,
+     "max": 48
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#I2TR8G#0",
+  "title": "skybox-with-boombox",
+  "titles": [
+   "skybox-with-boombox"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "skybox-with-boombox.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "skybox-with-boombox.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 46,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#HATGQZ#3",
+  "title": "Sliders",
+  "titles": [
+   "Sliders"
+  ],
+  "suites": [
+   "babylonjs"
+  ],
+  "referenceImages": [
+   "Sliders.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "sliders.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 1750,
+    "warnings": [],
+    "check": {
+     "px20": 0.001,
+     "px8": 0.003,
+     "max": 40
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#C90R62#17",
+  "title": "terrain-erosion",
+  "titles": [
+   "terrain-erosion"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "terrain-erosion.png"
+  ],
+  "engine": "null",
+  "error": "TypeError: this._engine.createStorageBuffer is not a function\n    at XT._create (file:///Users/matt/src/BabylonNative/Apps/node_modules/babylonjs/babylon.max.js:40909:125)\n    at new XT (file:///Users/matt/src/BabylonNative/Apps/node_modules/babylonjs/babylon.max.js:40907:94)\n    at HeightMapGenerator.generateHeightMap (file:///var/folders/_c/krb2zmbx2ss6b1xhpydpxcr80000gn/T/tmp2w48oyhr/test.html:705:31)\n    at TerrainGenerator.generateHeightMap (file:///var/folders/_c/krb2zmbx2ss6b1xhpydpxcr80000gn/T/tmp2w48oyhr/test.html:381:27)\n    at createScene (file:///var/folders/_c/krb2zmbx2ss6b1xhpydpxcr80000gn/T/tmp2w48oyhr/test.html:89:22)\n    at async main (file:///var/folders/_c/krb2zmbx2ss6b1xhpydpxcr80000gn/T/tmp2w48oyhr/test.html:1226:55)",
+  "canvases": []
+ },
+ {
+  "playgroundId": "#XJVHWQ",
+  "title": "UI unaffected by post-process",
+  "titles": [
+   "UI unaffected by post-process"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "uiUnaffected.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "ui-unaffected-by-post-process.svg",
+    "width": 1024,
+    "height": 768,
+    "ops": 76,
+    "warnings": [],
+    "check": {
+     "px20": 0.001,
+     "px8": 0.001,
+     "max": 65
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#664OF3#6",
+  "title": "Vertex Pulling - Normals UVs Colors Tangents",
+  "titles": [
+   "Vertex Pulling - Normals UVs Colors Tangents"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "vertexPullingNormalsUVsColors.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "vertex-pulling-normals-uvs-colors-tangents__0.svg",
+    "width": 256,
+    "height": 256,
+    "ops": 64,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   },
+   {
+    "file": "vertex-pulling-normals-uvs-colors-tangents__1.svg",
+    "width": 256,
+    "height": 256,
+    "ops": 65536,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   }
+  ]
+ },
+ {
+  "playgroundId": "#0SA2NH#4",
+  "title": "Vertex Pulling - UV Channels 1-6",
+  "titles": [
+   "Vertex Pulling - UV Channels 1-6"
+  ],
+  "suites": [
+   "babylonjs",
+   "babylonnative"
+  ],
+  "referenceImages": [
+   "vertexPullingUVChannels.png"
+  ],
+  "engine": "null",
+  "error": null,
+  "canvases": [
+   {
+    "file": "vertex-pulling-uv-channels-1-6__0.svg",
+    "width": 256,
+    "height": 256,
+    "ops": 16,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   },
+   {
+    "file": "vertex-pulling-uv-channels-1-6__1.svg",
+    "width": 256,
+    "height": 256,
+    "ops": 16,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   },
+   {
+    "file": "vertex-pulling-uv-channels-1-6__2.svg",
+    "width": 256,
+    "height": 256,
+    "ops": 16,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   },
+   {
+    "file": "vertex-pulling-uv-channels-1-6__3.svg",
+    "width": 256,
+    "height": 256,
+    "ops": 16,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   },
+   {
+    "file": "vertex-pulling-uv-channels-1-6__4.svg",
+    "width": 256,
+    "height": 256,
+    "ops": 16,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   },
+   {
+    "file": "vertex-pulling-uv-channels-1-6__5.svg",
+    "width": 256,
+    "height": 256,
+    "ops": 16,
+    "warnings": [],
+    "check": {
+     "px20": 0.0,
+     "px8": 0.0,
+     "max": 0
+    }
+   }
+  ]
+ }
+]

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+<defs>
+<clipPath id="c2"><path d="M0 0L1024 0L1024 768L0 768Z"/></clipPath>
+<clipPath id="c3"><path d="M0 40L1024 40L1024 768L0 768Z"/></clipPath>
+</defs>
+<g clip-path="url(#c2)">
+<g clip-path="url(#c3)">
+<text x="269.397" y="85" font-family="Arial" font-size="50px" fill="#ffffff" xml:space="preserve">Hello world WebGPU!</text>
+</g>
+</g>
+</svg>

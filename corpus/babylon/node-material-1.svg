@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+<defs>
+<clipPath id="c14"><path d="M0 0L1024 0L1024 768L0 768Z"/></clipPath>
+<clipPath id="c15"><path d="M804 234L1024 234L1024 534L804 534Z"/></clipPath>
+<clipPath id="c16"><path d="M864 244L964 244L964 284L864 284Z"/></clipPath>
+<clipPath id="c17"><path d="M865 245L963 245L963 283L865 283Z"/></clipPath>
+<clipPath id="c18"><path d="M864 294L964 294L964 334L864 334Z"/></clipPath>
+<clipPath id="c19"><path d="M865 295L963 295L963 333L865 333Z"/></clipPath>
+<clipPath id="c20"><path d="M864 344L964 344L964 384L864 384Z"/></clipPath>
+<clipPath id="c21"><path d="M865 345L963 345L963 383L865 383Z"/></clipPath>
+<clipPath id="c22"><path d="M864 394L964 394L964 434L864 434Z"/></clipPath>
+<clipPath id="c23"><path d="M865 395L963 395L963 433L865 433Z"/></clipPath>
+<clipPath id="c24"><path d="M864 444L964 444L964 484L864 484Z"/></clipPath>
+<clipPath id="c25"><path d="M865 445L963 445L963 483L865 483Z"/></clipPath>
+<clipPath id="c26"><path d="M864 494L964 494L964 534L864 534Z"/></clipPath>
+<clipPath id="c27"><path d="M865 495L963 495L963 533L865 533Z"/></clipPath>
+</defs>
+<g clip-path="url(#c14)">
+<g clip-path="url(#c15)">
+<g clip-path="url(#c16)">
+<path d="M864 244L964 244L964 284L864 284Z" fill="#008000"/>
+<path d="M864.5 244.5L963.5 244.5L963.5 283.5L864.5 283.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+<g clip-path="url(#c17)">
+<text x="886.902" y="268.5" font-family="Arial" font-size="14px" fill="#ffffff" xml:space="preserve">Play Idle</text>
+</g>
+</g>
+<g clip-path="url(#c18)">
+<path d="M864 294L964 294L964 334L864 334Z" fill="#008000"/>
+<path d="M864.5 294.5L963.5 294.5L963.5 333.5L864.5 333.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+<g clip-path="url(#c19)">
+<text x="882.63" y="318.5" font-family="Arial" font-size="14px" fill="#ffffff" xml:space="preserve">Play Walk</text>
+</g>
+</g>
+<g clip-path="url(#c20)">
+<path d="M864 344L964 344L964 384L864 384Z" fill="#008000"/>
+<path d="M864.5 344.5L963.5 344.5L963.5 383.5L864.5 383.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+<g clip-path="url(#c21)">
+<text x="885.539" y="368.5" font-family="Arial" font-size="14px" fill="#ffffff" xml:space="preserve">Play Run</text>
+</g>
+</g>
+<g clip-path="url(#c22)">
+<path d="M864 394L964 394L964 434L864 434Z" fill="#008000"/>
+<path d="M864.5 394.5L963.5 394.5L963.5 433.5L864.5 433.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+<g clip-path="url(#c23)">
+<text x="886.273" y="418.5" font-family="Arial" font-size="14px" fill="#ffffff" xml:space="preserve">Play Left</text>
+</g>
+</g>
+<g clip-path="url(#c24)">
+<path d="M864 444L964 444L964 484L864 484Z" fill="#008000"/>
+<path d="M864.5 444.5L963.5 444.5L963.5 483.5L864.5 483.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+<g clip-path="url(#c25)">
+<text x="881.608" y="468.5" font-family="Arial" font-size="14px" fill="#ffffff" xml:space="preserve">Play Right</text>
+</g>
+</g>
+<g clip-path="url(#c26)">
+<path d="M864 494L964 494L964 534L864 534Z" fill="#008000"/>
+<path d="M864.5 494.5L963.5 494.5L963.5 533.5L864.5 533.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+<g clip-path="url(#c27)">
+<text x="880.5" y="518.5" font-family="Arial" font-size="14px" fill="#ffffff" xml:space="preserve">Play Blend</text>
+</g>
+</g>
+</g>
+</g>
+</svg>

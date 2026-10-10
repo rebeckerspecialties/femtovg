@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+<defs>
+<clipPath id="c3"><path d="M0 0L1024 0L1024 768L0 768Z"/></clipPath>
+<clipPath id="c4"><path d="M0 0L1024 0L1024 768L0 768Z"/></clipPath>
+<clipPath id="c5"><path d="M1 1L1023 1L1023 767L1 767Z"/></clipPath>
+</defs>
+<g clip-path="url(#c3)">
+<g clip-path="url(#c4)">
+<path d="M0 0L1024 0L1024 768L0 768Z" fill="#0000ff"/>
+<path d="M0.5 0.5L1023.5 0.5L1023.5 767.5L0.5 767.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+<g clip-path="url(#c5)">
+<text x="338.328" y="407" font-family="&quot;Times New Roman&quot;" font-size="72px" fill="#ffffff" xml:space="preserve">Hello world</text>
+</g>
+</g>
+</g>
+</svg>

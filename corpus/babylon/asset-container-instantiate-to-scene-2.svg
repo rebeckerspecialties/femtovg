@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+<defs>
+<clipPath id="c1"><path d="M0 0L1024 0L1024 768L0 768Z"/></clipPath>
+</defs>
+<g clip-path="url(#c1)">
+</g>
+</svg>

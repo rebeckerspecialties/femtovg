@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+<defs>
+<clipPath id="c6"><path d="M0 0L1024 0L1024 768L0 768Z"/></clipPath>
+<clipPath id="c7"><path d="M0 344L1024 344L1024 424L0 424Z"/></clipPath>
+<clipPath id="c8"><path d="M409.6 344L614.4 344L614.4 364L409.6 364Z"/></clipPath>
+<clipPath id="c9"><path d="M410.6 345L613.4 345L613.4 363L410.6 363Z"/></clipPath>
+<clipPath id="c10"><path d="M409.6 384L614.4 384L614.4 424L409.6 424Z"/></clipPath>
+<clipPath id="c11"><path d="M410.6 385L613.4 385L613.4 423L410.6 423Z"/></clipPath>
+</defs>
+<g clip-path="url(#c6)">
+<g clip-path="url(#c7)">
+<g clip-path="url(#c8)">
+<path d="M409.6 344L614.4 344L614.4 364L409.6 364Z" fill="#008000"/>
+<path d="M410.1 344.5L613.9 344.5L613.9 363.5L410.1 363.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+<g clip-path="url(#c9)">
+<text x="477.424" y="359.5" font-family="Arial" font-size="18px" fill="#ffffff" xml:space="preserve">Click Me</text>
+</g>
+</g>
+<g clip-path="url(#c10)">
+<path d="M409.6 384L614.4 384L614.4 424L409.6 424Z" fill="#008000"/>
+<path d="M410.1 384.5L613.9 384.5L613.9 423.5L410.1 423.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+<g clip-path="url(#c11)">
+<text x="456.286" y="409.5" font-family="Arial" font-size="18px" fill="#ffffff" xml:space="preserve">Click Me also!</text>
+</g>
+</g>
+</g>
+</g>
+</svg>

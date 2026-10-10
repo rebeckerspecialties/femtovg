@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+<defs>
+<clipPath id="c18"><path d="M0 0L1024 0L1024 768L0 768Z"/></clipPath>
+<clipPath id="c19"><path d="M444.044 147.33L523.762 352.379L-192.044 630.67L-271.762 425.621Z"/></clipPath>
+<clipPath id="c20"><path d="M144.393 263.828L224.112 468.877L107.607 514.172L27.888 309.123Z"/></clipPath>
+<clipPath id="c21"><path d="M259.593 316.796L97.366 465.398L66.97 432.215L229.197 283.613Z"/></clipPath>
+<clipPath id="c22"><path d="M258.18 316.734L97.428 463.985L68.383 432.277L229.135 285.026Z"/></clipPath>
+<clipPath id="c23"><path d="M102.451 280.134L182.17 485.183L144.888 499.677L65.17 294.629Z"/></clipPath>
+<clipPath id="c24"><path d="M103.176 281.999L181.445 483.319L144.164 497.813L65.894 296.493Z"/></clipPath>
+<clipPath id="c25"><path d="M102.451 280.134L182.17 485.183L158.869 494.242L79.15 289.193Z"/></clipPath>
+<clipPath id="c26"><path d="M101.882 281.429L180.876 484.613L159.439 492.948L80.445 289.763Z"/></clipPath>
+<clipPath id="c27"><path d="M79.15 289.193L158.869 494.242L144.888 499.677L65.17 294.629Z"/></clipPath>
+<clipPath id="c28"><path d="M79.15 289.193L158.869 494.242L144.888 499.677L65.17 294.629Z"/></clipPath>
+<clipPath id="c29"><path d="M65.17 294.629L144.888 499.677L107.607 514.172L27.888 309.123Z"/></clipPath>
+<clipPath id="c30"><path d="M65.894 296.493L144.164 497.813L106.882 512.308L28.613 310.987Z"/></clipPath>
+<clipPath id="c31"><path d="M65.17 294.629L144.888 499.677L121.587 508.736L41.869 303.688Z"/></clipPath>
+<clipPath id="c32"><path d="M64.6 295.923L143.594 499.108L122.157 507.442L43.163 304.257Z"/></clipPath>
+<clipPath id="c33"><path d="M41.869 303.688L121.587 508.736L107.607 514.172L27.888 309.123Z"/></clipPath>
+<clipPath id="c34"><path d="M41.869 303.688L121.587 508.736L107.607 514.172L27.888 309.123Z"/></clipPath>
+<clipPath id="c35"><path d="M444.044 147.33L523.762 352.379L486.481 366.873L406.762 161.825Z"/></clipPath>
+</defs>
+<g clip-path="url(#c18)">
+<g clip-path="url(#c19)">
+<g clip-path="url(#c20)">
+<g clip-path="url(#c21)">
+<path d="M16 326.5L236 326.5L236 371.5L16 371.5Z" transform="matrix(-0.737 0.675 -0.675 -0.737 491.93 546.748)" fill="#111111"/>
+<path d="M16.5 327L235.5 327L235.5 371L16.5 371Z" transform="matrix(-0.737 0.675 -0.675 -0.737 491.93 546.748)" fill="none" stroke="#777777" stroke-width="1"/>
+<g clip-path="url(#c22)">
+<text x="93.826" y="354" transform="matrix(-0.737 0.675 -0.675 -0.737 491.93 546.748)" font-family="Arial" font-size="17px" fill="#555555" xml:space="preserve">testeroni</text>
+</g>
+</g>
+<g clip-path="url(#c23)">
+<path d="M17 372.5L235 372.5L235 410.5L17 410.5Z" transform="matrix(0.362 0.932 -0.932 0.362 442.906 130.606)" fill="none" stroke="#ff0000" stroke-width="2"/>
+<g clip-path="url(#c24)">
+<g clip-path="url(#c25)">
+<path d="M16 371.5L236 371.5L236 396.5L16 396.5Z" transform="matrix(0.362 0.932 -0.932 0.362 442.906 130.606)" fill="#00ff00"/>
+<path d="M16.5 372L235.5 372L235.5 396L16.5 396Z" transform="matrix(0.362 0.932 -0.932 0.362 442.906 130.606)" fill="none" stroke="#666666" stroke-width="1"/>
+<g clip-path="url(#c26)">
+<text x="103.46" y="388.5" transform="matrix(0.362 0.932 -0.932 0.362 442.906 130.606)" font-family="Courier" font-size="15px" fill="#dddddd" xml:space="preserve">hello</text>
+</g>
+</g>
+<g clip-path="url(#c27)">
+<g clip-path="url(#c28)">
+<text x="111.245" y="409" transform="matrix(0.362 0.932 -0.932 0.362 442.906 130.606)" font-family="Arial" font-size="15px" fill="#dddddd" xml:space="preserve">brrrr</text>
+</g>
+</g>
+</g>
+</g>
+<g clip-path="url(#c29)">
+<path d="M17 412.5L235 412.5L235 450.5L17 450.5Z" transform="matrix(0.362 0.932 -0.932 0.362 442.906 130.606)" fill="none" stroke="#ff0000" stroke-width="2"/>
+<g clip-path="url(#c30)">
+<g clip-path="url(#c31)">
+<path d="M16 411.5L236 411.5L236 436.5L16 436.5Z" transform="matrix(0.362 0.932 -0.932 0.362 442.906 130.606)" fill="#00ff00"/>
+<path d="M16.5 412L235.5 412L235.5 436L16.5 436Z" transform="matrix(0.362 0.932 -0.932 0.362 442.906 130.606)" fill="none" stroke="#666666" stroke-width="1"/>
+<g clip-path="url(#c32)">
+<text x="103.61" y="428.5" transform="matrix(0.362 0.932 -0.932 0.362 442.906 130.606)" font-family="Courier" font-size="15px" fill="#dddddd" xml:space="preserve">world</text>
+</g>
+</g>
+<g clip-path="url(#c33)">
+<g clip-path="url(#c34)">
+<text x="109.367" y="449" transform="matrix(0.362 0.932 -0.932 0.362 442.906 130.606)" font-family="Arial" font-size="15px" fill="#dddddd" xml:space="preserve">afafa</text>
+</g>
+</g>
+</g>
+</g>
+</g>
+<g clip-path="url(#c35)">
+<path d="M16 5L236 5L236 45L16 45Z" transform="matrix(0.362 0.932 -0.932 0.362 442.906 130.606)" fill="#ff2222"/>
+</g>
+</g>
+</g>
+</svg>

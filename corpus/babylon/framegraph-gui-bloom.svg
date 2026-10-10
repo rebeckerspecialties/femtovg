@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+<defs>
+<clipPath id="c4"><path d="M0 0L1024 0L1024 768L0 768Z"/></clipPath>
+<clipPath id="c5"><path d="M0 0L1024 0L1024 668L0 668Z"/></clipPath>
+<clipPath id="c6"><path d="M409.6 364L614.4 364L614.4 404L409.6 404Z"/></clipPath>
+<clipPath id="c7"><path d="M419.6 373.5L606.4 373.5L606.4 413.5L419.6 413.5Z"/></clipPath>
+</defs>
+<g clip-path="url(#c4)">
+<g clip-path="url(#c5)">
+<text x="388.147" y="350.5" font-family="Arial" font-size="50px" fill="#ff0000" xml:space="preserve">Hello world</text>
+</g>
+<g clip-path="url(#c6)">
+<path d="M409.6 364L614.4 364L614.4 404L409.6 404Z" fill="#008000"/>
+<g clip-path="url(#c7)">
+<text x="419.6" y="389.5" font-family="Arial" font-size="18px" fill="#ffffff" xml:space="preserve">This is a very long text used to test how the cursor works within the InputText control.</text>
+</g>
+<path d="M410.1 364.5L613.9 364.5L613.9 403.5L410.1 403.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+</g>
+</g>
+</svg>

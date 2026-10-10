@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+<defs>
+<clipPath id="c19"><path d="M0 0L1024 0L1024 768L0 768Z"/></clipPath>
+<clipPath id="c20"><path d="M437 264L587 264L587 304L437 304Z"/></clipPath>
+<linearGradient id="g21" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1024" y2="1024"><stop offset="0" stop-color="#ffff00"/><stop offset="0.5" stop-color="#ff00ff"/><stop offset="1" stop-color="#00ffff"/></linearGradient>
+<linearGradient id="g22" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1024" y2="1024"><stop offset="0" stop-color="#ff0000"/><stop offset="0.5" stop-color="#008000"/><stop offset="1" stop-color="#0000ff"/></linearGradient>
+<clipPath id="c23"><path d="M457 269L567 269L567 269C575.284 269 582 275.716 582 284L582 284L582 284C582 292.284 575.284 299 567 299L457 299L457 299C448.716 299 442 292.284 442 284L442 284L442 284C442 275.716 448.716 269 457 269Z"/></clipPath>
+<clipPath id="c24"><path d="M442 269L582 269L582 299L442 299Z"/></clipPath>
+<linearGradient id="g25" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1024" y2="1024"><stop offset="0" stop-color="#ff0000"/><stop offset="0.5" stop-color="#008000"/><stop offset="1" stop-color="#0000ff"/></linearGradient>
+<clipPath id="c26"><path d="M462 359L562 359L562 409L462 409Z"/></clipPath>
+<linearGradient id="g27" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1024" y2="1024"><stop offset="0" stop-color="#ff0000"/><stop offset="0.5" stop-color="#008000"/><stop offset="1" stop-color="#0000ff"/></linearGradient>
+<clipPath id="c28"><path d="M454.5 470L569.5 470L569.5 498L454.5 498Z"/></clipPath>
+<linearGradient id="g29" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1024" y2="1024"><stop offset="0" stop-color="#ff0000"/><stop offset="0.5" stop-color="#008000"/><stop offset="1" stop-color="#0000ff"/></linearGradient>
+<clipPath id="c30"><path d="M7.5 7.5L1002.5 7.5L1002.5 1002.5L7.5 1002.5Z"/></clipPath>
+<linearGradient id="g31" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1024" y2="1024"><stop offset="0" stop-color="#ff0000"/><stop offset="0.5" stop-color="#008000"/><stop offset="1" stop-color="#0000ff"/></linearGradient>
+<clipPath id="c32"><path d="M362 344L462 344L462 424L362 424Z"/></clipPath>
+<linearGradient id="g33" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1024" y2="1024"><stop offset="0" stop-color="#ff0000"/><stop offset="0.5" stop-color="#008000"/><stop offset="1" stop-color="#0000ff"/></linearGradient>
+<clipPath id="c34"><path d="M462 384C462 406.091 439.614 424 412 424C384.386 424 362 406.091 362 384C362 361.909 384.386 344 412 344C439.614 344 462 361.909 462 384Z"/></clipPath>
+<clipPath id="c35"><path d="M372 519L452 519L452 549L372 549Z"/></clipPath>
+<linearGradient id="g36" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1024" y2="1024"><stop offset="0" stop-color="#ff0000"/><stop offset="0.5" stop-color="#008000"/><stop offset="1" stop-color="#0000ff"/></linearGradient>
+<linearGradient id="g37" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="1024" y2="1024"><stop offset="0" stop-color="#ff0000"/><stop offset="0.5" stop-color="#008000"/><stop offset="1" stop-color="#0000ff"/></linearGradient>
+</defs>
+<g clip-path="url(#c19)">
+<g clip-path="url(#c20)">
+<path d="M457 266.5L567 266.5L567 266.5C576.665 266.5 584.5 274.335 584.5 284L584.5 284L584.5 284C584.5 293.665 576.665 301.5 567 301.5L457 301.5L457 301.5C447.335 301.5 439.5 293.665 439.5 284L439.5 284L439.5 284C439.5 274.335 447.335 266.5 457 266.5Z" fill="url(#g21)"/>
+<path d="M457 266.5L567 266.5L567 266.5C576.665 266.5 584.5 274.335 584.5 284L584.5 284L584.5 284C584.5 293.665 576.665 301.5 567 301.5L457 301.5L457 301.5C447.335 301.5 439.5 293.665 439.5 284L439.5 284L439.5 284C439.5 274.335 447.335 266.5 457 266.5Z" fill="none" stroke="url(#g22)" stroke-width="5"/>
+<g clip-path="url(#c23)">
+<g clip-path="url(#c24)">
+<text x="477.424" y="289.5" font-family="Arial" font-size="18px" fill="url(#g25)" xml:space="preserve">Click Me</text>
+</g>
+</g>
+</g>
+<g clip-path="url(#c26)">
+<path d="M462 359L562 359L562 409L462 409Z" fill="url(#g27)"/>
+<path d="M462.5 359.5L561.5 359.5L561.5 408.5L462.5 408.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+</g>
+<g clip-path="url(#c28)">
+<text x="454.859" y="492" font-family="Arial" font-size="24px" fill="url(#g29)" xml:space="preserve">Some Text</text>
+</g>
+<g clip-path="url(#c30)">
+<path d="M10 10L1000 1000" fill="none" stroke="url(#g31)" stroke-width="5"/>
+</g>
+<g clip-path="url(#c32)">
+<path d="M460.5 384C460.5 405.263 438.786 422.5 412 422.5C385.214 422.5 363.5 405.263 363.5 384C363.5 362.737 385.214 345.5 412 345.5C438.786 345.5 460.5 362.737 460.5 384Z" transform="matrix(1 0 0 1 0 0)" fill="url(#g33)"/>
+<path d="M460.5 384C460.5 405.263 438.786 422.5 412 422.5C385.214 422.5 363.5 405.263 363.5 384C363.5 362.737 385.214 345.5 412 345.5C438.786 345.5 460.5 362.737 460.5 384Z" transform="matrix(1 0 0 1 0 0)" fill="none" stroke="#ffffff" stroke-width="3"/>
+<g clip-path="url(#c34)">
+</g>
+</g>
+<g clip-path="url(#c35)">
+<path d="M382 524L442 524L442 544L382 544Z" fill="url(#g36)"/>
+<path d="M382 524L412 524L412 544L382 544Z" fill="url(#g37)"/>
+<path d="M402 519L422 519L422 549L402 549Z" fill="#ffffff"/>
+<path d="M402 519L422 519L422 549L402 549Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+</g>
+</g>
+</svg>

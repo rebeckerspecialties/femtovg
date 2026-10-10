@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+<defs>
+<clipPath id="c4"><path d="M0 0L1024 0L1024 768L0 768Z"/></clipPath>
+<clipPath id="c5"><path d="M804 359L1024 359L1024 409L804 409Z"/></clipPath>
+<clipPath id="c6"><path d="M814 359L1014 359L1014 379L814 379Z"/></clipPath>
+<clipPath id="c7"><path d="M814 389L1014 389L1014 409L814 409Z"/></clipPath>
+</defs>
+<g clip-path="url(#c4)">
+<g clip-path="url(#c5)">
+<g clip-path="url(#c6)">
+<path d="M824 364L1004 364L1004 374L824 374Z" fill="#000000"/>
+<path d="M824 364L920.923 364L920.923 374L824 374Z" fill="#008000"/>
+<path d="M910.923 359L930.923 359L930.923 379L910.923 379Z" fill="#008000"/>
+<path d="M910.923 359L930.923 359L930.923 379L910.923 379Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+</g>
+<g clip-path="url(#c7)">
+<path d="M824 394L1004 394L1004 404L824 404Z" fill="#000000"/>
+<path d="M824 394L824 394L824 404L824 404Z" fill="#008000"/>
+<path d="M814 389L834 389L834 409L814 409Z" fill="#008000"/>
+<path d="M814 389L834 389L834 409L814 409Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+</g>
+</g>
+</g>
+</svg>

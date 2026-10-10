@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+<defs>
+<clipPath id="c16"><path d="M0 0L1024 0L1024 768L0 768Z"/></clipPath>
+<clipPath id="c17"><path d="M0 0L1024 0L1024 758L0 758Z"/></clipPath>
+</defs>
+<g clip-path="url(#c16)">
+<g clip-path="url(#c17)">
+<text x="329.402" y="749" font-family="Arial" font-size="40px" fill="#ffffff" xml:space="preserve">Look at bottom-back</text>
+</g>
+</g>
+</svg>

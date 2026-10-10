@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+<defs>
+<clipPath id="c5"><path d="M0 0L1024 0L1024 768L0 768Z"/></clipPath>
+<clipPath id="c6"><path d="M432 364L592 364L592 404L432 404Z"/></clipPath>
+<clipPath id="c7"><path d="M442 373.5L584 373.5L584 413.5L442 413.5Z"/></clipPath>
+<clipPath id="c8"><path d="M611 364L731 364L731 404L611 404Z"/></clipPath>
+<clipPath id="c9"><path d="M612 365L730 365L730 403L612 403Z"/></clipPath>
+</defs>
+<g clip-path="url(#c5)">
+<g clip-path="url(#c6)">
+<path d="M432 364L592 364L592 404L432 404Z" fill="#333333"/>
+<g clip-path="url(#c7)">
+<text x="442" y="389.5" font-family="Arial" font-size="18px" fill="#ffffff" xml:space="preserve">大♥😂ﺥ</text>
+</g>
+<path d="M432.5 364.5L591.5 364.5L591.5 403.5L432.5 403.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+</g>
+<g clip-path="url(#c8)">
+<path d="M611 364L731 364L731 404L611 404Z" fill="#333333"/>
+<path d="M611.5 364.5L730.5 364.5L730.5 403.5L611.5 403.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+<g clip-path="url(#c9)">
+<text x="662.015" y="389.5" font-family="Arial" font-size="18px" fill="#ffffff" xml:space="preserve">大</text>
+</g>
+</g>
+</g>
+</svg>

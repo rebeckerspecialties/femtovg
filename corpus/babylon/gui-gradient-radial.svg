@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+<defs>
+<clipPath id="c3"><path d="M0 0L1024 0L1024 768L0 768Z"/></clipPath>
+<clipPath id="c4"><path d="M256 192L768 192L768 576L256 576Z"/></clipPath>
+<radialGradient id="g5" gradientUnits="userSpaceOnUse" cx="250" cy="100" r="300" fx="100" fy="100" fr="150"><stop offset="0" stop-color="#ffff00"/><stop offset="0.5" stop-color="#ffc0cb"/><stop offset="1" stop-color="#008000"/></radialGradient>
+</defs>
+<g clip-path="url(#c3)">
+<g clip-path="url(#c4)">
+<path d="M256 192L768 192L768 576L256 576Z" fill="url(#g5)"/>
+<path d="M256.5 192.5L767.5 192.5L767.5 575.5L256.5 575.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+</g>
+</g>
+</svg>

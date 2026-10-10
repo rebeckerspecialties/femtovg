@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+<defs>
+<clipPath id="c0"><path d="M0 0L1024 0L1024 768L0 768Z"/></clipPath>
+<clipPath id="c1"><path d="M0 289L1024 289L1024 479L0 479Z"/></clipPath>
+<clipPath id="c2"><path d="M0 289L1024 289L1024 319L0 319Z"/></clipPath>
+<clipPath id="c3"><path d="M409.6 319L614.4 319L614.4 359L409.6 359Z"/></clipPath>
+<clipPath id="c4"><path d="M419.6 328.5L606.4 328.5L606.4 368.5L419.6 368.5Z"/></clipPath>
+<clipPath id="c5"><path d="M437 359L587 359L587 399L437 399Z"/></clipPath>
+<clipPath id="c6"><path d="M457 360L567 360L567 360C577.493 360 586 368.507 586 379L586 379L586 379C586 389.493 577.493 398 567 398L457 398L457 398C446.507 398 438 389.493 438 379L438 379L438 379C438 368.507 446.507 360 457 360Z"/></clipPath>
+<clipPath id="c7"><path d="M438 360L586 360L586 398L438 398Z"/></clipPath>
+<clipPath id="c8"><path d="M437 399L587 399L587 439L437 439Z"/></clipPath>
+<clipPath id="c9"><path d="M457 400L567 400L567 400C577.493 400 586 408.507 586 419L586 419L586 419C586 429.493 577.493 438 567 438L457 438L457 438C446.507 438 438 429.493 438 419L438 419L438 419C438 408.507 446.507 400 457 400Z"/></clipPath>
+<clipPath id="c10"><path d="M438 400L586 400L586 438L438 438Z"/></clipPath>
+<clipPath id="c11"><path d="M437 439L587 439L587 479L437 479Z"/></clipPath>
+<clipPath id="c12"><path d="M457 440L567 440L567 440C577.493 440 586 448.507 586 459L586 459L586 459C586 469.493 577.493 478 567 478L457 478L457 478C446.507 478 438 469.493 438 459L438 459L438 459C438 448.507 446.507 440 457 440Z"/></clipPath>
+<clipPath id="c13"><path d="M438 440L586 440L586 478L438 478Z"/></clipPath>
+</defs>
+<g clip-path="url(#c0)">
+<g clip-path="url(#c1)">
+<g clip-path="url(#c2)">
+<text x="489.799" y="312" font-family="Arial" font-size="24px" fill="#ffffff" xml:space="preserve">Test</text>
+</g>
+<g clip-path="url(#c3)">
+<path d="M409.6 319L614.4 319L614.4 359L409.6 359Z" fill="#000000"/>
+<g clip-path="url(#c4)">
+<text x="419.6" y="344.5" font-family="Arial" font-size="18px" fill="#ffffff" xml:space="preserve"></text>
+</g>
+<path d="M410.1 319.5L613.9 319.5L613.9 358.5L410.1 358.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+</g>
+<g clip-path="url(#c5)">
+<path d="M457 359.5L567 359.5L567 359.5C577.77 359.5 586.5 368.23 586.5 379L586.5 379L586.5 379C586.5 389.77 577.77 398.5 567 398.5L457 398.5L457 398.5C446.23 398.5 437.5 389.77 437.5 379L437.5 379L437.5 379C437.5 368.23 446.23 359.5 457 359.5Z" fill="#000000"/>
+<path d="M457 359.5L567 359.5L567 359.5C577.77 359.5 586.5 368.23 586.5 379L586.5 379L586.5 379C586.5 389.77 577.77 398.5 567 398.5L457 398.5L457 398.5C446.23 398.5 437.5 389.77 437.5 379L437.5 379L437.5 379C437.5 368.23 446.23 359.5 457 359.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+<g clip-path="url(#c6)">
+<g clip-path="url(#c7)">
+<text x="492.088" y="384.5" font-family="Arial" font-size="18px" fill="#ffffff" xml:space="preserve">Click</text>
+</g>
+</g>
+</g>
+<g clip-path="url(#c8)">
+<path d="M457 399.5L567 399.5L567 399.5C577.77 399.5 586.5 408.23 586.5 419L586.5 419L586.5 419C586.5 429.77 577.77 438.5 567 438.5L457 438.5L457 438.5C446.23 438.5 437.5 429.77 437.5 419L437.5 419L437.5 419C437.5 408.23 446.23 399.5 457 399.5Z" fill="#000000"/>
+<path d="M457 399.5L567 399.5L567 399.5C577.77 399.5 586.5 408.23 586.5 419L586.5 419L586.5 419C586.5 429.77 577.77 438.5 567 438.5L457 438.5L457 438.5C446.23 438.5 437.5 429.77 437.5 419L437.5 419L437.5 419C437.5 408.23 446.23 399.5 457 399.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+<g clip-path="url(#c9)">
+<g clip-path="url(#c10)">
+<text x="488.916" y="424.5" font-family="Arial" font-size="18px" fill="#ffffff" xml:space="preserve">Down</text>
+</g>
+</g>
+</g>
+<g clip-path="url(#c11)">
+<path d="M457 439.5L567 439.5L567 439.5C577.77 439.5 586.5 448.23 586.5 459L586.5 459L586.5 459C586.5 469.77 577.77 478.5 567 478.5L457 478.5L457 478.5C446.23 478.5 437.5 469.77 437.5 459L437.5 459L437.5 459C437.5 448.23 446.23 439.5 457 439.5Z" fill="#000000"/>
+<path d="M457 439.5L567 439.5L567 439.5C577.77 439.5 586.5 448.23 586.5 459L586.5 459L586.5 459C586.5 469.77 577.77 478.5 567 478.5L457 478.5L457 478.5C446.23 478.5 437.5 469.77 437.5 459L437.5 459L437.5 459C437.5 448.23 446.23 439.5 457 439.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+<g clip-path="url(#c12)">
+<g clip-path="url(#c13)">
+<text x="500.148" y="464.5" font-family="Arial" font-size="18px" fill="#ffffff" xml:space="preserve">Up</text>
+</g>
+</g>
+</g>
+</g>
+</g>
+</svg>

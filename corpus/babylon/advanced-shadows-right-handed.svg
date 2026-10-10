@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+<defs>
+<clipPath id="c17"><path d="M87 449L1024 449L1024 629L87 629Z"/></clipPath>
+<clipPath id="c18"><path d="M906.123 586.474L1026.123 586.474L1026.123 626.474L906.123 626.474Z"/></clipPath>
+<clipPath id="c19"><path d="M908.123 588.474L1024.123 588.474L1024.123 624.474L908.123 624.474Z"/></clipPath>
+<clipPath id="c20"><path d="M633.649 586.474L753.649 586.474L753.649 626.474L633.649 626.474Z"/></clipPath>
+<clipPath id="c21"><path d="M635.649 588.474L751.649 588.474L751.649 624.474L635.649 624.474Z"/></clipPath>
+<clipPath id="c22"><path d="M361.175 586.474L481.175 586.474L481.175 626.474L361.175 626.474Z"/></clipPath>
+<clipPath id="c23"><path d="M363.175 588.474L479.175 588.474L479.175 624.474L363.175 624.474Z"/></clipPath>
+<clipPath id="c24"><path d="M88.702 586.474L208.702 586.474L208.702 626.474L88.702 626.474Z"/></clipPath>
+<clipPath id="c25"><path d="M90.702 588.474L206.702 588.474L206.702 624.474L90.702 624.474Z"/></clipPath>
+<clipPath id="c26"><path d="M679.061 450.237L799.061 450.237L799.061 490.237L679.061 490.237Z"/></clipPath>
+<clipPath id="c27"><path d="M681.061 452.237L797.061 452.237L797.061 488.237L681.061 488.237Z"/></clipPath>
+<clipPath id="c28"><path d="M542.825 450.237L662.825 450.237L662.825 490.237L542.825 490.237Z"/></clipPath>
+<clipPath id="c29"><path d="M544.825 452.237L660.825 452.237L660.825 488.237L544.825 488.237Z"/></clipPath>
+<clipPath id="c30"><path d="M406.588 450.237L526.588 450.237L526.588 490.237L406.588 490.237Z"/></clipPath>
+<clipPath id="c31"><path d="M408.588 452.237L524.588 452.237L524.588 488.237L408.588 488.237Z"/></clipPath>
+<clipPath id="c32"><path d="M270.351 450.237L390.351 450.237L390.351 490.237L270.351 490.237Z"/></clipPath>
+<clipPath id="c33"><path d="M272.351 452.237L388.351 452.237L388.351 488.237L272.351 488.237Z"/></clipPath>
+</defs>
+<g clip-path="url(#c17)">
+<g clip-path="url(#c18)">
+<path d="M906.123 586.474L1026.123 586.474L1026.123 626.474L906.123 626.474Z" fill="#000000"/>
+<path d="M907.123 587.474L1025.123 587.474L1025.123 625.474L907.123 625.474Z" fill="none" stroke="#ffffff" stroke-width="2"/>
+<g clip-path="url(#c19)">
+<text x="928.265" y="602.474" font-family="Arial" font-size="12px" fill="#ffffff" xml:space="preserve">Spotlight Hard</text>
+<text x="941.402" y="617.474" font-family="Arial" font-size="12px" fill="#ffffff" xml:space="preserve">Shadows</text>
+</g>
+</g>
+<g clip-path="url(#c20)">
+<path d="M633.649 586.474L753.649 586.474L753.649 626.474L633.649 626.474Z" fill="#000000"/>
+<path d="M634.649 587.474L752.649 587.474L752.649 625.474L634.649 625.474Z" fill="none" stroke="#ffffff" stroke-width="2"/>
+<g clip-path="url(#c21)">
+<text x="647.43" y="602.474" font-family="Arial" font-size="12px" fill="#ffffff" xml:space="preserve">Spotlight Poisson</text>
+<text x="668.767" y="617.474" font-family="Arial" font-size="12px" fill="#ffffff" xml:space="preserve">Sampling</text>
+</g>
+</g>
+<g clip-path="url(#c22)">
+<path d="M361.175 586.474L481.175 586.474L481.175 626.474L361.175 626.474Z" fill="#000000"/>
+<path d="M362.175 587.474L480.175 587.474L480.175 625.474L362.175 625.474Z" fill="none" stroke="#ffffff" stroke-width="2"/>
+<g clip-path="url(#c23)">
+<text x="383.341" y="609.974" font-family="Arial" font-size="12px" fill="#ffffff" xml:space="preserve">Spotlight ESM</text>
+</g>
+</g>
+<g clip-path="url(#c24)">
+<path d="M88.702 586.474L208.702 586.474L208.702 626.474L88.702 626.474Z" fill="#000000"/>
+<path d="M89.702 587.474L207.702 587.474L207.702 625.474L89.702 625.474Z" fill="none" stroke="#ffffff" stroke-width="2"/>
+<g clip-path="url(#c25)">
+<text x="98.531" y="609.974" font-family="Arial" font-size="12px" fill="#ffffff" xml:space="preserve">Spotlight Blur ESM</text>
+</g>
+</g>
+<g clip-path="url(#c26)">
+<path d="M679.061 450.237L799.061 450.237L799.061 490.237L679.061 490.237Z" fill="#000000"/>
+<path d="M680.061 451.237L798.061 451.237L798.061 489.237L680.061 489.237Z" fill="none" stroke="#ffffff" stroke-width="2"/>
+<g clip-path="url(#c27)">
+<text x="696.015" y="466.237" font-family="Arial" font-size="12px" fill="#ffffff" xml:space="preserve">Directional Hard</text>
+<text x="714.341" y="481.237" font-family="Arial" font-size="12px" fill="#ffffff" xml:space="preserve">Shadows</text>
+</g>
+</g>
+<g clip-path="url(#c28)">
+<path d="M542.825 450.237L662.825 450.237L662.825 490.237L542.825 490.237Z" fill="#000000"/>
+<path d="M543.825 451.237L661.825 451.237L661.825 489.237L543.825 489.237Z" fill="none" stroke="#ffffff" stroke-width="2"/>
+<g clip-path="url(#c29)">
+<text x="551.417" y="466.237" font-family="Arial" font-size="12px" fill="#ffffff" xml:space="preserve">Directional Poisson</text>
+<text x="577.943" y="481.237" font-family="Arial" font-size="12px" fill="#ffffff" xml:space="preserve">Sampling</text>
+</g>
+</g>
+<g clip-path="url(#c30)">
+<path d="M406.588 450.237L526.588 450.237L526.588 490.237L406.588 490.237Z" fill="#000000"/>
+<path d="M407.588 451.237L525.588 451.237L525.588 489.237L407.588 489.237Z" fill="none" stroke="#ffffff" stroke-width="2"/>
+<g clip-path="url(#c31)">
+<text x="423.565" y="473.737" font-family="Arial" font-size="12px" fill="#ffffff" xml:space="preserve">Directional ESM</text>
+</g>
+</g>
+<g clip-path="url(#c32)">
+<path d="M270.351 450.237L390.351 450.237L390.351 490.237L270.351 490.237Z" fill="#000000"/>
+<path d="M271.351 451.237L389.351 451.237L389.351 489.237L271.351 489.237Z" fill="none" stroke="#ffffff" stroke-width="2"/>
+<g clip-path="url(#c33)">
+<text x="274.992" y="473.737" font-family="Arial" font-size="12px" fill="#ffffff" xml:space="preserve">Directional Blur ESM</text>
+</g>
+</g>
+</g>
+</svg>

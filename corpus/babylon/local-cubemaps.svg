@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+<defs>
+<clipPath id="c4"><path d="M0 0L1024 0L1024 768L0 768Z"/></clipPath>
+<clipPath id="c5"><path d="M824 0L1024 0L1024 768L824 768Z"/></clipPath>
+<clipPath id="c6"><path d="M824 374L844 374L844 394L824 394Z"/></clipPath>
+<clipPath id="c7"><path d="M844 0L1024 0L1024 768L844 768Z"/></clipPath>
+</defs>
+<g clip-path="url(#c4)">
+<g clip-path="url(#c5)">
+<g clip-path="url(#c6)">
+<path d="M824.5 374.5L843.5 374.5L843.5 393.5L824.5 393.5Z" fill="#000000"/>
+<path d="M826.4 376.4L841.6 376.4L841.6 391.6L826.4 391.6Z" fill="#008000"/>
+<path d="M824.5 374.5L843.5 374.5L843.5 393.5L824.5 393.5Z" fill="none" stroke="#008000" stroke-width="1"/>
+</g>
+<g clip-path="url(#c7)">
+<text x="844" y="389.5" font-family="Arial" font-size="18px" fill="#ffffff" xml:space="preserve">Local cubemap mode</text>
+</g>
+</g>
+</g>
+</svg>

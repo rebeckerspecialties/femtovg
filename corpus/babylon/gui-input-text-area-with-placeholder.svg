@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+<defs>
+<clipPath id="c3"><path d="M0 0L1024 0L1024 768L0 768Z"/></clipPath>
+<clipPath id="c4"><path d="M160.193 0L863.807 0L863.807 768L160.193 768Z"/></clipPath>
+<clipPath id="c5"><path d="M170.193 10L855.807 10L855.807 760L170.193 760Z"/></clipPath>
+</defs>
+<path d="M0 0L1024 0L1024 768L0 768Z" fill="#008000"/>
+<g clip-path="url(#c3)">
+<g clip-path="url(#c4)">
+<path d="M160.193 0L863.807 0L863.807 768L160.193 768Z" fill="#222222"/>
+<g clip-path="url(#c5)">
+<text x="170.193" y="32" font-family="Arial" font-size="24px" fill="#ff0000" xml:space="preserve">This is some example text. </text>
+<text x="170.193" y="60" font-family="Arial" font-size="24px" fill="#ff0000" xml:space="preserve">It's quite long, so will need to be displayed across multiple lines. </text>
+<text x="170.193" y="88" font-family="Arial" font-size="24px" fill="#ff0000" xml:space="preserve"></text>
+<text x="170.193" y="116" font-family="Arial" font-size="24px" fill="#ff0000" xml:space="preserve">It also has several line breaks.</text>
+</g>
+<path d="M160.693 0.5L863.307 0.5L863.307 767.5L160.693 767.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+</g>
+</g>
+</svg>

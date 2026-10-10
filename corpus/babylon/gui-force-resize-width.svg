@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+<defs>
+<clipPath id="c9"><path d="M0 0L1024 0L1024 768L0 768Z"/></clipPath>
+<clipPath id="c10"><path d="M362 234L662 234L662 534L362 534Z"/></clipPath>
+<clipPath id="c11"><path d="M363 235L661 235L661 533L363 533Z"/></clipPath>
+<clipPath id="c12"><path d="M449 235L575 235L575 276L449 276Z"/></clipPath>
+<clipPath id="c13"><path d="M460 236L564 236L564 236C569.523 236 574 240.477 574 246L574 265L574 265C574 270.523 569.523 275 564 275L460 275L460 275C454.477 275 450 270.523 450 265L450 246L450 246C450 240.477 454.477 236 460 236Z"/></clipPath>
+<clipPath id="c14"><path d="M469 245L555 245L555 266L469 266Z"/></clipPath>
+<clipPath id="c15"><path d="M365.5 276L658.5 276L658.5 380L365.5 380Z"/></clipPath>
+<clipPath id="c16"><path d="M376.5 277L647.5 277L647.5 277C653.023 277 657.5 281.477 657.5 287L657.5 369L657.5 369C657.5 374.523 653.023 379 647.5 379L376.5 379L376.5 379C370.977 379 366.5 374.523 366.5 369L366.5 287L366.5 287C366.5 281.477 370.977 277 376.5 277Z"/></clipPath>
+<clipPath id="c17"><path d="M385.5 286L638.5 286L638.5 370L385.5 370Z"/></clipPath>
+</defs>
+<g clip-path="url(#c9)">
+<g clip-path="url(#c10)">
+<path d="M362 234L662 234L662 534L362 534Z" fill="#ffffff"/>
+<path d="M362.5 234.5L661.5 234.5L661.5 533.5L362.5 533.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+<g clip-path="url(#c11)">
+<g clip-path="url(#c12)">
+<path d="M459.5 235.5L564.5 235.5L564.5 235.5C570.023 235.5 574.5 239.977 574.5 245.5L574.5 265.5L574.5 265.5C574.5 271.023 570.023 275.5 564.5 275.5L459.5 275.5L459.5 275.5C453.977 275.5 449.5 271.023 449.5 265.5L449.5 245.5L449.5 245.5C449.5 239.977 453.977 235.5 459.5 235.5Z" fill="#000000"/>
+<path d="M459.5 235.5L564.5 235.5L564.5 235.5C570.023 235.5 574.5 239.977 574.5 245.5L574.5 265.5L574.5 265.5C574.5 271.023 570.023 275.5 564.5 275.5L459.5 275.5L459.5 275.5C453.977 275.5 449.5 271.023 449.5 265.5L449.5 245.5L449.5 245.5C449.5 239.977 453.977 235.5 459.5 235.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+<g clip-path="url(#c13)">
+<g clip-path="url(#c14)">
+<text x="469.035" y="261" font-family="Arial" font-size="18px" font-weight="500" fill="#000000" xml:space="preserve">hello world</text>
+</g>
+</g>
+</g>
+<g clip-path="url(#c15)">
+<path d="M376 276.5L648 276.5L648 276.5C653.523 276.5 658 280.977 658 286.5L658 369.5L658 369.5C658 375.023 653.523 379.5 648 379.5L376 379.5L376 379.5C370.477 379.5 366 375.023 366 369.5L366 286.5L366 286.5C366 280.977 370.477 276.5 376 276.5Z" fill="#000000"/>
+<path d="M376 276.5L648 276.5L648 276.5C653.523 276.5 658 280.977 658 286.5L658 369.5L658 369.5C658 375.023 653.523 379.5 648 379.5L376 379.5L376 379.5C370.477 379.5 366 375.023 366 369.5L366 286.5L366 286.5C366 280.977 370.477 276.5 376 276.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+<g clip-path="url(#c16)">
+<g clip-path="url(#c17)">
+<text x="401.1" y="302" font-family="Arial" font-size="18px" font-weight="500" fill="#000000" xml:space="preserve">Lorem ipsum dolor sit amet,</text>
+<text x="406.874" y="323" font-family="Arial" font-size="18px" font-weight="500" fill="#000000" xml:space="preserve">consectetur adipiscing elit.</text>
+<text x="385.833" y="344" font-family="Arial" font-size="18px" font-weight="500" fill="#000000" xml:space="preserve">Maecenas vitae dolor vitae velit</text>
+<text x="451.659" y="365" font-family="Arial" font-size="18px" font-weight="500" fill="#000000" xml:space="preserve">mattis eleifend.</text>
+</g>
+</g>
+</g>
+</g>
+</g>
+</g>
+</svg>

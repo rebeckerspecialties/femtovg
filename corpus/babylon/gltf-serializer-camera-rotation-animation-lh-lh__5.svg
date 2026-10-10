@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+<defs>
+<clipPath id="c26"><path d="M0 0L1024 0L1024 768L0 768Z"/></clipPath>
+<clipPath id="c27"><path d="M0 0L1024 0L1024 758L0 758Z"/></clipPath>
+</defs>
+<g clip-path="url(#c26)">
+<g clip-path="url(#c27)">
+<text x="365.037" y="749" font-family="Arial" font-size="40px" fill="#ffffff" xml:space="preserve">Look at top-front</text>
+</g>
+</g>
+</svg>

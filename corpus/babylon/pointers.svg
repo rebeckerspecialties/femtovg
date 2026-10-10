@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+<defs>
+<clipPath id="c12"><path d="M0 0L1024 0L1024 768L0 768Z"/></clipPath>
+<clipPath id="c13"><path d="M0 214L1024 214L1024 554L0 554Z"/></clipPath>
+<clipPath id="c14"><path d="M0 214L1024 214L1024 248L0 248Z"/></clipPath>
+<clipPath id="c15"><path d="M0 248L1024 248L1024 282L0 282Z"/></clipPath>
+<clipPath id="c16"><path d="M0 282L1024 282L1024 316L0 316Z"/></clipPath>
+<clipPath id="c17"><path d="M0 316L1024 316L1024 350L0 350Z"/></clipPath>
+<clipPath id="c18"><path d="M0 350L1024 350L1024 384L0 384Z"/></clipPath>
+<clipPath id="c19"><path d="M0 384L1024 384L1024 418L0 418Z"/></clipPath>
+<clipPath id="c20"><path d="M0 418L1024 418L1024 452L0 452Z"/></clipPath>
+<clipPath id="c21"><path d="M0 452L1024 452L1024 486L0 486Z"/></clipPath>
+<clipPath id="c22"><path d="M0 486L1024 486L1024 520L0 520Z"/></clipPath>
+<clipPath id="c23"><path d="M0 520L1024 520L1024 554L0 554Z"/></clipPath>
+</defs>
+<g clip-path="url(#c12)">
+<g clip-path="url(#c13)">
+<g clip-path="url(#c14)">
+<text x="430.379" y="239" font-family="Arial" font-size="24px" fill="#ffffff" xml:space="preserve">onPointerDown</text>
+</g>
+<g clip-path="url(#c15)">
+<text x="417.395" y="273" font-family="Arial" font-size="24px" fill="#008000" xml:space="preserve">POINTER DOWN</text>
+</g>
+<g clip-path="url(#c16)">
+<text x="438.254" y="307" font-family="Arial" font-size="24px" fill="#008000" xml:space="preserve">POINTER UP</text>
+</g>
+<g clip-path="url(#c17)">
+<text x="445.373" y="341" font-family="Arial" font-size="24px" fill="#ffffff" xml:space="preserve">onPointerUp</text>
+</g>
+<g clip-path="url(#c18)">
+<text x="432.477" y="375" font-family="Arial" font-size="24px" fill="#008000" xml:space="preserve">POINTER TAP</text>
+</g>
+<g clip-path="url(#c19)">
+<text x="430.379" y="409" font-family="Arial" font-size="24px" fill="#ffffff" xml:space="preserve">onPointerDown</text>
+</g>
+<g clip-path="url(#c20)">
+<text x="417.395" y="443" font-family="Arial" font-size="24px" fill="#008000" xml:space="preserve">POINTER DOWN</text>
+</g>
+<g clip-path="url(#c21)">
+<text x="438.254" y="477" font-family="Arial" font-size="24px" fill="#008000" xml:space="preserve">POINTER UP</text>
+</g>
+<g clip-path="url(#c22)">
+<text x="445.373" y="511" font-family="Arial" font-size="24px" fill="#ffffff" xml:space="preserve">onPointerUp</text>
+</g>
+<g clip-path="url(#c23)">
+<text x="379.133" y="545" font-family="Arial" font-size="24px" fill="#008000" xml:space="preserve">POINTER DOUBLE-TAP</text>
+</g>
+</g>
+</g>
+</svg>

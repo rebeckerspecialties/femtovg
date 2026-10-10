@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+<defs>
+<clipPath id="c8"><path d="M0 0L1024 0L1024 768L0 768Z"/></clipPath>
+<clipPath id="c9"><path d="M0 370L1221 370L1221 398L0 398Z"/></clipPath>
+<clipPath id="c10"><path d="M-4 362L411 362L411 406L-4 406Z"/></clipPath>
+<filter id="s11" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceAlpha" stdDeviation="2"/><feOffset dx="0" dy="0" result="o"/><feFlood flood-color="#000000" flood-opacity="1"/><feComposite in2="o" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<clipPath id="c12"><path d="M403 362L818 362L818 406L403 406Z"/></clipPath>
+<filter id="s13" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceAlpha" stdDeviation="2"/><feOffset dx="0" dy="0" result="o"/><feFlood flood-color="#000000" flood-opacity="1"/><feComposite in2="o" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+<clipPath id="c14"><path d="M810 362L1225 362L1225 406L810 406Z"/></clipPath>
+<filter id="s15" x="-50%" y="-50%" width="200%" height="200%" color-interpolation-filters="sRGB"><feGaussianBlur in="SourceAlpha" stdDeviation="2"/><feOffset dx="0" dy="0" result="o"/><feFlood flood-color="#000000" flood-opacity="1"/><feComposite in2="o" operator="in"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<g clip-path="url(#c8)">
+<g clip-path="url(#c9)">
+<path d="M0 370L1221 370L1221 398L0 398Z" fill="rgb(255,0,0)" fill-opacity="0.4"/>
+<g clip-path="url(#c10)">
+<g filter="url(#s11)"><text x="4" y="392" font-family="Arial" font-size="24px" fill="#ffffff" xml:space="preserve">Hello world, here's a really long string</text></g>
+</g>
+<g clip-path="url(#c12)">
+<g filter="url(#s13)"><text x="411" y="392" font-family="Arial" font-size="24px" fill="#ffffff" xml:space="preserve">Hello world, here's a really long string</text></g>
+</g>
+<g clip-path="url(#c14)">
+<g filter="url(#s15)"><text x="818" y="392" font-family="Arial" font-size="24px" fill="#ffffff" xml:space="preserve">Hello world, here's a really long string</text></g>
+</g>
+</g>
+</g>
+</svg>

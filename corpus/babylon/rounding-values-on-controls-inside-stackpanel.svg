@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" viewBox="0 0 1024 768">
+<defs>
+<clipPath id="c11"><path d="M0 0L1024 0L1024 768L0 768Z"/></clipPath>
+<clipPath id="c12"><path d="M374 310L650 310L650 458L374 458Z"/></clipPath>
+<clipPath id="c13"><path d="M374 310L650 310L650 384L374 384Z"/></clipPath>
+<clipPath id="c14"><path d="M375 311L649 311L649 383L375 383Z"/></clipPath>
+<clipPath id="c15"><path d="M374 384L650 384L650 458L374 458Z"/></clipPath>
+<clipPath id="c16"><path d="M375 385L649 385L649 457L375 457Z"/></clipPath>
+<clipPath id="c17"><path d="M236.5 164L787.5 164L787.5 238L236.5 238Z"/></clipPath>
+<clipPath id="c18"><path d="M236.5 164L512.5 164L512.5 238L236.5 238Z"/></clipPath>
+<clipPath id="c19"><path d="M237.5 165L511.5 165L511.5 237L237.5 237Z"/></clipPath>
+<clipPath id="c20"><path d="M511.5 164L787.5 164L787.5 238L511.5 238Z"/></clipPath>
+<clipPath id="c21"><path d="M512.5 165L786.5 165L786.5 237L512.5 237Z"/></clipPath>
+</defs>
+<g clip-path="url(#c11)">
+<g clip-path="url(#c12)">
+<g clip-path="url(#c13)">
+<path d="M374 310L650 310L650 384L374 384Z" fill="#008000"/>
+<path d="M374.5 310.5L649.5 310.5L649.5 383.5L374.5 383.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+<g clip-path="url(#c14)">
+<text x="446.689" y="358.5" font-family="Arial" font-size="34px" fill="#ffffff" xml:space="preserve">Click Me</text>
+</g>
+</g>
+<g clip-path="url(#c15)">
+<path d="M374 384L650 384L650 458L374 458Z" fill="#008000"/>
+<path d="M374.5 384.5L649.5 384.5L649.5 457.5L374.5 457.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+<g clip-path="url(#c16)">
+<text x="406.763" y="432.5" font-family="Arial" font-size="34px" fill="#ffffff" xml:space="preserve">Click Me also!</text>
+</g>
+</g>
+</g>
+<g clip-path="url(#c17)">
+<g clip-path="url(#c18)">
+<path d="M236.5 164L512.5 164L512.5 238L236.5 238Z" fill="#008000"/>
+<path d="M237 164.5L512 164.5L512 237.5L237 237.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+<g clip-path="url(#c19)">
+<text x="309.189" y="212.5" font-family="Arial" font-size="34px" fill="#ffffff" xml:space="preserve">Click Me</text>
+</g>
+</g>
+<g clip-path="url(#c20)">
+<path d="M511.5 164L787.5 164L787.5 238L511.5 238Z" fill="#008000"/>
+<path d="M512 164.5L787 164.5L787 237.5L512 237.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+<g clip-path="url(#c21)">
+<text x="544.263" y="212.5" font-family="Arial" font-size="34px" fill="#ffffff" xml:space="preserve">Click Me also!</text>
+</g>
+</g>
+</g>
+</g>
+</svg>

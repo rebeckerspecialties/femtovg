@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<defs>
+<clipPath id="c27"><path d="M0 0L512 0L512 512L0 512Z"/></clipPath>
+<clipPath id="c28"><path d="M0 0L512 0L512 512L0 512Z"/></clipPath>
+<clipPath id="c29"><path d="M72 192.5L440 192.5L440 319.5L72 319.5Z"/></clipPath>
+<clipPath id="c30"><path d="M6 136L506 136L506 176L6 176Z"/></clipPath>
+<clipPath id="c31"><path d="M128 307.2L384 307.2L384 409.6L128 409.6Z"/></clipPath>
+<clipPath id="c32"><path d="M230 327.2L384 327.2L384 399.2L230 399.2Z"/></clipPath>
+<clipPath id="c33"><path d="M230 327.2L384 327.2L384 399.2L230 399.2Z"/></clipPath>
+<clipPath id="c34"><path d="M230 399.2L384 399.2L384 409.2L230 409.2Z"/></clipPath>
+<clipPath id="c35"><path d="M230 399.2L384 399.2L384 409.2L230 409.2Z"/></clipPath>
+</defs>
+<g clip-path="url(#c27)">
+<g clip-path="url(#c28)">
+<path d="M0 0L512 0L512 512L0 512Z" fill="#ff0000"/>
+<path d="M0.5 0.5L511.5 0.5L511.5 511.5L0.5 511.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+<g clip-path="url(#c29)">
+<text x="72.469" y="293.5" font-family="Arial" font-size="112px" fill="#000000" xml:space="preserve">I'm text</text>
+</g>
+</g>
+<g clip-path="url(#c30)">
+<path d="M6 136L506 136L506 176L6 176Z" fill="#0000ff"/>
+<path d="M6.5 136.5L505.5 136.5L505.5 175.5L6.5 175.5Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+</g>
+<g clip-path="url(#c31)">
+<g clip-path="url(#c32)">
+<g clip-path="url(#c33)">
+<path d="M230 327.2L384 327.2L384 399.2L230 399.2Z" fill="#008000"/>
+<path d="M230.5 327.7L383.5 327.7L383.5 398.7L230.5 398.7Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+</g>
+</g>
+<g clip-path="url(#c34)">
+<g clip-path="url(#c35)">
+<path d="M230 399.2L384 399.2L384 409.2L230 409.2Z" fill="#ffff00"/>
+<path d="M230.5 399.7L383.5 399.7L383.5 408.7L230.5 408.7Z" fill="none" stroke="#ffffff" stroke-width="1"/>
+</g>
+</g>
+</g>
+</g>
+</svg>

@@ -1,0 +1,236 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<defs>
+<filter id="f0" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.5"/></filter>
+<linearGradient id="g1" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="200" y2="0"><stop offset="0" stop-color="#008000"/><stop offset="0.7" stop-color="#ffffff"/><stop offset="1" stop-color="#ffc0cb"/></linearGradient>
+<linearGradient id="g2" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="256" y2="0"><stop offset="0" stop-color="#ff00ff"/><stop offset="0.5" stop-color="#0000ff"/><stop offset="1" stop-color="#ff0000"/></linearGradient>
+<clipPath id="c3"><path d="M50 450L130 450L130 450C135.523 450 140 454.477 140 460L140 490L140 490C140 495.523 135.523 500 130 500L50 500L50 500C44.477 500 40 495.523 40 490L40 460L40 460C40 454.477 44.477 450 50 450Z"/></clipPath>
+<filter id="f4" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.5"/></filter>
+<linearGradient id="g5" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="200" y2="0"><stop offset="0" stop-color="#008000"/><stop offset="0.7" stop-color="#ffffff"/><stop offset="1" stop-color="#ffc0cb"/></linearGradient>
+<linearGradient id="g6" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="256" y2="0"><stop offset="0" stop-color="#ff00ff"/><stop offset="0.5" stop-color="#0000ff"/><stop offset="1" stop-color="#ff0000"/></linearGradient>
+<clipPath id="c7"><path d="M50 450L130 450L130 450C135.523 450 140 454.477 140 460L140 490L140 490C140 495.523 135.523 500 130 500L50 500L50 500C44.477 500 40 495.523 40 490L40 460L40 460C40 454.477 44.477 450 50 450Z"/></clipPath>
+<filter id="f8" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.5"/></filter>
+<linearGradient id="g9" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="200" y2="0"><stop offset="0" stop-color="#008000"/><stop offset="0.7" stop-color="#ffffff"/><stop offset="1" stop-color="#ffc0cb"/></linearGradient>
+<linearGradient id="g10" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="256" y2="0"><stop offset="0" stop-color="#ff00ff"/><stop offset="0.5" stop-color="#0000ff"/><stop offset="1" stop-color="#ff0000"/></linearGradient>
+<clipPath id="c11"><path d="M50 450L130 450L130 450C135.523 450 140 454.477 140 460L140 490L140 490C140 495.523 135.523 500 130 500L50 500L50 500C44.477 500 40 495.523 40 490L40 460L40 460C40 454.477 44.477 450 50 450Z"/></clipPath>
+<filter id="f12" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.5"/></filter>
+<linearGradient id="g13" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="200" y2="0"><stop offset="0" stop-color="#008000"/><stop offset="0.7" stop-color="#ffffff"/><stop offset="1" stop-color="#ffc0cb"/></linearGradient>
+<linearGradient id="g14" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="256" y2="0"><stop offset="0" stop-color="#ff00ff"/><stop offset="0.5" stop-color="#0000ff"/><stop offset="1" stop-color="#ff0000"/></linearGradient>
+<clipPath id="c15"><path d="M50 450L130 450L130 450C135.523 450 140 454.477 140 460L140 490L140 490C140 495.523 135.523 500 130 500L50 500L50 500C44.477 500 40 495.523 40 490L40 460L40 460C40 454.477 44.477 450 50 450Z"/></clipPath>
+<filter id="f16" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.5"/></filter>
+<linearGradient id="g17" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="200" y2="0"><stop offset="0" stop-color="#008000"/><stop offset="0.7" stop-color="#ffffff"/><stop offset="1" stop-color="#ffc0cb"/></linearGradient>
+<linearGradient id="g18" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="256" y2="0"><stop offset="0" stop-color="#ff00ff"/><stop offset="0.5" stop-color="#0000ff"/><stop offset="1" stop-color="#ff0000"/></linearGradient>
+<clipPath id="c19"><path d="M50 450L130 450L130 450C135.523 450 140 454.477 140 460L140 490L140 490C140 495.523 135.523 500 130 500L50 500L50 500C44.477 500 40 495.523 40 490L40 460L40 460C40 454.477 44.477 450 50 450Z"/></clipPath>
+<filter id="f20" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.5"/></filter>
+<linearGradient id="g21" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="200" y2="0"><stop offset="0" stop-color="#008000"/><stop offset="0.7" stop-color="#ffffff"/><stop offset="1" stop-color="#ffc0cb"/></linearGradient>
+<linearGradient id="g22" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="256" y2="0"><stop offset="0" stop-color="#ff00ff"/><stop offset="0.5" stop-color="#0000ff"/><stop offset="1" stop-color="#ff0000"/></linearGradient>
+<clipPath id="c23"><path d="M50 450L130 450L130 450C135.523 450 140 454.477 140 460L140 490L140 490C140 495.523 135.523 500 130 500L50 500L50 500C44.477 500 40 495.523 40 490L40 460L40 460C40 454.477 44.477 450 50 450Z"/></clipPath>
+<filter id="f24" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.5"/></filter>
+<linearGradient id="g25" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="200" y2="0"><stop offset="0" stop-color="#008000"/><stop offset="0.7" stop-color="#ffffff"/><stop offset="1" stop-color="#ffc0cb"/></linearGradient>
+<linearGradient id="g26" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="256" y2="0"><stop offset="0" stop-color="#ff00ff"/><stop offset="0.5" stop-color="#0000ff"/><stop offset="1" stop-color="#ff0000"/></linearGradient>
+<clipPath id="c27"><path d="M50 450L130 450L130 450C135.523 450 140 454.477 140 460L140 490L140 490C140 495.523 135.523 500 130 500L50 500L50 500C44.477 500 40 495.523 40 490L40 460L40 460C40 454.477 44.477 450 50 450Z"/></clipPath>
+<filter id="f28" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.5"/></filter>
+<linearGradient id="g29" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="200" y2="0"><stop offset="0" stop-color="#008000"/><stop offset="0.7" stop-color="#ffffff"/><stop offset="1" stop-color="#ffc0cb"/></linearGradient>
+<linearGradient id="g30" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="256" y2="0"><stop offset="0" stop-color="#ff00ff"/><stop offset="0.5" stop-color="#0000ff"/><stop offset="1" stop-color="#ff0000"/></linearGradient>
+<clipPath id="c31"><path d="M50 450L130 450L130 450C135.523 450 140 454.477 140 460L140 490L140 490C140 495.523 135.523 500 130 500L50 500L50 500C44.477 500 40 495.523 40 490L40 460L40 460C40 454.477 44.477 450 50 450Z"/></clipPath>
+</defs>
+<path d="M0 0L512 0L512 512L0 512Z" fill="#8b0000"/>
+<path d="M-64 -64L64 -64L64 64L-64 64Z" transform="matrix(1 0 0.8 1 256 256)" fill="#ff8c00"/>
+<path d="M150 50C83.333 50 50 75 50 125C50 175 66.667 200 100 200C100 226.667 86.667 243.333 60 250C100 243.333 123.333 226.667 130 200C210 200 250 175 250 125C250 75 216.667 50 150 50" fill="#0000ff"/>
+<text x="0" y="0" transform="matrix(1 0 0 1 100 246)" font-family="monospace" font-size="108px" font-weight="bold" fill="none" stroke="#008000" stroke-width="8.64" xml:space="preserve">BabylonNative</text>
+<text x="0" y="0" transform="matrix(1 0 0 1 100 246)" font-family="monospace" font-size="108px" font-weight="bold" fill="#ffffff" xml:space="preserve">BabylonNative</text>
+<path d="M10 10L140 10M10 140L140 140" fill="none" stroke="#0099ff" stroke-width="1"/>
+<g filter="url(#f0)"><text x="100" y="246" font-family="monospace" font-size="50px" font-weight="bold" fill="#ffffff" xml:space="preserve">BLUR TEST BLUR TEST</text></g>
+<path d="M25 10L25 140" fill="none" stroke="#000000" stroke-width="15"/>
+<path d="M75 10L75 140" fill="none" stroke="#000000" stroke-width="15" stroke-linecap="round"/>
+<path d="M125 10L125 140" fill="none" stroke="#000000" stroke-width="15" stroke-linecap="square"/>
+<path d="M195 15L235 55L275 15L315 55L355 15" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square" stroke-linejoin="round"/>
+<path d="M195 55L235 95L275 55L315 95L355 55" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square" stroke-linejoin="bevel"/>
+<path d="M195 95L235 135L275 95L315 135L355 95" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square"/>
+<path d="M10 310L410 310L410 370L10 370Z" fill="url(#g1)"/>
+<text x="10" y="420" font-family="monospace" font-size="60px" font-weight="bold" fill="url(#g2)" xml:space="preserve">Gradient Text!</text>
+<path d="M10 220L160 220L160 320L10 320L10 220Z" fill="none" stroke="#ff0000" stroke-width="5" stroke-linecap="square"/>
+<path d="M50 220L120 220L120 220C142.091 220 160 237.909 160 260L160 280L160 280C160 302.091 142.091 320 120 320L50 320L50 320C27.909 320 10 302.091 10 280L10 260L10 260C10 237.909 27.909 220 50 220Z" fill="none" stroke="#0000ff" stroke-width="5" stroke-linecap="square"/>
+<path d="M20 350L120 350L120 350C142.091 350 160 367.909 160 390L160 440L160 440C160 445.523 155.523 450 150 450L50 450L50 450C27.909 450 10 432.091 10 410L10 360L10 360C10 354.477 14.477 350 20 350Z" fill="none" stroke="#ffa500" stroke-width="5" stroke-linecap="square"/>
+<path d="M200 220L370 220L370 220C386.569 220 400 233.431 400 250L400 270L400 270C400 297.614 377.614 320 350 320L260 320L260 320C226.863 320 200 293.137 200 260L200 220Z" fill="none" stroke="#008000" stroke-width="5" stroke-linecap="square"/>
+<path d="M230 350L400 350L400 390L400 390C400 423.137 373.137 450 340 450L250 450L250 450C222.386 450 200 427.614 200 400L200 380L200 380C200 363.431 213.431 350 230 350Z" fill="none" stroke="#ff00ff" stroke-width="5" stroke-linecap="square"/>
+<path d="M390 30L390 30C390 18.954 398.954 10 410 10C421.046 10 430 18.954 430 30L430 30C430 18.954 438.954 10 450 10C461.046 10 470 18.954 470 30C470 50 456.667 70 430 90C403.333 70 390 50 390 30ZM380 5L480 5L480 105L380 105Z" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="square"/>
+<path d="M350 200L375 175L400 200L375 225L350 200" fill="#ffff00"/>
+<path d="M322.5 150L322.5 150L322.5 150C334.926 150 345 155.037 345 161.25L345 208.75L345 208.75C345 214.963 334.926 220 322.5 220L322.5 220L322.5 220C310.074 220 300 214.963 300 208.75L300 161.25L300 161.25C300 155.037 310.074 150 322.5 150Z" fill="none" stroke="#ff0000" stroke-width="2" stroke-linecap="square"/>
+<g clip-path="url(#c3)">
+<path d="M0 0L1000 0L1000 1000L0 1000Z" fill="#0000ff"/>
+<path d="M0 0L512 0L512 512L0 512Z" fill="#8b0000"/>
+<path d="M-64 -64L64 -64L64 64L-64 64Z" transform="matrix(1 0.02 0.79 1.008 257.92 254.08)" fill="#ff8c00"/>
+<path d="M150 50C83.333 50 50 75 50 125C50 175 66.667 200 100 200C100 226.667 86.667 243.333 60 250C100 243.333 123.333 226.667 130 200C210 200 250 175 250 125C250 75 216.667 50 150 50" fill="#0000ff"/>
+<text x="0" y="0" transform="matrix(1 0 0 1 99.995 246)" font-family="monospace" font-size="109px" font-weight="bold" fill="none" stroke="#008000" stroke-width="8.72" stroke-linecap="square" xml:space="preserve">BabylonNative</text>
+<text x="0" y="0" transform="matrix(1 0 0 1 99.995 246)" font-family="monospace" font-size="109px" font-weight="bold" fill="#ffffff" xml:space="preserve">BabylonNative</text>
+<path d="M10 10L140 10M10 140L140 140" fill="none" stroke="#0099ff" stroke-width="2" stroke-linecap="square"/>
+<g filter="url(#f4)"><text x="100" y="246" font-family="monospace" font-size="50px" font-weight="bold" fill="#ffffff" xml:space="preserve">BLUR TEST BLUR TEST</text></g>
+<path d="M25 10L25 140" fill="none" stroke="#000000" stroke-width="15"/>
+<path d="M75 10L75 140" fill="none" stroke="#000000" stroke-width="15" stroke-linecap="round"/>
+<path d="M125 10L125 140" fill="none" stroke="#000000" stroke-width="15" stroke-linecap="square"/>
+<path d="M195 15L235 55L275 15L315 55L355 15" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square" stroke-linejoin="round"/>
+<path d="M195 55L235 95L275 55L315 95L355 55" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square" stroke-linejoin="bevel"/>
+<path d="M195 95L235 135L275 95L315 135L355 95" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square"/>
+<path d="M10 310L410 310L410 370L10 370Z" fill="url(#g5)"/>
+<text x="10" y="420" font-family="monospace" font-size="60px" font-weight="bold" fill="url(#g6)" xml:space="preserve">Gradient Text!</text>
+<path d="M10 220L160 220L160 320L10 320L10 220Z" fill="none" stroke="#ff0000" stroke-width="5" stroke-linecap="square"/>
+<path d="M50 220L120 220L120 220C142.091 220 160 237.909 160 260L160 280L160 280C160 302.091 142.091 320 120 320L50 320L50 320C27.909 320 10 302.091 10 280L10 260L10 260C10 237.909 27.909 220 50 220Z" fill="none" stroke="#0000ff" stroke-width="5" stroke-linecap="square"/>
+<path d="M20 350L120 350L120 350C142.091 350 160 367.909 160 390L160 440L160 440C160 445.523 155.523 450 150 450L50 450L50 450C27.909 450 10 432.091 10 410L10 360L10 360C10 354.477 14.477 350 20 350Z" fill="none" stroke="#ffa500" stroke-width="5" stroke-linecap="square"/>
+<path d="M200 220L370 220L370 220C386.569 220 400 233.431 400 250L400 270L400 270C400 297.614 377.614 320 350 320L260 320L260 320C226.863 320 200 293.137 200 260L200 220Z" fill="none" stroke="#008000" stroke-width="5" stroke-linecap="square"/>
+<path d="M230 350L400 350L400 390L400 390C400 423.137 373.137 450 340 450L250 450L250 450C222.386 450 200 427.614 200 400L200 380L200 380C200 363.431 213.431 350 230 350Z" fill="none" stroke="#ff00ff" stroke-width="5" stroke-linecap="square"/>
+<path d="M390 30L390 30C390 18.954 398.954 10 410 10C421.046 10 430 18.954 430 30L430 30C430 18.954 438.954 10 450 10C461.046 10 470 18.954 470 30C470 50 456.667 70 430 90C403.333 70 390 50 390 30ZM380 5L480 5L480 105L380 105Z" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="square"/>
+<path d="M350 200L375 175L400 200L375 225L350 200" fill="#ffff00"/>
+<path d="M322.5 150L322.5 150L322.5 150C334.926 150 345 155.037 345 161.25L345 208.75L345 208.75C345 214.963 334.926 220 322.5 220L322.5 220L322.5 220C310.074 220 300 214.963 300 208.75L300 161.25L300 161.25C300 155.037 310.074 150 322.5 150Z" fill="none" stroke="#ff0000" stroke-width="2" stroke-linecap="square"/>
+<g clip-path="url(#c7)">
+<path d="M0 0L1000 0L1000 1000L0 1000Z" fill="#0000ff"/>
+<path d="M0 0L512 0L512 512L0 512Z" fill="#8b0000"/>
+<path d="M-64 -64L64 -64L64 64L-64 64Z" transform="matrix(0.999 0.04 0.78 1.016 259.84 252.16)" fill="#ff8c00"/>
+<path d="M150 50C83.333 50 50 75 50 125C50 175 66.667 200 100 200C100 226.667 86.667 243.333 60 250C100 243.333 123.333 226.667 130 200C210 200 250 175 250 125C250 75 216.667 50 150 50" fill="#0000ff"/>
+<text x="0" y="0" transform="matrix(1 0 0 1 99.98 246)" font-family="monospace" font-size="110px" font-weight="bold" fill="none" stroke="#008000" stroke-width="8.8" stroke-linecap="square" xml:space="preserve">BabylonNative</text>
+<text x="0" y="0" transform="matrix(1 0 0 1 99.98 246)" font-family="monospace" font-size="110px" font-weight="bold" fill="#ffffff" xml:space="preserve">BabylonNative</text>
+<path d="M10 10L140 10M10 140L140 140" fill="none" stroke="#0099ff" stroke-width="2" stroke-linecap="square"/>
+<g filter="url(#f8)"><text x="100" y="246" font-family="monospace" font-size="50px" font-weight="bold" fill="#ffffff" xml:space="preserve">BLUR TEST BLUR TEST</text></g>
+<path d="M25 10L25 140" fill="none" stroke="#000000" stroke-width="15"/>
+<path d="M75 10L75 140" fill="none" stroke="#000000" stroke-width="15" stroke-linecap="round"/>
+<path d="M125 10L125 140" fill="none" stroke="#000000" stroke-width="15" stroke-linecap="square"/>
+<path d="M195 15L235 55L275 15L315 55L355 15" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square" stroke-linejoin="round"/>
+<path d="M195 55L235 95L275 55L315 95L355 55" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square" stroke-linejoin="bevel"/>
+<path d="M195 95L235 135L275 95L315 135L355 95" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square"/>
+<path d="M10 310L410 310L410 370L10 370Z" fill="url(#g9)"/>
+<text x="10" y="420" font-family="monospace" font-size="60px" font-weight="bold" fill="url(#g10)" xml:space="preserve">Gradient Text!</text>
+<path d="M10 220L160 220L160 320L10 320L10 220Z" fill="none" stroke="#ff0000" stroke-width="5" stroke-linecap="square"/>
+<path d="M50 220L120 220L120 220C142.091 220 160 237.909 160 260L160 280L160 280C160 302.091 142.091 320 120 320L50 320L50 320C27.909 320 10 302.091 10 280L10 260L10 260C10 237.909 27.909 220 50 220Z" fill="none" stroke="#0000ff" stroke-width="5" stroke-linecap="square"/>
+<path d="M20 350L120 350L120 350C142.091 350 160 367.909 160 390L160 440L160 440C160 445.523 155.523 450 150 450L50 450L50 450C27.909 450 10 432.091 10 410L10 360L10 360C10 354.477 14.477 350 20 350Z" fill="none" stroke="#ffa500" stroke-width="5" stroke-linecap="square"/>
+<path d="M200 220L370 220L370 220C386.569 220 400 233.431 400 250L400 270L400 270C400 297.614 377.614 320 350 320L260 320L260 320C226.863 320 200 293.137 200 260L200 220Z" fill="none" stroke="#008000" stroke-width="5" stroke-linecap="square"/>
+<path d="M230 350L400 350L400 390L400 390C400 423.137 373.137 450 340 450L250 450L250 450C222.386 450 200 427.614 200 400L200 380L200 380C200 363.431 213.431 350 230 350Z" fill="none" stroke="#ff00ff" stroke-width="5" stroke-linecap="square"/>
+<path d="M390 30L390 30C390 18.954 398.954 10 410 10C421.046 10 430 18.954 430 30L430 30C430 18.954 438.954 10 450 10C461.046 10 470 18.954 470 30C470 50 456.667 70 430 90C403.333 70 390 50 390 30ZM380 5L480 5L480 105L380 105Z" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="square"/>
+<path d="M350 200L375 175L400 200L375 225L350 200" fill="#ffff00"/>
+<path d="M322.5 150L322.5 150L322.5 150C334.926 150 345 155.037 345 161.25L345 208.75L345 208.75C345 214.963 334.926 220 322.5 220L322.5 220L322.5 220C310.074 220 300 214.963 300 208.75L300 161.25L300 161.25C300 155.037 310.074 150 322.5 150Z" fill="none" stroke="#ff0000" stroke-width="2" stroke-linecap="square"/>
+<g clip-path="url(#c11)">
+<path d="M0 0L1000 0L1000 1000L0 1000Z" fill="#0000ff"/>
+<path d="M0 0L512 0L512 512L0 512Z" fill="#8b0000"/>
+<path d="M-64 -64L64 -64L64 64L-64 64Z" transform="matrix(0.999 0.06 0.77 1.024 261.759 250.241)" fill="#ff8c00"/>
+<path d="M150 50C83.333 50 50 75 50 125C50 175 66.667 200 100 200C100 226.667 86.667 243.333 60 250C100 243.333 123.333 226.667 130 200C210 200 250 175 250 125C250 75 216.667 50 150 50" fill="#0000ff"/>
+<text x="0" y="0" transform="matrix(1 0 0 1 99.955 246)" font-family="monospace" font-size="111px" font-weight="bold" fill="none" stroke="#008000" stroke-width="8.88" stroke-linecap="square" xml:space="preserve">BabylonNative</text>
+<text x="0" y="0" transform="matrix(1 0 0 1 99.955 246)" font-family="monospace" font-size="111px" font-weight="bold" fill="#ffffff" xml:space="preserve">BabylonNative</text>
+<path d="M10 10L140 10M10 140L140 140" fill="none" stroke="#0099ff" stroke-width="2" stroke-linecap="square"/>
+<g filter="url(#f12)"><text x="100" y="246" font-family="monospace" font-size="50px" font-weight="bold" fill="#ffffff" xml:space="preserve">BLUR TEST BLUR TEST</text></g>
+<path d="M25 10L25 140" fill="none" stroke="#000000" stroke-width="15"/>
+<path d="M75 10L75 140" fill="none" stroke="#000000" stroke-width="15" stroke-linecap="round"/>
+<path d="M125 10L125 140" fill="none" stroke="#000000" stroke-width="15" stroke-linecap="square"/>
+<path d="M195 15L235 55L275 15L315 55L355 15" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square" stroke-linejoin="round"/>
+<path d="M195 55L235 95L275 55L315 95L355 55" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square" stroke-linejoin="bevel"/>
+<path d="M195 95L235 135L275 95L315 135L355 95" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square"/>
+<path d="M10 310L410 310L410 370L10 370Z" fill="url(#g13)"/>
+<text x="10" y="420" font-family="monospace" font-size="60px" font-weight="bold" fill="url(#g14)" xml:space="preserve">Gradient Text!</text>
+<path d="M10 220L160 220L160 320L10 320L10 220Z" fill="none" stroke="#ff0000" stroke-width="5" stroke-linecap="square"/>
+<path d="M50 220L120 220L120 220C142.091 220 160 237.909 160 260L160 280L160 280C160 302.091 142.091 320 120 320L50 320L50 320C27.909 320 10 302.091 10 280L10 260L10 260C10 237.909 27.909 220 50 220Z" fill="none" stroke="#0000ff" stroke-width="5" stroke-linecap="square"/>
+<path d="M20 350L120 350L120 350C142.091 350 160 367.909 160 390L160 440L160 440C160 445.523 155.523 450 150 450L50 450L50 450C27.909 450 10 432.091 10 410L10 360L10 360C10 354.477 14.477 350 20 350Z" fill="none" stroke="#ffa500" stroke-width="5" stroke-linecap="square"/>
+<path d="M200 220L370 220L370 220C386.569 220 400 233.431 400 250L400 270L400 270C400 297.614 377.614 320 350 320L260 320L260 320C226.863 320 200 293.137 200 260L200 220Z" fill="none" stroke="#008000" stroke-width="5" stroke-linecap="square"/>
+<path d="M230 350L400 350L400 390L400 390C400 423.137 373.137 450 340 450L250 450L250 450C222.386 450 200 427.614 200 400L200 380L200 380C200 363.431 213.431 350 230 350Z" fill="none" stroke="#ff00ff" stroke-width="5" stroke-linecap="square"/>
+<path d="M390 30L390 30C390 18.954 398.954 10 410 10C421.046 10 430 18.954 430 30L430 30C430 18.954 438.954 10 450 10C461.046 10 470 18.954 470 30C470 50 456.667 70 430 90C403.333 70 390 50 390 30ZM380 5L480 5L480 105L380 105Z" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="square"/>
+<path d="M350 200L375 175L400 200L375 225L350 200" fill="#ffff00"/>
+<path d="M322.5 150L322.5 150L322.5 150C334.926 150 345 155.037 345 161.25L345 208.75L345 208.75C345 214.963 334.926 220 322.5 220L322.5 220L322.5 220C310.074 220 300 214.963 300 208.75L300 161.25L300 161.25C300 155.037 310.074 150 322.5 150Z" fill="none" stroke="#ff0000" stroke-width="2" stroke-linecap="square"/>
+<g clip-path="url(#c15)">
+<path d="M0 0L1000 0L1000 1000L0 1000Z" fill="#0000ff"/>
+<path d="M0 0L512 0L512 512L0 512Z" fill="#8b0000"/>
+<path d="M-64 -64L64 -64L64 64L-64 64Z" transform="matrix(0.998 0.08 0.759 1.031 263.678 248.322)" fill="#ff8c00"/>
+<path d="M150 50C83.333 50 50 75 50 125C50 175 66.667 200 100 200C100 226.667 86.667 243.333 60 250C100 243.333 123.333 226.667 130 200C210 200 250 175 250 125C250 75 216.667 50 150 50" fill="#0000ff"/>
+<text x="0" y="0" transform="matrix(1 0 0 1 99.92 246)" font-family="monospace" font-size="111.999px" font-weight="bold" fill="none" stroke="#008000" stroke-width="8.96" stroke-linecap="square" xml:space="preserve">BabylonNative</text>
+<text x="0" y="0" transform="matrix(1 0 0 1 99.92 246)" font-family="monospace" font-size="111.999px" font-weight="bold" fill="#ffffff" xml:space="preserve">BabylonNative</text>
+<path d="M10 10L140 10M10 140L140 140" fill="none" stroke="#0099ff" stroke-width="2" stroke-linecap="square"/>
+<g filter="url(#f16)"><text x="100" y="246" font-family="monospace" font-size="50px" font-weight="bold" fill="#ffffff" xml:space="preserve">BLUR TEST BLUR TEST</text></g>
+<path d="M25 10L25 140" fill="none" stroke="#000000" stroke-width="15"/>
+<path d="M75 10L75 140" fill="none" stroke="#000000" stroke-width="15" stroke-linecap="round"/>
+<path d="M125 10L125 140" fill="none" stroke="#000000" stroke-width="15" stroke-linecap="square"/>
+<path d="M195 15L235 55L275 15L315 55L355 15" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square" stroke-linejoin="round"/>
+<path d="M195 55L235 95L275 55L315 95L355 55" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square" stroke-linejoin="bevel"/>
+<path d="M195 95L235 135L275 95L315 135L355 95" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square"/>
+<path d="M10 310L410 310L410 370L10 370Z" fill="url(#g17)"/>
+<text x="10" y="420" font-family="monospace" font-size="60px" font-weight="bold" fill="url(#g18)" xml:space="preserve">Gradient Text!</text>
+<path d="M10 220L160 220L160 320L10 320L10 220Z" fill="none" stroke="#ff0000" stroke-width="5" stroke-linecap="square"/>
+<path d="M50 220L120 220L120 220C142.091 220 160 237.909 160 260L160 280L160 280C160 302.091 142.091 320 120 320L50 320L50 320C27.909 320 10 302.091 10 280L10 260L10 260C10 237.909 27.909 220 50 220Z" fill="none" stroke="#0000ff" stroke-width="5" stroke-linecap="square"/>
+<path d="M20 350L120 350L120 350C142.091 350 160 367.909 160 390L160 440L160 440C160 445.523 155.523 450 150 450L50 450L50 450C27.909 450 10 432.091 10 410L10 360L10 360C10 354.477 14.477 350 20 350Z" fill="none" stroke="#ffa500" stroke-width="5" stroke-linecap="square"/>
+<path d="M200 220L370 220L370 220C386.569 220 400 233.431 400 250L400 270L400 270C400 297.614 377.614 320 350 320L260 320L260 320C226.863 320 200 293.137 200 260L200 220Z" fill="none" stroke="#008000" stroke-width="5" stroke-linecap="square"/>
+<path d="M230 350L400 350L400 390L400 390C400 423.137 373.137 450 340 450L250 450L250 450C222.386 450 200 427.614 200 400L200 380L200 380C200 363.431 213.431 350 230 350Z" fill="none" stroke="#ff00ff" stroke-width="5" stroke-linecap="square"/>
+<path d="M390 30L390 30C390 18.954 398.954 10 410 10C421.046 10 430 18.954 430 30L430 30C430 18.954 438.954 10 450 10C461.046 10 470 18.954 470 30C470 50 456.667 70 430 90C403.333 70 390 50 390 30ZM380 5L480 5L480 105L380 105Z" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="square"/>
+<path d="M350 200L375 175L400 200L375 225L350 200" fill="#ffff00"/>
+<path d="M322.5 150L322.5 150L322.5 150C334.926 150 345 155.037 345 161.25L345 208.75L345 208.75C345 214.963 334.926 220 322.5 220L322.5 220L322.5 220C310.074 220 300 214.963 300 208.75L300 161.25L300 161.25C300 155.037 310.074 150 322.5 150Z" fill="none" stroke="#ff0000" stroke-width="2" stroke-linecap="square"/>
+<g clip-path="url(#c19)">
+<path d="M0 0L1000 0L1000 1000L0 1000Z" fill="#0000ff"/>
+<path d="M0 0L512 0L512 512L0 512Z" fill="#8b0000"/>
+<path d="M-64 -64L64 -64L64 64L-64 64Z" transform="matrix(0.996 0.1 0.749 1.039 265.596 246.404)" fill="#ff8c00"/>
+<path d="M150 50C83.333 50 50 75 50 125C50 175 66.667 200 100 200C100 226.667 86.667 243.333 60 250C100 243.333 123.333 226.667 130 200C210 200 250 175 250 125C250 75 216.667 50 150 50" fill="#0000ff"/>
+<text x="0" y="0" transform="matrix(1 0 0 1 99.875 246)" font-family="monospace" font-size="112.998px" font-weight="bold" fill="none" stroke="#008000" stroke-width="9.04" stroke-linecap="square" xml:space="preserve">BabylonNative</text>
+<text x="0" y="0" transform="matrix(1 0 0 1 99.875 246)" font-family="monospace" font-size="112.998px" font-weight="bold" fill="#ffffff" xml:space="preserve">BabylonNative</text>
+<path d="M10 10L140 10M10 140L140 140" fill="none" stroke="#0099ff" stroke-width="2" stroke-linecap="square"/>
+<g filter="url(#f20)"><text x="100" y="246" font-family="monospace" font-size="50px" font-weight="bold" fill="#ffffff" xml:space="preserve">BLUR TEST BLUR TEST</text></g>
+<path d="M25 10L25 140" fill="none" stroke="#000000" stroke-width="15"/>
+<path d="M75 10L75 140" fill="none" stroke="#000000" stroke-width="15" stroke-linecap="round"/>
+<path d="M125 10L125 140" fill="none" stroke="#000000" stroke-width="15" stroke-linecap="square"/>
+<path d="M195 15L235 55L275 15L315 55L355 15" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square" stroke-linejoin="round"/>
+<path d="M195 55L235 95L275 55L315 95L355 55" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square" stroke-linejoin="bevel"/>
+<path d="M195 95L235 135L275 95L315 135L355 95" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square"/>
+<path d="M10 310L410 310L410 370L10 370Z" fill="url(#g21)"/>
+<text x="10" y="420" font-family="monospace" font-size="60px" font-weight="bold" fill="url(#g22)" xml:space="preserve">Gradient Text!</text>
+<path d="M10 220L160 220L160 320L10 320L10 220Z" fill="none" stroke="#ff0000" stroke-width="5" stroke-linecap="square"/>
+<path d="M50 220L120 220L120 220C142.091 220 160 237.909 160 260L160 280L160 280C160 302.091 142.091 320 120 320L50 320L50 320C27.909 320 10 302.091 10 280L10 260L10 260C10 237.909 27.909 220 50 220Z" fill="none" stroke="#0000ff" stroke-width="5" stroke-linecap="square"/>
+<path d="M20 350L120 350L120 350C142.091 350 160 367.909 160 390L160 440L160 440C160 445.523 155.523 450 150 450L50 450L50 450C27.909 450 10 432.091 10 410L10 360L10 360C10 354.477 14.477 350 20 350Z" fill="none" stroke="#ffa500" stroke-width="5" stroke-linecap="square"/>
+<path d="M200 220L370 220L370 220C386.569 220 400 233.431 400 250L400 270L400 270C400 297.614 377.614 320 350 320L260 320L260 320C226.863 320 200 293.137 200 260L200 220Z" fill="none" stroke="#008000" stroke-width="5" stroke-linecap="square"/>
+<path d="M230 350L400 350L400 390L400 390C400 423.137 373.137 450 340 450L250 450L250 450C222.386 450 200 427.614 200 400L200 380L200 380C200 363.431 213.431 350 230 350Z" fill="none" stroke="#ff00ff" stroke-width="5" stroke-linecap="square"/>
+<path d="M390 30L390 30C390 18.954 398.954 10 410 10C421.046 10 430 18.954 430 30L430 30C430 18.954 438.954 10 450 10C461.046 10 470 18.954 470 30C470 50 456.667 70 430 90C403.333 70 390 50 390 30ZM380 5L480 5L480 105L380 105Z" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="square"/>
+<path d="M350 200L375 175L400 200L375 225L350 200" fill="#ffff00"/>
+<path d="M322.5 150L322.5 150L322.5 150C334.926 150 345 155.037 345 161.25L345 208.75L345 208.75C345 214.963 334.926 220 322.5 220L322.5 220L322.5 220C310.074 220 300 214.963 300 208.75L300 161.25L300 161.25C300 155.037 310.074 150 322.5 150Z" fill="none" stroke="#ff0000" stroke-width="2" stroke-linecap="square"/>
+<g clip-path="url(#c23)">
+<path d="M0 0L1000 0L1000 1000L0 1000Z" fill="#0000ff"/>
+<path d="M0 0L512 0L512 512L0 512Z" fill="#8b0000"/>
+<path d="M-64 -64L64 -64L64 64L-64 64Z" transform="matrix(0.995 0.12 0.739 1.046 267.513 244.487)" fill="#ff8c00"/>
+<path d="M150 50C83.333 50 50 75 50 125C50 175 66.667 200 100 200C100 226.667 86.667 243.333 60 250C100 243.333 123.333 226.667 130 200C210 200 250 175 250 125C250 75 216.667 50 150 50" fill="#0000ff"/>
+<text x="0" y="0" transform="matrix(1 0 0 1 99.82 246)" font-family="monospace" font-size="113.996px" font-weight="bold" fill="none" stroke="#008000" stroke-width="9.12" stroke-linecap="square" xml:space="preserve">BabylonNative</text>
+<text x="0" y="0" transform="matrix(1 0 0 1 99.82 246)" font-family="monospace" font-size="113.996px" font-weight="bold" fill="#ffffff" xml:space="preserve">BabylonNative</text>
+<path d="M10 10L140 10M10 140L140 140" fill="none" stroke="#0099ff" stroke-width="2" stroke-linecap="square"/>
+<g filter="url(#f24)"><text x="100" y="246" font-family="monospace" font-size="50px" font-weight="bold" fill="#ffffff" xml:space="preserve">BLUR TEST BLUR TEST</text></g>
+<path d="M25 10L25 140" fill="none" stroke="#000000" stroke-width="15"/>
+<path d="M75 10L75 140" fill="none" stroke="#000000" stroke-width="15" stroke-linecap="round"/>
+<path d="M125 10L125 140" fill="none" stroke="#000000" stroke-width="15" stroke-linecap="square"/>
+<path d="M195 15L235 55L275 15L315 55L355 15" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square" stroke-linejoin="round"/>
+<path d="M195 55L235 95L275 55L315 95L355 55" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square" stroke-linejoin="bevel"/>
+<path d="M195 95L235 135L275 95L315 135L355 95" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square"/>
+<path d="M10 310L410 310L410 370L10 370Z" fill="url(#g25)"/>
+<text x="10" y="420" font-family="monospace" font-size="60px" font-weight="bold" fill="url(#g26)" xml:space="preserve">Gradient Text!</text>
+<path d="M10 220L160 220L160 320L10 320L10 220Z" fill="none" stroke="#ff0000" stroke-width="5" stroke-linecap="square"/>
+<path d="M50 220L120 220L120 220C142.091 220 160 237.909 160 260L160 280L160 280C160 302.091 142.091 320 120 320L50 320L50 320C27.909 320 10 302.091 10 280L10 260L10 260C10 237.909 27.909 220 50 220Z" fill="none" stroke="#0000ff" stroke-width="5" stroke-linecap="square"/>
+<path d="M20 350L120 350L120 350C142.091 350 160 367.909 160 390L160 440L160 440C160 445.523 155.523 450 150 450L50 450L50 450C27.909 450 10 432.091 10 410L10 360L10 360C10 354.477 14.477 350 20 350Z" fill="none" stroke="#ffa500" stroke-width="5" stroke-linecap="square"/>
+<path d="M200 220L370 220L370 220C386.569 220 400 233.431 400 250L400 270L400 270C400 297.614 377.614 320 350 320L260 320L260 320C226.863 320 200 293.137 200 260L200 220Z" fill="none" stroke="#008000" stroke-width="5" stroke-linecap="square"/>
+<path d="M230 350L400 350L400 390L400 390C400 423.137 373.137 450 340 450L250 450L250 450C222.386 450 200 427.614 200 400L200 380L200 380C200 363.431 213.431 350 230 350Z" fill="none" stroke="#ff00ff" stroke-width="5" stroke-linecap="square"/>
+<path d="M390 30L390 30C390 18.954 398.954 10 410 10C421.046 10 430 18.954 430 30L430 30C430 18.954 438.954 10 450 10C461.046 10 470 18.954 470 30C470 50 456.667 70 430 90C403.333 70 390 50 390 30ZM380 5L480 5L480 105L380 105Z" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="square"/>
+<path d="M350 200L375 175L400 200L375 225L350 200" fill="#ffff00"/>
+<path d="M322.5 150L322.5 150L322.5 150C334.926 150 345 155.037 345 161.25L345 208.75L345 208.75C345 214.963 334.926 220 322.5 220L322.5 220L322.5 220C310.074 220 300 214.963 300 208.75L300 161.25L300 161.25C300 155.037 310.074 150 322.5 150Z" fill="none" stroke="#ff0000" stroke-width="2" stroke-linecap="square"/>
+<g clip-path="url(#c27)">
+<path d="M0 0L1000 0L1000 1000L0 1000Z" fill="#0000ff"/>
+<path d="M0 0L512 0L512 512L0 512Z" fill="#8b0000"/>
+<path d="M-64 -64L64 -64L64 64L-64 64Z" transform="matrix(0.993 0.14 0.728 1.054 269.429 242.571)" fill="#ff8c00"/>
+<path d="M150 50C83.333 50 50 75 50 125C50 175 66.667 200 100 200C100 226.667 86.667 243.333 60 250C100 243.333 123.333 226.667 130 200C210 200 250 175 250 125C250 75 216.667 50 150 50" fill="#0000ff"/>
+<text x="0" y="0" transform="matrix(1 0 0 1 99.755 246)" font-family="monospace" font-size="114.994px" font-weight="bold" fill="none" stroke="#008000" stroke-width="9.2" stroke-linecap="square" xml:space="preserve">BabylonNative</text>
+<text x="0" y="0" transform="matrix(1 0 0 1 99.755 246)" font-family="monospace" font-size="114.994px" font-weight="bold" fill="#ffffff" xml:space="preserve">BabylonNative</text>
+<path d="M10 10L140 10M10 140L140 140" fill="none" stroke="#0099ff" stroke-width="2" stroke-linecap="square"/>
+<g filter="url(#f28)"><text x="100" y="246" font-family="monospace" font-size="50px" font-weight="bold" fill="#ffffff" xml:space="preserve">BLUR TEST BLUR TEST</text></g>
+<path d="M25 10L25 140" fill="none" stroke="#000000" stroke-width="15"/>
+<path d="M75 10L75 140" fill="none" stroke="#000000" stroke-width="15" stroke-linecap="round"/>
+<path d="M125 10L125 140" fill="none" stroke="#000000" stroke-width="15" stroke-linecap="square"/>
+<path d="M195 15L235 55L275 15L315 55L355 15" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square" stroke-linejoin="round"/>
+<path d="M195 55L235 95L275 55L315 95L355 55" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square" stroke-linejoin="bevel"/>
+<path d="M195 95L235 135L275 95L315 135L355 95" fill="none" stroke="#000000" stroke-width="10" stroke-linecap="square"/>
+<path d="M10 310L410 310L410 370L10 370Z" fill="url(#g29)"/>
+<text x="10" y="420" font-family="monospace" font-size="60px" font-weight="bold" fill="url(#g30)" xml:space="preserve">Gradient Text!</text>
+<path d="M10 220L160 220L160 320L10 320L10 220Z" fill="none" stroke="#ff0000" stroke-width="5" stroke-linecap="square"/>
+<path d="M50 220L120 220L120 220C142.091 220 160 237.909 160 260L160 280L160 280C160 302.091 142.091 320 120 320L50 320L50 320C27.909 320 10 302.091 10 280L10 260L10 260C10 237.909 27.909 220 50 220Z" fill="none" stroke="#0000ff" stroke-width="5" stroke-linecap="square"/>
+<path d="M20 350L120 350L120 350C142.091 350 160 367.909 160 390L160 440L160 440C160 445.523 155.523 450 150 450L50 450L50 450C27.909 450 10 432.091 10 410L10 360L10 360C10 354.477 14.477 350 20 350Z" fill="none" stroke="#ffa500" stroke-width="5" stroke-linecap="square"/>
+<path d="M200 220L370 220L370 220C386.569 220 400 233.431 400 250L400 270L400 270C400 297.614 377.614 320 350 320L260 320L260 320C226.863 320 200 293.137 200 260L200 220Z" fill="none" stroke="#008000" stroke-width="5" stroke-linecap="square"/>
+<path d="M230 350L400 350L400 390L400 390C400 423.137 373.137 450 340 450L250 450L250 450C222.386 450 200 427.614 200 400L200 380L200 380C200 363.431 213.431 350 230 350Z" fill="none" stroke="#ff00ff" stroke-width="5" stroke-linecap="square"/>
+<path d="M390 30L390 30C390 18.954 398.954 10 410 10C421.046 10 430 18.954 430 30L430 30C430 18.954 438.954 10 450 10C461.046 10 470 18.954 470 30C470 50 456.667 70 430 90C403.333 70 390 50 390 30ZM380 5L480 5L480 105L380 105Z" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="square"/>
+<path d="M350 200L375 175L400 200L375 225L350 200" fill="#ffff00"/>
+<path d="M322.5 150L322.5 150L322.5 150C334.926 150 345 155.037 345 161.25L345 208.75L345 208.75C345 214.963 334.926 220 322.5 220L322.5 220L322.5 220C310.074 220 300 214.963 300 208.75L300 161.25L300 161.25C300 155.037 310.074 150 322.5 150Z" fill="none" stroke="#ff0000" stroke-width="2" stroke-linecap="square"/>
+<g clip-path="url(#c31)">
+<path d="M0 0L1000 0L1000 1000L0 1000Z" fill="#0000ff"/></g></g></g></g></g></g></g></g>
+</svg>
