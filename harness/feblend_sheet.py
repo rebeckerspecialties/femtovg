@@ -6,10 +6,10 @@ region where the two renders differ most.
   sheet.py OUT.png NAME[,NAME...] ZOOMS THRESHOLD [BEFORE_LABEL]
 A NAME is `file`, `dir:file` (before_/after_/chr_ files in that directory
 under the blend work dir) and may end in `@ZOOM` to use that zoom alone."""
-import sys
+import os, sys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-B = '/Users/matt/src/femtovg-wt/blend'
+B = os.environ.get('BLEND_DIR', 'blend')  # the feBlend run's work directory
 out, names, zooms, thr = sys.argv[1], sys.argv[2].split(','), [z for z in sys.argv[3].split(',')], int(sys.argv[4])
 before_label = sys.argv[5] if len(sys.argv) > 5 else 'master 1334764'
 font = ImageFont.load_default()

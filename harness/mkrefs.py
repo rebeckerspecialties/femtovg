@@ -1,5 +1,5 @@
 import os, subprocess, glob, sys
-S=os.environ['S']; CHR=os.path.expanduser("~/.cache/puppeteer/chrome-headless-shell/mac_arm-131.0.6778.204/chrome-headless-shell-mac-arm64/chrome-headless-shell")
+S=os.environ['S']; CHR=os.environ.get("CHROMIUM", os.path.expanduser("~/.cache/puppeteer/chrome-headless-shell/mac_arm-131.0.6778.204/chrome-headless-shell-mac-arm64/chrome-headless-shell"))
 def ref(svg, scale, out):
     html=out[:-4]+".html"
     with open(html,"w") as f: subprocess.run([sys.executable, f"{S}/da/harness/make_ref.py", svg, str(scale)], stdout=f, check=True)

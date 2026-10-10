@@ -8,7 +8,7 @@ Pass = test vs ref at most 0.5 % of pixels beyond the threshold."""
 import argparse, glob, os, subprocess, sys, tempfile, time
 import numpy as np
 from PIL import Image
-CHR = os.path.expanduser('~/.cache/puppeteer/chrome-headless-shell/mac_arm-131.0.6778.204/chrome-headless-shell-mac-arm64/chrome-headless-shell')
+CHR = os.environ.get('CHROMIUM', os.path.expanduser('~/.cache/puppeteer/chrome-headless-shell/mac_arm-131.0.6778.204/chrome-headless-shell-mac-arm64/chrome-headless-shell'))
 HERE = os.path.dirname(os.path.abspath(__file__))
 ap = argparse.ArgumentParser()
 ap.add_argument('binary'); ap.add_argument('suite'); ap.add_argument('--threshold', type=int, default=8)

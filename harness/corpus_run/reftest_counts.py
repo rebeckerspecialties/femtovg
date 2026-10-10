@@ -13,7 +13,7 @@ from common import *
 before, after = sys.argv[1:3]
 opts = dict(a.split('=', 1) for a in sys.argv[3:])
 group = opts.get('group', 'wpt-clip-path-reftests')
-suite = os.path.expanduser(opts.get('suite', '~/.gemini/antigravity/scratch/wpt_svg_reftests'))
+suite = os.path.expanduser(opts.get('suite', os.environ.get('WPT_SVG_REFTESTS', 'wpt_svg_reftests')))
 names = {'chr': 'Chromium software', 'chg': 'Chromium GPU', 'ff': 'Firefox', 'wk': 'WebKit', 'id': 'the area reference'}
 fs = files()
 

@@ -4,6 +4,38 @@ How every rendering claim in the femtovg conformance PRs was measured. The
 point is reproducibility: the same scene, the same framing, the same metric,
 so a number in a PR body means something.
 
+## Quick start
+
+From a checkout of this branch (a worktree of the femtovg repository, so
+`build.sh` finds the sources), with Python 3, numpy and Pillow:
+
+    harness/build.sh master:../femtovg mine:../my-femtovg-branch
+    export CORPUS_RUN_OUT=~/corpus-run
+    harness/corpus_run/files.py                 # the corpus: corpus/**, *.svg
+    harness/corpus_run/refs.py                  # Chromium references; `refs.py firefox` for Firefox,
+                                                # refs_ideal.py for the area reference
+    harness/corpus_run/sweep.py master          # renders and compares every frame
+    harness/corpus_run/sweep.py mine base=master
+    harness/corpus_run/identity.py master mine  # or: are the two bit for bit the same?
+    harness/corpus_run/sheet.py out.png master mine --refs=chr tiger__Ghostscript_Tiger:hd
+
+A build name is a binary `$HARNESS_BIN/_logos_full_<name>`; `build.sh` makes
+it with every harness cfg the checkout supports and prints the `harness cfgs:`
+line to check. `corpus_run/common.py` keeps the builds of past runs by name.
+
+| environment | what | default |
+|---|---|---|
+| `FEMTOVG_SRC` | the femtovg checkout for a `build.sh` tag without `:SRC` | the repository this checkout is a worktree of |
+| `HARNESS_BIN` | the harness binaries | `bin/` beside this checkout |
+| `CARGO_TARGET_DIR` | cargo's (share one between checkouts) | each checkout's `target/` |
+| `CORPUS_RUN_OUT` | file list, references, results, kept frames | `./corpus-run` |
+| `CHROMIUM`, `FIREFOX` | the reference browsers | the puppeteer headless shell 131; Firefox Developer Edition |
+| `WPT_SVG_REFTESTS` | the WPT SVG reftest checkout `reftest_counts.py` reads | `./wpt_svg_reftests` |
+
+The corpus is `corpus/` (each directory a group) and the SVGs at the top
+level. `corpus/svgenius` (Apache-2.0) and `corpus/tiger` (AGPL-3.0-or-later)
+carry their licenses and sources.
+
 ## Renderers
 
 **femtovg**: offscreen wgpu examples (`_logos_full.rs`, `_logos_pivot.rs`,

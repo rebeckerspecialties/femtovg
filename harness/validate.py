@@ -28,9 +28,9 @@ import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-CHR = os.path.expanduser(
+CHR = os.environ.get("CHROMIUM", os.path.expanduser(
     "~/.cache/puppeteer/chrome-headless-shell/mac_arm-131.0.6778.204/chrome-headless-shell-mac-arm64/chrome-headless-shell"
-)
+))
 PAT = re.compile(r"px>(\d+): ([\d.]+)%\s+structural \(2px erosion\): ([\d.]+)%\s+max delta: (\d+)")
 LADDER = [0.6, 0.75, 0.9, 1.0, 1.15, 1.3, 1.6, 1.9, 2.35]
 

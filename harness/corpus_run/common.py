@@ -2,7 +2,8 @@
 
 Environment:
   CORPUS_RUN_OUT  where results, references and temporaries go (default ./corpus-run)
-  HARNESS_BIN     directory holding the harness binaries named _logos_full_<build>
+  HARNESS_BIN     directory holding the harness binaries named _logos_full_<build> (default: bin/ beside this
+                  checkout, where harness/build.sh puts them)
   CHROMIUM, FIREFOX  the reference browsers
 """
 import json, os
@@ -28,10 +29,21 @@ FRAMINGS.update({'z01': (DEFAULT, 0.1), 'z025': (DEFAULT, 0.25), 'z05': (DEFAULT
 FRAMINGS.update({'zt2': ({**DEFAULT, 'PIVOT': '230,48'}, 2.0), 'zt4': ({**DEFAULT, 'PIVOT': '230,48'}, 4.0)})
 DEFAULT_FRAMINGS = ['z1', 'z2', 'z4', 'hd']
 
-# build -> (binary, extra env). Every binary is the harness built with all cfgs
-# (harness_clip, harness_turbulence, harness_blend, harness_mix_blend), plus harness_slices
-# on a tree that has WGPURenderer::set_submission_slicing.
-BUILDS = {
+
+class Builds(dict):
+    """build -> (binary, extra env). A name with no entry below is the binary harness/build.sh writes for it,
+    HARNESS_BIN/_logos_full_<name>, run as every build since the shadow merge is: with one shadow layer."""
+
+    def __missing__(self, name):
+        binary = f'{BIN}/_logos_full_{name}'
+        if not os.path.exists(binary):
+            raise KeyError(f'no build {name!r}: build {binary} with harness/build.sh {name}:<femtovg checkout>')
+        return (binary, {'SINGLE_SHADOW_LAYER': '1'})
+
+
+# Builds of past runs, kept for what each tag meant. Every binary is the harness built with all the cfgs its tree
+# supports (harness/build.sh works them out).
+BUILDS = Builds({
     'pre369': (f'{BIN}/_logos_full_pre369', {}),    # master before the Canvas split (#369)
     'base': (f'{BIN}/_logos_full_base', {}),        # master
     'slices': (f'{BIN}/_logos_full_slices', {}),    # #368 before lazy passes, slicing on
@@ -43,7 +55,7 @@ BUILDS = {
     # #368 as pushed: a pass begins with its first draw; slicing on and off
     'final': (f'{BIN}/_logos_full_final', {}),
     'final_noslices': (f'{BIN}/_logos_full_final', {'NO_SLICES': '1'}),
-}
+})
 BUILDS['mm'] = (f'{BIN}/_logos_full_mm', {})  # #370, mipmaps on wgpu, on its own base
 BUILDS['ab'] = (f'{BIN}/_logos_full_ab', {})  # #362 aniso-blur branch, --cfg harness_blur_xy
 BUILDS['bd'] = (f'{BIN}/_logos_full_bd', {})  # #325 blur-downsample branch
@@ -176,3 +188,24 @@ for _n, _k in {'l25m': '0.375', 'l25z': '0'}.items():
 BUILDS['cm8_stencil'] = (f'{BIN}/_logos_full_cm8', {'SINGLE_SHADOW_LAYER': '1', 'CLIP_MASK_BUDGET_MB': '0', 'CLIP_JOINED': '1'})  # the masks build on the stencil, as master
 BUILDS['cm8b'] = (f'{BIN}/_logos_full_cm8b', {'SINGLE_SHADOW_LAYER': '1'})  # experiment: cm8n with the per-draw mask boxed (Params 264 bytes)
 BUILDS['m7pad'] = (f'{BIN}/_logos_full_m7pad', {'SINGLE_SHADOW_LAYER': '1'})  # experiment: master with Params padded to the masks' size (292 bytes)
+# 2026-10-08, on master cc0d841: fb = flatten-straddle da5e537 (chords straddle each curve, CHORD_SHIFT 3/8, curve ends
+# on the curve; holds_outline gets the straddle as slack at a round corner), fc = flatten-straddle-half 297bf9a (fb at
+# tolerance 0.125). No debug info, as m7/m7f.
+BUILDS['fb'] = (f'{BIN}/_logos_full_fb', {'SINGLE_SHADOW_LAYER': '1'})
+BUILDS['fc'] = (f'{BIN}/_logos_full_fc', {'SINGLE_SHADOW_LAYER': '1'})
+BUILDS['pp1'] = (f'{BIN}/_logos_full_pp1', {'SINGLE_SHADOW_LAYER': '1'})  # point-costs: the fill's triangle list in a sized loop
+BUILDS['pp2'] = (f'{BIN}/_logos_full_pp2', {'SINGLE_SHADOW_LAYER': '1'})  # point-costs: + the flattener as a loop
+BUILDS['pp3'] = (f'{BIN}/_logos_full_pp3', {'SINGLE_SHADOW_LAYER': '1'})  # point-costs: + exact reversal, contour pass in registers
+BUILDS['pc'] = (f'{BIN}/_logos_full_pc', {'SINGLE_SHADOW_LAYER': '1'})  # point-costs + straddle + tolerance 0.125 (option C on the savings)
+BUILDS['pp4'] = (f'{BIN}/_logos_full_pp4', {'SINGLE_SHADOW_LAYER': '1'})  # point-costs: + fills drawn as fans (uncommitted when built)
+BUILDS['pp5'] = (f'{BIN}/_logos_full_pp5', {'SINGLE_SHADOW_LAYER': '1'})  # point-costs-2 ba0d8a9 (savings + fans, final)
+BUILDS['pc2'] = (f'{BIN}/_logos_full_pc2', {'SINGLE_SHADOW_LAYER': '1'})  # point-costs-2-straddle e7a2973 (option C on savings + fans)
+BUILDS['pp6'] = (f'{BIN}/_logos_full_pp6', {'SINGLE_SHADOW_LAYER': '1'})  # point-costs-2 + base vertex for fans off wgpu's GL backend (uncommitted)
+BUILDS['pc3'] = (f'{BIN}/_logos_full_pc3', {'SINGLE_SHADOW_LAYER': '1'})  # option C on savings + base-vertex fans (pd worktree)
+BUILDS['c2'] = (f'{BIN}/_logos_full_c2', {'SINGLE_SHADOW_LAYER': '1'})  # point-costs-3-straddle 36f8a18: option C with per-point straddle + grown gate, on savings v3
+BUILDS['pf'] = (f'{BIN}/_logos_full_pf', {'SINGLE_SHADOW_LAYER': '1'})  # point-costs-3-fans (uncommitted): fans via per-frame indices, GLES2 fans, long fans split
+BUILDS['pfc'] = (f'{BIN}/_logos_full_pfc', {'SINGLE_SHADOW_LAYER': '1'})  # point-costs-3-fans-straddle 02e6d79: option C v2 on savings v3 + fans v2
+BUILDS['pf2'] = (f'{BIN}/_logos_full_pf', {'SINGLE_SHADOW_LAYER': '1'})  # point-costs-3-fans 00af849 (pf binary after round-2 fixes)
+BUILDS['m8'] = (f'{BIN}/_logos_full_m8', {'SINGLE_SHADOW_LAYER': '1'})  # upstream master d70ffeb (#390), all cfgs incl crop + clip_paths
+BUILDS['pr1'] = (f'{BIN}/_logos_full_pr1', {'SINGLE_SHADOW_LAYER': '1'})  # fill-point-costs on d70ffeb, all cfgs incl crop + clip_paths
+BUILDS['pr2'] = (f'{BIN}/_logos_full_pr2', {'SINGLE_SHADOW_LAYER': '1'})  # straddled-chords on fill-point-costs (d70ffeb), all cfgs

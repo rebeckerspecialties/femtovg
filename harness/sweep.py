@@ -18,8 +18,8 @@ from PIL import Image
 S = "/private/tmp/claude-501/-Users-matt-src-femtovg/e8e3f9a7-e26b-426f-ad20-5815dcc2470f/scratchpad"
 BINS = {"master": f"{S}/bin/_logos_full_master2", "stack": f"{S}/bin/_logos_full_stack2"}
 HARN = "/private/tmp/wt-da/harness"
-CHR = os.path.expanduser("~/.cache/puppeteer/chrome-headless-shell/mac_arm-131.0.6778.204/chrome-headless-shell-mac-arm64/chrome-headless-shell")
-FF = "/Applications/Firefox Developer Edition.app/Contents/MacOS/firefox"
+CHR = os.environ.get("CHROMIUM", os.path.expanduser("~/.cache/puppeteer/chrome-headless-shell/mac_arm-131.0.6778.204/chrome-headless-shell-mac-arm64/chrome-headless-shell"))
+FF = os.environ.get("FIREFOX", "/Applications/Firefox Developer Edition.app/Contents/MacOS/firefox")
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--corpus", required=True)
