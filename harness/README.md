@@ -34,7 +34,8 @@ line to check. `corpus_run/common.py` keeps the builds of past runs by name.
 
 The corpus is `corpus/` (each directory a group) and the SVGs at the top
 level. `corpus/svgenius` (Apache-2.0) and `corpus/tiger` (AGPL-3.0-or-later)
-carry their licenses and sources.
+carry their licenses and sources; `corpus/babylon` is the Babylon.js visual
+tests' 2D canvases, captured by `harness/babylon/capture.py`.
 
 ## Renderers
 
