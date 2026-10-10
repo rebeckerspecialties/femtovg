@@ -4,8 +4,9 @@ use imgref::ImgVec;
 use rgb::RGBA8;
 
 use crate::{
-    geometry::Position, paint::GlyphTexture, Color, CompositeOperationState, ErrorKind, FillRule, ImageFilter, ImageId,
-    ImageInfo, ImageSource, ImageStore,
+    geometry::{Bounds, Position},
+    paint::GlyphTexture,
+    Color, CompositeOperationState, ErrorKind, FillRule, ImageFilter, ImageId, ImageInfo, ImageSource, ImageStore,
 };
 
 mod opengl;
@@ -141,6 +142,9 @@ pub struct Command {
     pub(crate) blend_pass: BlendPass,
     // The matrices a two-draw filter pass folds into its draws.
     pub(crate) fused: Fused,
+    // The rect a filter pass's result is drawn inside - x, y, width and
+    // height in the texel rows of its target - when it is cropped.
+    pub(crate) crop: Option<[u32; 4]>,
     pub(crate) fill_rule: FillRule,
     pub(crate) composite_operation: CompositeOperationState,
 }
@@ -158,9 +162,51 @@ impl Command {
             glyph_texture: GlyphTexture::default(),
             blend_pass: BlendPass::default(),
             fused: Fused::default(),
+            crop: None,
             fill_rule: FillRule::default(),
             composite_operation: CompositeOperationState::default(),
         }
+    }
+
+    /// The pixels of a target of `size` that the clip leaves the command's
+    /// draws - x, y, width and height from the top left - when they carry a
+    /// shape that ends somewhere, a mask, or both. Outside them the clip's
+    /// coverage is zero, so the renderer scissors every draw of the command
+    /// to them, the ones that only write the stencil too: no fragment is
+    /// shaded out there and a tiler leaves its tiles alone, as under a clip
+    /// on the stencil. Never less than a pixel: Metal takes no empty
+    /// scissor.
+    pub(crate) fn clip_bounds(&self, [width, height]: [u32; 2]) -> Option<[u32; 4]> {
+        let params = match &self.cmd_type {
+            CommandType::ConvexFill { params }
+            | CommandType::Stroke { params }
+            | CommandType::Triangles { params }
+            | CommandType::ConcaveFill {
+                fill_params: params, ..
+            }
+            | CommandType::StencilStroke { params1: params, .. } => params,
+            _ => return None,
+        };
+        let shape = params.clip.and_then(|shape| shape.reach());
+        let mask = params.clip_mask.map(|mask| mask.reach());
+        let reach = match (shape, mask) {
+            (Some(shape), Some(mask)) => Bounds {
+                minx: shape.minx.max(mask.minx),
+                miny: shape.miny.max(mask.miny),
+                maxx: shape.maxx.min(mask.maxx),
+                maxy: shape.maxy.min(mask.maxy),
+            },
+            (shape, mask) => shape.or(mask)?,
+        };
+        if width == 0 || height == 0 {
+            return None;
+        }
+        // A float past either end saturates, and one that is no number is zero.
+        let left = (reach.minx.floor() as u32).min(width - 1);
+        let top = (reach.miny.floor() as u32).min(height - 1);
+        let right = (reach.maxx.ceil() as u32).clamp(left + 1, width);
+        let bottom = (reach.maxy.ceil() as u32).clamp(top + 1, height);
+        Some([left, top, right - left, bottom - top])
     }
 }
 

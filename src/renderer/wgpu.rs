@@ -60,8 +60,9 @@ impl std::fmt::Debug for WGPURenderOutput {
 
 use super::Params;
 use super::Vertex;
+use crate::clip::{ClipCoverage, MaskCoverage};
 
-const UNIFORMARRAY_SIZE: usize = 14;
+const UNIFORMARRAY_SIZE: usize = 16;
 const UNIFORM_BYTES: u64 = (UNIFORMARRAY_SIZE * 4 * 4) as u64;
 // A concave fill and a stencil stroke record two sets of params, every other command one.
 const UNIFORM_SLOTS_PER_COMMAND: u64 = 2;
@@ -92,11 +93,7 @@ pub struct UniformArray([f32; UNIFORMARRAY_SIZE * 4]);
 
 impl Default for UniformArray {
     fn default() -> Self {
-        Self([
-            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-        ])
+        Self([0.0; UNIFORMARRAY_SIZE * 4])
     }
 }
 
@@ -182,6 +179,28 @@ impl UniformArray {
         // float 51 (byte offset 204) holds the scissor radius.
         self.0[52] = angle;
     }
+
+    /// The clip shape, read by the shader variant of a draw under one: the
+    /// rest of the row the conic angle starts, and the two rows after it.
+    pub fn set_clip(&mut self, clip: Option<&ClipCoverage>) {
+        if let Some(clip) = clip {
+            self.0[54..64].copy_from_slice(&clip.uniform_rows());
+        }
+    }
+
+    /// The coverage mask, read by the shader variant of a draw under one:
+    /// where its corner lies, the pixels it spans and what one of them is
+    /// of its image, in the halves of the scissor matrix's columns that no
+    /// shader reads, and beside the conic angle whether it takes a pixel
+    /// whole or not at all.
+    pub fn set_clip_mask(&mut self, mask: Option<&MaskCoverage>) {
+        if let Some(mask) = mask {
+            self.0[2..4].copy_from_slice(&mask.origin);
+            self.0[6..8].copy_from_slice(&mask.size);
+            self.0[10..12].copy_from_slice(&mask.texel);
+            self.0[53] = f32::from(u8::from(mask.hard));
+        }
+    }
 }
 
 impl From<&Params> for UniformArray {
@@ -207,6 +226,8 @@ impl From<&Params> for UniformArray {
         arr.set_image_blur_filter_sigma(params.image_blur_filter_sigma);
         arr.set_image_blur_filter_coeff(params.image_blur_filter_coeff);
         arr.set_conic_start_angle(params.conic_start_angle);
+        arr.set_clip(params.clip.as_ref());
+        arr.set_clip_mask(params.clip_mask.as_ref());
 
         arr
     }
@@ -252,10 +273,88 @@ const SAMPLER_FLAGS: crate::ImageFlags = crate::ImageFlags::REPEAT_X
 
 type SamplerCache = Rc<RefCell<HashMap<crate::ImageFlags, wgpu::Sampler>>>;
 
+/// Pipelines kept between flushes. Above this, a flush evicts the least recently used. Large enough to keep the
+/// pipelines of views that are not being drawn.
+const PIPELINE_CACHE_CAPACITY: usize = 512;
+
+/// Flushes a pipeline stays protected after its last use, even above `PIPELINE_CACHE_CAPACITY`. A frame is several
+/// flushes when the app draws layers, so this keeps a whole frame's pipelines, and views that alternate within a
+/// few frames.
+const PIPELINE_RECENT_FLUSHES: u64 = 64;
+
 #[derive(Debug)]
 struct CachedPipeline {
     pipeline: wgpu::RenderPipeline,
-    accessed: bool,
+    last_used: u64,
+}
+
+/// Evicts the entries whose `last_used` flush is oldest until at most `PIPELINE_CACHE_CAPACITY` remain, but none
+/// used within the last `PIPELINE_RECENT_FLUSHES` flushes: a frame that binds more states than that keeps them all.
+fn evict_least_recently_used<K: Clone + Eq + std::hash::Hash, V>(
+    cache: &mut HashMap<K, V>,
+    flush: u64,
+    last_used: impl Fn(&V) -> u64,
+) {
+    if cache.len() <= PIPELINE_CACHE_CAPACITY {
+        return;
+    }
+    let excess = cache.len() - PIPELINE_CACHE_CAPACITY;
+    let mut unused: Vec<(u64, K)> = cache
+        .iter()
+        .filter(|(_, value)| flush.saturating_sub(last_used(value)) > PIPELINE_RECENT_FLUSHES)
+        .map(|(key, value)| (last_used(value), key.clone()))
+        .collect();
+    unused.sort_unstable_by_key(|&(stamp, _)| stamp);
+    for (_, key) in unused.into_iter().take(excess) {
+        cache.remove(&key);
+    }
+}
+
+#[cfg(test)]
+mod pipeline_eviction_tests {
+    use super::{evict_least_recently_used, PIPELINE_CACHE_CAPACITY, PIPELINE_RECENT_FLUSHES};
+    use std::collections::HashMap;
+
+    /// Up to capacity a flush evicts nothing, one past it evicts the pipeline used longest ago, and a flush never
+    /// evicts a pipeline used within the last `PIPELINE_RECENT_FLUSHES` flushes.
+    #[test]
+    fn pipelines_are_evicted_only_past_capacity_least_recently_used_first() {
+        for len in PIPELINE_CACHE_CAPACITY - 1..=PIPELINE_CACHE_CAPACITY + 1 {
+            // Pipeline `i` was last bound in flush `i`; the current flush, a lone clear, rebinds only pipeline 0.
+            let flush = len as u64;
+            let mut cache: HashMap<usize, u64> = (0..len).map(|i| (i, i as u64)).collect();
+            cache.insert(0, flush);
+            evict_least_recently_used(&mut cache, flush, |&last_used| last_used);
+            assert_eq!(cache.len(), len.min(PIPELINE_CACHE_CAPACITY), "pipelines kept of {len}");
+            if len > PIPELINE_CACHE_CAPACITY {
+                assert!(!cache.contains_key(&1), "pipeline 1, used longest ago, was kept");
+            }
+        }
+
+        let len = PIPELINE_CACHE_CAPACITY + 1;
+        let mut cache: HashMap<usize, u64> = (0..len).map(|i| (i, 1)).collect();
+        evict_least_recently_used(&mut cache, 1, |&last_used| last_used);
+        assert_eq!(cache.len(), len, "a flush binding {len} states evicted some of them");
+
+        // Past capacity, the oldest pipeline is kept while its last use is within PIPELINE_RECENT_FLUSHES flushes,
+        // and evicted once it is one flush older than that.
+        let flush = PIPELINE_RECENT_FLUSHES + 2;
+        let mut cache: HashMap<usize, u64> = (0..len).map(|i| (i, flush - 1)).collect();
+        cache.insert(1, flush - PIPELINE_RECENT_FLUSHES);
+        evict_least_recently_used(&mut cache, flush, |&last_used| last_used);
+        assert_eq!(
+            cache.len(),
+            len,
+            "pipeline 1, used {PIPELINE_RECENT_FLUSHES} flushes ago, was evicted"
+        );
+        cache.insert(1, flush - PIPELINE_RECENT_FLUSHES - 1);
+        evict_least_recently_used(&mut cache, flush, |&last_used| last_used);
+        assert!(
+            !cache.contains_key(&1),
+            "pipeline 1, used {} flushes ago, was kept",
+            PIPELINE_RECENT_FLUSHES + 1
+        );
+    }
 }
 
 /// WGPU renderer.
@@ -275,12 +374,13 @@ pub struct WGPURenderer {
     vertex_buffer: wgpu::Buffer,
     stencil_buffer: Option<wgpu::Texture>,
     stencil_buffer_for_textures: HashMap<wgpu::Texture, wgpu::Texture>,
-    bind_group_layout: wgpu::BindGroupLayout,
     viewport_bind_group_layout: wgpu::BindGroupLayout,
-    pipeline_layout: wgpu::PipelineLayout,
+    /// Without and with a coverage mask.
+    draw_layouts: [DrawLayout; 2],
     pipeline_cache: Rc<RefCell<HashMap<PipelineState, CachedPipeline>>>,
     /// Built on the first upload of an image with `GENERATE_MIPMAPS`.
     mipmaps: Option<MipmapGenerator>,
+    flush_count: u64,
 }
 
 /// Rasterizes an image element into an offscreen canvas at the given size.
@@ -427,59 +527,7 @@ impl WGPURenderer {
             }],
         });
 
-        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            label: None,
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: true,
-                        min_binding_size: wgpu::BufferSize::new(UNIFORM_BYTES),
-                    },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        multisampled: false,
-                    },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 2,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 3,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        multisampled: false,
-                    },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 4,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                    count: None,
-                },
-            ],
-        });
-
-        let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: None,
-            bind_group_layouts: &[Some(&viewport_bind_group_layout), Some(&bind_group_layout)],
-            immediate_size: 0,
-        });
+        let draw_layouts = [false, true].map(|mask| DrawLayout::new(&device, &viewport_bind_group_layout, mask));
 
         Self {
             device,
@@ -496,11 +544,11 @@ impl WGPURenderer {
             vertex_buffer,
             stencil_buffer: None,
             stencil_buffer_for_textures: HashMap::new(),
-            bind_group_layout,
             viewport_bind_group_layout,
-            pipeline_layout,
+            draw_layouts,
             pipeline_cache: Default::default(),
             mipmaps: None,
+            flush_count: 0,
         }
     }
 
@@ -693,6 +741,7 @@ impl Renderer for WGPURenderer {
         if commands.is_empty() {
             return None;
         }
+        self.flush_count += 1;
 
         // The bind groups recorded below hold this buffer, so it cannot grow mid-frame.
         let needed_slots = commands.len() as u64 * UNIFORM_SLOTS_PER_COMMAND;
@@ -777,13 +826,14 @@ impl Renderer for WGPURenderer {
             self.uniform_buffer.clone(),
             self.uniform_stride,
             self.shader_module.clone(),
-            self.bind_group_layout.clone(),
-            self.pipeline_layout.clone(),
+            self.draw_layouts.clone(),
             self.pipeline_cache.clone(),
+            self.flush_count,
         );
 
         let mut current_render_target = RenderTarget::Screen;
         for command in commands {
+            render_pass_builder.set_clip_bounds(&command);
             match command.cmd_type {
                 super::CommandType::SetRenderTarget(render_target) => {
                     current_render_target = render_target;
@@ -927,9 +977,11 @@ impl Renderer for WGPURenderer {
 
         let command_buffer = encoder.finish();
 
-        self.pipeline_cache
-            .borrow_mut()
-            .retain(|_, cached_pipeline| std::mem::replace(&mut cached_pipeline.accessed, false));
+        evict_least_recently_used(
+            &mut self.pipeline_cache.borrow_mut(),
+            self.flush_count,
+            |cached_pipeline| cached_pipeline.last_used,
+        );
 
         Some(command_buffer)
     }
@@ -1218,7 +1270,10 @@ fn separable_filter(
         params.feather = 1.0;
     }
 
-    if let Some((start, count)) = command.triangles_verts {
+    if let Some((start, count)) = command
+        .triangles_verts
+        .filter(|_| render_pass_builder.crop(command.crop))
+    {
         pipeline_and_bindgroup_mapper.update_renderpass(
             render_pass_builder,
             blend_state,
@@ -1336,7 +1391,10 @@ fn single_pass_filter(
 
     render_pass_builder.set_filter_target_image(images, target_image, wgpu::LoadOp::Clear(wgpu::Color::default()));
 
-    if let Some((start, count)) = command.triangles_verts {
+    if let Some((start, count)) = command
+        .triangles_verts
+        .filter(|_| render_pass_builder.crop(command.crop))
+    {
         pipeline_and_bindgroup_mapper.update_renderpass(
             render_pass_builder,
             blend_state,
@@ -2016,6 +2074,10 @@ struct PipelineState {
     primitive_topology: wgpu::PrimitiveTopology,
     cull_mode: Option<wgpu::Face>,
     stencil_state: Option<wgpu::StencilState>,
+    /// The draw is under a clip shape, which only its fragment entry point evaluates.
+    clip_shape: bool,
+    /// The draw is under a coverage mask, which only its fragment entry point reads.
+    clip_mask: bool,
 }
 
 impl PipelineState {
@@ -2061,6 +2123,8 @@ impl PipelineState {
             primitive_topology,
             cull_mode,
             stencil_state: has_stencil_buffer.then_some(stencil_state),
+            clip_shape: false,
+            clip_mask: false,
         }
     }
 
@@ -2078,11 +2142,19 @@ impl PipelineState {
             primitive_topology,
             cull_mode,
             stencil_state,
+            clip_shape,
+            clip_mask,
         } = self;
         let vertex_entry_point = if *render_to_texture {
             "vs_main_texture"
         } else {
             "vs_main"
+        };
+        let fragment_entry_point = match (*clip_shape, *clip_mask) {
+            (false, false) => "fs_main",
+            (true, false) => "fs_main_clip",
+            (false, true) => "fs_main_mask",
+            (true, true) => "fs_main_clip_mask",
         };
 
         device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -2100,7 +2172,7 @@ impl PipelineState {
             },
             fragment: Some(wgpu::FragmentState {
                 module: shader_module,
-                entry_point: Some("fs_main"),
+                entry_point: Some(fragment_entry_point),
                 compilation_options: Default::default(),
                 targets: &[Some(color_target_state.clone())],
             }),
@@ -2128,10 +2200,90 @@ impl PipelineState {
     }
 }
 
+/// The layout of the draws' second bind group - their uniforms, image and glyph texture, and under a coverage mask
+/// the mask - and the pipeline layout over it and the viewport's. A draw under no mask binds no mask texture: the
+/// group is bound again for every draw's uniforms, and a binding more costs each of those binds.
+#[derive(Clone, Debug)]
+struct DrawLayout {
+    bind_group: wgpu::BindGroupLayout,
+    pipeline: wgpu::PipelineLayout,
+}
+
+impl DrawLayout {
+    fn new(device: &wgpu::Device, viewport_bind_group_layout: &wgpu::BindGroupLayout, mask: bool) -> Self {
+        let entries = [
+            wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: true,
+                    min_binding_size: wgpu::BufferSize::new(UNIFORM_BYTES),
+                },
+                count: None,
+            },
+            wgpu::BindGroupLayoutEntry {
+                binding: 1,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Texture {
+                    sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled: false,
+                },
+                count: None,
+            },
+            wgpu::BindGroupLayoutEntry {
+                binding: 2,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                count: None,
+            },
+            wgpu::BindGroupLayoutEntry {
+                binding: 3,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Texture {
+                    sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled: false,
+                },
+                count: None,
+            },
+            wgpu::BindGroupLayoutEntry {
+                binding: 4,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                count: None,
+            },
+            // The coverage mask of a clip, read texel by texel.
+            wgpu::BindGroupLayoutEntry {
+                binding: 5,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Texture {
+                    sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    multisampled: false,
+                },
+                count: None,
+            },
+        ];
+        let bind_group = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: None,
+            entries: &entries[..if mask { 6 } else { 5 }],
+        });
+        let pipeline = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: None,
+            bind_group_layouts: &[Some(viewport_bind_group_layout), Some(&bind_group)],
+            immediate_size: 0,
+        });
+        Self { bind_group, pipeline }
+    }
+}
+
 #[derive(Clone, PartialEq)]
 struct BindGroupState {
     image: Option<ImageId>,
     glyph_texture: GlyphTexture,
+    clip_mask: Option<ImageId>,
 }
 
 impl BindGroupState {
@@ -2159,38 +2311,53 @@ impl BindGroupState {
             sampler_cache,
         );
 
-        if main_texture_view.is_external() || glyph_texture_view.is_external() {
+        // The empty texture stands in for no mask, and the layout without a
+        // mask takes no entry for it.
+        let (clip_mask_view, _) = RenderPassBuilder::create_binding_resource_and_sampler(
+            device,
+            images,
+            self.clip_mask.as_ref(),
+            empty_texture_view,
+            sampler_cache,
+        );
+
+        if main_texture_view.is_external() || glyph_texture_view.is_external() || clip_mask_view.is_external() {
             unimplemented!("External texture shaders and bind groups are not implemented yet");
         }
 
+        let entries = [
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
+                    buffer: uniform_buffer,
+                    offset: 0,
+                    size: wgpu::BufferSize::new(UNIFORM_BYTES),
+                }),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: (&main_texture_view).into(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 2,
+                resource: wgpu::BindingResource::Sampler(&main_sampler),
+            },
+            wgpu::BindGroupEntry {
+                binding: 3,
+                resource: (&glyph_texture_view).into(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 4,
+                resource: wgpu::BindingResource::Sampler(&glyph_sampler),
+            },
+            wgpu::BindGroupEntry {
+                binding: 5,
+                resource: (&clip_mask_view).into(),
+            },
+        ];
         device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
-                        buffer: uniform_buffer,
-                        offset: 0,
-                        size: wgpu::BufferSize::new(UNIFORM_BYTES),
-                    }),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: (&main_texture_view).into(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: wgpu::BindingResource::Sampler(&main_sampler),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 3,
-                    resource: (&glyph_texture_view).into(),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 4,
-                    resource: wgpu::BindingResource::Sampler(&glyph_sampler),
-                },
-            ],
+            entries: &entries[..if self.clip_mask.is_some() { 6 } else { 5 }],
             label: None,
         })
     }
@@ -2216,6 +2383,8 @@ struct RenderPassBuilder<'a> {
     current_pipeline_state: Option<PipelineState>,
     current_stencil_reference: Option<u32>,
     current_bound_offset: Option<u32>,
+    // The scissor rect set on the open pass; none is the whole target.
+    current_clip_bounds: Option<[u32; 4]>,
 }
 
 impl<'a> RenderPassBuilder<'a> {
@@ -2251,7 +2420,23 @@ impl<'a> RenderPassBuilder<'a> {
             current_pipeline_state: None,
             current_stencil_reference: None,
             current_bound_offset: None,
+            current_clip_bounds: None,
         }
+    }
+
+    /// Scissors the open pass's draws to the pixels `command`'s clip
+    /// leaves them, or to the whole target again.
+    fn set_clip_bounds(&mut self, command: &super::Command) {
+        let (width, height) = (self.viewport[0] as u32, self.viewport[1] as u32);
+        let bounds = command.clip_bounds([width, height]);
+        if self.current_clip_bounds == bounds {
+            return;
+        }
+        self.current_clip_bounds = bounds;
+        let [x, y, w, h] = bounds.unwrap_or([0, 0, width, height]);
+        // An image target stores its rows bottom up.
+        let y = if self.rendering_to_texture { height - (y + h) } else { y };
+        self.rpass.as_mut().unwrap().set_scissor_rect(x, y, w, h);
     }
 
     fn set_viewport(&mut self, viewport: [f32; 2]) {
@@ -2426,6 +2611,7 @@ impl<'a> RenderPassBuilder<'a> {
         self.current_pipeline_state = None;
         self.current_stencil_reference = None;
         self.current_bound_offset = None;
+        self.current_clip_bounds = None;
         drop(self.rpass.take());
         let stencil_view = self
             .stencil_buffer
@@ -2466,6 +2652,19 @@ impl<'a> RenderPassBuilder<'a> {
     fn draw(&mut self, vertices: std::ops::Range<u32>) {
         self.rpass.as_mut().unwrap().draw(vertices, 0..1);
     }
+
+    /// Limits the open pass to `crop` - x, y, width and height in the
+    /// target's texel rows - and says whether that leaves anything to draw.
+    fn crop(&mut self, crop: Option<[u32; 4]>) -> bool {
+        let Some([x, y, width, height]) = crop else {
+            return true;
+        };
+        if width == 0 || height == 0 {
+            return false;
+        }
+        self.rpass.as_mut().unwrap().set_scissor_rect(x, y, width, height);
+        true
+    }
 }
 
 struct CommandToPipelineAndBindGroupMapper {
@@ -2480,9 +2679,10 @@ struct CommandToPipelineAndBindGroupMapper {
 
     current_bind_group_state: Option<BindGroupState>,
     current_bind_group: Option<wgpu::BindGroup>,
-    bind_group_layout: wgpu::BindGroupLayout,
+    /// Without and with a coverage mask.
+    draw_layouts: [DrawLayout; 2],
     pipeline_cache: Rc<RefCell<HashMap<PipelineState, CachedPipeline>>>,
-    pipeline_layout: wgpu::PipelineLayout,
+    flush_count: u64,
 }
 
 impl CommandToPipelineAndBindGroupMapper {
@@ -2493,9 +2693,9 @@ impl CommandToPipelineAndBindGroupMapper {
         uniform_buffer: wgpu::Buffer,
         uniform_stride: u64,
         shader_module: Rc<wgpu::ShaderModule>,
-        bind_group_layout: wgpu::BindGroupLayout,
-        pipeline_layout: wgpu::PipelineLayout,
+        draw_layouts: [DrawLayout; 2],
         pipeline_cache: Rc<RefCell<HashMap<PipelineState, CachedPipeline>>>,
+        flush_count: u64,
     ) -> Self {
         Self {
             device: device.clone(),
@@ -2508,9 +2708,9 @@ impl CommandToPipelineAndBindGroupMapper {
             shader_module,
             current_bind_group_state: None,
             current_bind_group: None,
-            bind_group_layout,
+            draw_layouts,
             pipeline_cache,
-            pipeline_layout,
+            flush_count,
         }
     }
 
@@ -2537,7 +2737,11 @@ impl CommandToPipelineAndBindGroupMapper {
             render_pass_builder.current_stencil_reference = Some(stencil_reference);
         }
 
-        let bind_group_state = BindGroupState { image, glyph_texture };
+        let bind_group_state = BindGroupState {
+            image,
+            glyph_texture,
+            clip_mask: params.clip_mask.map(|mask| mask.image),
+        };
 
         let bind_group_changed = self.current_bind_group_state != Some(bind_group_state.clone());
         if bind_group_changed {
@@ -2545,7 +2749,7 @@ impl CommandToPipelineAndBindGroupMapper {
                 .materialize(
                     &self.device,
                     images,
-                    &self.bind_group_layout,
+                    &self.draw_layouts[usize::from(bind_group_state.clip_mask.is_some())].bind_group,
                     &self.empty_texture_view,
                     &self.sampler_cache,
                     &self.uniform_buffer,
@@ -2569,7 +2773,7 @@ impl CommandToPipelineAndBindGroupMapper {
             render_pass_builder.current_bound_offset = Some(offset);
         }
 
-        let pipeline_state = PipelineState::new(
+        let mut pipeline_state = PipelineState::new(
             color_blend,
             stencil_test,
             render_pass_builder.surface_format,
@@ -2578,18 +2782,23 @@ impl CommandToPipelineAndBindGroupMapper {
             cull_mode,
             render_pass_builder.stencil_buffer.is_some(),
         );
+        // Set in place: a copy of the state with the flags changed was slower
+        // to hash, by 1.3 % of the time 600 unclipped fills take to encode.
+        pipeline_state.clip_shape = params.clip.is_some();
+        pipeline_state.clip_mask = params.clip_mask.is_some();
 
-        // An unchanged pipeline was looked up, and marked accessed, when it was bound.
+        // An unchanged pipeline was looked up, and stamped with this flush, when it was bound.
         if render_pass_builder.current_pipeline_state.as_ref() != Some(&pipeline_state) {
             let mut pipeline_cache = self.pipeline_cache.borrow_mut();
             let render_pipeline = pipeline_cache.entry(pipeline_state.clone()).or_insert_with(|| {
-                let pipeline = pipeline_state.materialize(&self.device, &self.pipeline_layout, &self.shader_module);
+                let layout = &self.draw_layouts[usize::from(pipeline_state.clip_mask)].pipeline;
+                let pipeline = pipeline_state.materialize(&self.device, layout, &self.shader_module);
                 CachedPipeline {
                     pipeline,
-                    accessed: false,
+                    last_used: self.flush_count,
                 }
             });
-            render_pipeline.accessed = true;
+            render_pipeline.last_used = self.flush_count;
             render_pass.set_pipeline(&render_pipeline.pipeline);
             render_pass_builder.current_pipeline_state = Some(pipeline_state);
         }

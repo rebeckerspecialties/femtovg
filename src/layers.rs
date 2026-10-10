@@ -769,15 +769,12 @@ where
             source_alpha: alpha,
             contribution: true,
         };
-        self.filter_image_with_scratch(
-            target,
-            blend,
-            source,
-            None,
-            Some((images.backdrop, pass)),
-            Fused::default(),
-        )
-        .then_some(target)
+        let draw = PassDraw {
+            backdrop: Some((images.backdrop, pass)),
+            ..PassDraw::default()
+        };
+        self.filter_image_with_scratch(target, blend, source, None, draw)
+            .then_some(target)
     }
 
     /// Puts the current state into the shape every offscreen pass draws
@@ -985,8 +982,7 @@ where
                             ImageFilter::luminance_to_alpha(),
                             images.normalized,
                             None,
-                            None,
-                            Fused::default(),
+                            PassDraw::default(),
                         );
                         converted
                     }
@@ -1048,7 +1044,7 @@ fn a_rounded_scissor_clips_a_layer_once_at_its_composite() {
         canvas.rounded_scissor(10.0, 10.0, 40.0, 20.0, 5.0); // centered on root (30, 20)
         assert!(canvas.begin_layer(effects));
         assert_eq!(canvas.layers.last().unwrap().origin, origin);
-        fill_rect_with_current_scissor(&mut canvas);
+        fill_across_current_scissor(&mut canvas);
         {
             let commands = recorded_commands.borrow();
             let params = first_draw_params(&commands);

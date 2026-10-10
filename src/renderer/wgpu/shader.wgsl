@@ -21,6 +21,18 @@ struct Params {
     // is frag[13].x in the flat uniform array written from Rust.
     scissor_radius: f32,
     conic_start_angle: f32,
+    // Whether the coverage mask of a draw under one takes a pixel whole or
+    // not at all (see clipMaskCoverage). Where the mask's corner lies and
+    // the pixels it spans are scissor_mat[0].zw and scissor_mat[1].zw, which
+    // the scissor does not read; scissor_mat[2].zw is one of them as a share
+    // of the mask's image, for a backend that cannot read a texel by index.
+    clip_mask_hard: f32,
+    // The clip shape of a draw under one (see clipMask): where its corners'
+    // ellipses are centered, the rows of the map from device pixels to its
+    // frame, and that map's offset with the half extents plus half a fringe.
+    clip_inner: vec2<f32>,
+    clip_linear: vec4<f32>,
+    clip_offset_outer: vec4<f32>,
 }
 
 const SHADER_TYPE_FillGradient: i32 = 0;
@@ -107,9 +119,35 @@ var glyph_texture: texture_2d<f32>;
 @binding(4)
 var glyph_sampler: sampler;
 
+@group(1)
+@binding(5)
+var clip_mask_texture: texture_2d<f32>;
+
 
 @fragment
 fn fs_main(vertex: VertexOutput) -> @location(0) vec4<f32> {
+    return shade(vertex, 1.0);
+}
+
+// The entry point of a draw under a clip shape: no other draw evaluates one.
+@fragment
+fn fs_main_clip(vertex: VertexOutput) -> @location(0) vec4<f32> {
+    return shade(vertex, clipMask(vertex.fpos));
+}
+
+// The entry points of a draw under a coverage mask, and under a mask and a
+// shape: no other draw reads one.
+@fragment
+fn fs_main_mask(vertex: VertexOutput) -> @location(0) vec4<f32> {
+    return shade(vertex, clipMaskCoverage(vertex.fpos));
+}
+
+@fragment
+fn fs_main_clip_mask(vertex: VertexOutput) -> @location(0) vec4<f32> {
+    return shade(vertex, clipMask(vertex.fpos) * clipMaskCoverage(vertex.fpos));
+}
+
+fn shade(vertex: VertexOutput, clip: f32) -> vec4<f32> {
     var result: vec4<f32>;
     let shader_type_int: i32 = i32(params.shader_type);
 
@@ -197,7 +235,7 @@ fn fs_main(vertex: VertexOutput) -> @location(0) vec4<f32> {
         }
     }
 
-    var scissor: f32 = scissorMask(vertex.fpos, params);
+    var scissor: f32 = scissorMask(vertex.fpos, params) * clip;
 
     if (params.glyph_texture_type != 0.0) {
         // Textured tris
@@ -319,10 +357,14 @@ fn renderGradientTwoPointRadial(vertex: VertexOutput, params: Params) -> vec4<f3
 
 fn renderImageGradientTwoPointRadial(vertex: VertexOutput, params: Params) -> vec4<f32> {
     let r: RadialT = radialTwoPointT(vertex, params);
+    // textureSample() has to come before the early return: WGSL allows it
+    // only in uniform control flow, and r.covered differs between fragments.
+    // Chrome rejects the shader module otherwise; naga accepts it either way.
+    let color: vec4<f32> = textureSample(image_texture, image_sampler, vec2<f32>(r.t, 0.0));
     if (!r.covered) {
         return vec4<f32>(0.0);
     }
-    return ditherGradient(textureSample(image_texture, image_sampler, vec2<f32>(r.t, 0.0)), vertex.position.xy);
+    return ditherGradient(color, vertex.position.xy);
 }
 
 fn sdroundrect(pt: vec2<f32>, ext: vec2<f32>, rad: f32) -> f32 {
@@ -342,6 +384,45 @@ fn scissorMask(p: vec2<f32>, params: Params) -> f32 {
     var sc: vec2<f32> = (abs((params.scissor_mat * vec3<f32>(p,1.0)).xy) - params.scissor_ext);
     sc = vec2(0.5,0.5) - sc * params.scissor_scale;
     return clamp(sc.x,0.0,1.0) * clamp(sc.y,0.0,1.0);
+}
+
+// The clip taken as a shape: coverage of a box with elliptical corners, in
+// a frame where one unit is one fringe width across each side. Past a
+// corner's center the distance is the first-order one to its ellipse, exact
+// for a circle: k1 is one on the ellipse, and its gradient in device pixels
+// is g along the frame's rows - unit vectors, at a right angle only without
+// a skew. A box with square corners has their centers out of reach.
+fn clipMask(p: vec2<f32>) -> f32 {
+    let at = vec2<f32>(dot(params.clip_linear.xy, p), dot(params.clip_linear.zw, p)) + params.clip_offset_outer.xy;
+    let reach = abs(at);
+    let corner = reach - params.clip_inner;
+    if (corner.x > 0.0 && corner.y > 0.0) {
+        let radii = params.clip_offset_outer.zw - vec2<f32>(0.5, 0.5) - params.clip_inner;
+        let k = corner / radii;
+        let k1 = length(k);
+        let g = k / radii;
+        let lean = dot(params.clip_linear.xy, params.clip_linear.zw) * sign(at.x) * sign(at.y);
+        return clamp(0.5 - (k1 - 1.0) * k1 / sqrt(dot(g, g) + 2.0 * g.x * g.y * lean), 0.0, 1.0);
+    }
+    let cover = clamp(params.clip_offset_outer.zw - reach, vec2<f32>(0.0, 0.0), vec2<f32>(1.0, 1.0));
+    return cover.x * cover.y;
+}
+
+// The clip taken as a coverage mask: the texel under the fragment, of a mask
+// that holds one for each pixel of the clip's bounds and nothing along its
+// border - what a fragment past the mask reads. An operation that coverage
+// cannot bound takes the pixels the clip covers by half or more, whole.
+fn clipMaskCoverage(p: vec2<f32>) -> f32 {
+    let size = params.scissor_mat[1].zw;
+    let at = clamp(p - params.scissor_mat[0].zw, vec2<f32>(0.5, 0.5), size - vec2<f32>(0.5, 0.5));
+    let coverage = textureLoad(clip_mask_texture, vec2<i32>(at), 0).r;
+    if (params.clip_mask_hard != 0.0) {
+        if (coverage < 0.5) {
+            discard;
+        }
+        return 1.0;
+    }
+    return coverage;
 }
 
 // Stroke - from [0..1] to clipped pyramid, where the slope is 1px.

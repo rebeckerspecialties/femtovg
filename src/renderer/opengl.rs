@@ -45,8 +45,14 @@ pub struct OpenGl {
     main_programs_with_glyph_texture: [Option<MainProgram>; 18],
     // Same shader programs but with has_glyph_texture being false
     main_programs_without_glyph_texture: [Option<MainProgram>; 18],
+    // The programs of draws under a clip shape, by shader type and glyph texture use, each built when first drawn
+    // with (None if that failed): no other program evaluates a shape, and few of them are ever drawn under one.
+    clip_programs: FnvHashMap<(u8, bool, (bool, bool)), Option<MainProgram>>,
+    // The scissor rect of the draws under a clip; none is no scissor.
+    current_clip_bounds: Option<[u32; 4]>,
     current_program: u8,
     current_program_needs_glyph_texture: bool,
+    current_program_clips: (bool, bool),
     vert_arr: Option<<glow::Context as glow::HasContext>::VertexArray>,
     vert_buff: Option<<glow::Context as glow::HasContext>::Buffer>,
     framebuffers: FnvHashMap<ImageId, Result<Framebuffer, ErrorKind>>,
@@ -269,6 +275,18 @@ impl OpenGl {
 
         let main_programs_with_glyph_texture = generate_shader_program_variants(true)?;
         let main_programs_without_glyph_texture = generate_shader_program_variants(false)?;
+        // One of them now: a driver that cannot build the clip shape's code fails here, not at a draw.
+        let mut clip_programs = FnvHashMap::default();
+        clip_programs.insert(
+            (ShaderType::FillColor.to_u8(), false, (true, true)),
+            Some(MainProgram::with_clip(
+                &context,
+                antialias,
+                ShaderType::FillColor,
+                false,
+                (true, true),
+            )?),
+        );
 
         let mut opengl = Self {
             debug,
@@ -278,8 +296,11 @@ impl OpenGl {
             screen_view: [0.0, 0.0],
             main_programs_with_glyph_texture,
             main_programs_without_glyph_texture,
+            clip_programs,
+            current_clip_bounds: None,
             current_program: 0,
             current_program_needs_glyph_texture: true,
+            current_program_clips: (false, false),
             vert_arr: None,
             vert_buff: None,
             framebuffers: HashMap::default(),
@@ -728,6 +749,14 @@ impl OpenGl {
             self.context.bind_texture(glow::TEXTURE_2D, glyphtex);
         }
 
+        if let Some(mask) = paint.clip_mask {
+            let cliptex = images.get(mask.image).map(GlTexture::id);
+            unsafe {
+                self.context.active_texture(glow::TEXTURE0 + 2);
+                self.context.bind_texture(glow::TEXTURE_2D, cliptex);
+            }
+        }
+
         self.check_error("set_uniforms texture");
     }
 
@@ -755,6 +784,31 @@ impl OpenGl {
             self.context.clear(glow::COLOR_BUFFER_BIT | glow::STENCIL_BUFFER_BIT);
             self.context.stencil_mask(0xff);
             self.context.disable(glow::SCISSOR_TEST);
+        }
+    }
+
+    /// Limits the draws that follow to `crop` - x, y, width and height in
+    /// the target's texel rows - until [`end_crop`](Self::end_crop), and says
+    /// whether that leaves anything to draw.
+    fn begin_crop(&self, crop: Option<[u32; 4]>) -> bool {
+        let Some([x, y, width, height]) = crop else {
+            return true;
+        };
+        if width == 0 || height == 0 {
+            return false;
+        }
+        unsafe {
+            self.context.enable(glow::SCISSOR_TEST);
+            self.context.scissor(x as i32, y as i32, width as i32, height as i32);
+        }
+        true
+    }
+
+    fn end_crop(&self, crop: Option<[u32; 4]>) {
+        if crop.is_some() {
+            unsafe {
+                self.context.disable(glow::SCISSOR_TEST);
+            }
         }
     }
 
@@ -899,7 +953,10 @@ impl OpenGl {
             Color::rgbaf(0., 0., 0., 0.),
             false,
         );
-        self.triangles(images, &cmd, &params);
+        if self.begin_crop(cmd.crop) {
+            self.triangles(images, &cmd, &params);
+        }
+        self.end_crop(cmd.crop);
 
         self.set_target(images, original_render_target);
         self.main_program().set_view(self.view);
@@ -990,7 +1047,10 @@ impl OpenGl {
 
         cmd.image = Some(horizontal_buffer);
 
-        self.triangles(images, &cmd, &params);
+        if self.begin_crop(cmd.crop) {
+            self.triangles(images, &cmd, &params);
+        }
+        self.end_crop(cmd.crop);
 
         // restore previous render target and view
         self.set_target(images, original_render_target);
@@ -1035,7 +1095,41 @@ impl OpenGl {
         });
     }
 
+    /// Scissors the draws that follow to `bounds` - x, y, width and height
+    /// from the target's top left - or lifts the scissor.
+    fn set_clip_bounds(&mut self, bounds: Option<[u32; 4]>) {
+        if self.current_clip_bounds == bounds {
+            return;
+        }
+        self.current_clip_bounds = bounds;
+        unsafe {
+            match bounds {
+                Some([x, y, width, height]) => {
+                    self.context.enable(glow::SCISSOR_TEST);
+                    self.context.scissor(
+                        x as i32,
+                        self.view[1] as i32 - (y + height) as i32,
+                        width as i32,
+                        height as i32,
+                    );
+                }
+                None => self.context.disable(glow::SCISSOR_TEST),
+            }
+        }
+    }
+
     fn main_program(&self) -> &MainProgram {
+        if self.current_program_clips != (false, false) {
+            return self
+                .clip_programs
+                .get(&(
+                    self.current_program,
+                    self.current_program_needs_glyph_texture,
+                    self.current_program_clips,
+                ))
+                .and_then(Option::as_ref)
+                .expect("internal error: clip program selected before it was built");
+        }
         let programs = if self.current_program_needs_glyph_texture {
             &self.main_programs_with_glyph_texture
         } else {
@@ -1046,10 +1140,31 @@ impl OpenGl {
             .expect("internal error: invalid shader program selected for given paint")
     }
 
+    /// Whether the program for `params` under `clips` - a clip shape, a coverage mask - is there, building it when
+    /// first asked for. Start-up built one, so the driver can; what fails later is a lost context, which draws
+    /// nothing with any program.
+    fn has_clip_program(&mut self, params: &Params, clips: (bool, bool)) -> bool {
+        let (context, antialias) = (&self.context, self.antialias);
+        let (shader_type, with_glyph_texture) = (params.shader_type, params.uses_glyph_texture());
+        self.clip_programs
+            .entry((shader_type.to_u8(), with_glyph_texture, clips))
+            .or_insert_with(|| {
+                MainProgram::with_clip(context, antialias, shader_type, with_glyph_texture, clips)
+                    .map_err(|error| log::error!("clip program for {shader_type:?}: {error}"))
+                    .ok()
+            })
+            .is_some()
+    }
+
     fn select_main_program(&mut self, params: &Params) {
         let program_index = params.shader_type.to_u8();
+        let mut clips = (params.clip.is_some(), params.clip_mask.is_some());
+        if clips != (false, false) && !self.has_clip_program(params, clips) {
+            clips = (false, false);
+        }
         if program_index != self.current_program
             || params.uses_glyph_texture() != self.current_program_needs_glyph_texture
+            || clips != self.current_program_clips
         {
             unsafe {
                 self.context.active_texture(glow::TEXTURE0);
@@ -1061,12 +1176,14 @@ impl OpenGl {
             self.main_program().unbind();
             self.current_program = program_index;
             self.current_program_needs_glyph_texture = params.uses_glyph_texture();
+            self.current_program_clips = clips;
 
             let program = self.main_program();
             program.bind();
             // Bind the two uniform samplers to texture units
             program.set_tex(0);
             program.set_glyphtex(1);
+            program.set_cliptex(2);
             program.set_view(self.view);
         }
     }
@@ -1102,6 +1219,7 @@ impl Renderer for OpenGl {
         commands: Vec<Command>,
     ) {
         self.current_program = 0;
+        self.current_program_clips = (false, false);
         self.main_program().bind();
 
         unsafe {
@@ -1147,6 +1265,7 @@ impl Renderer for OpenGl {
         self.check_error("render prepare");
 
         for cmd in commands {
+            self.set_clip_bounds(cmd.clip_bounds([self.view[0] as u32, self.view[1] as u32]));
             self.set_composite_operation(cmd.composite_operation);
 
             match cmd.cmd_type {
@@ -1187,6 +1306,9 @@ impl Renderer for OpenGl {
                 }
             }
         }
+
+        // No scissor of a clipped draw outlives the frame.
+        self.set_clip_bounds(None);
 
         unsafe {
             self.context.disable_vertex_attrib_array(0);

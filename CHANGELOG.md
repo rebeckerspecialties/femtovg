@@ -9,6 +9,10 @@ All notable changes to this project will be documented in this file.
   `BlendFactor` is a subset of what the backends expose - so adding to either
   should not be a breaking change. Downstream `match`es on them now need a
   wildcard arm.
+- Fixed the WGPU backend rebuilding render pipelines every frame when a frame
+  takes several flushes: each flush dropped every pipeline it did not use.
+  Pipelines now stay cached across flushes, and past 512 the least recently
+  used are dropped first.
 - Fixed the WGPU backend ignoring `ImageFlags::GENERATE_MIPMAPS`: an image
   created with it now gets its mip levels, filled after every upload the way
   the OpenGL backend's `glGenerateMipmap` fills them, and is sampled with
@@ -22,8 +26,9 @@ All notable changes to this project will be documented in this file.
   bitmap glyphs (color emoji) is drawn outside the glyph atlas: under a
   rotated, skewed, flipped or non-uniformly scaled transform, larger than 92
   pixels, or scaled with a gradient or image paint.
-- Added `ImageFilter::Morphology` and `ImageFilter::Offset`, the SVG
-  `feMorphology` and `feOffset` primitives: a dilation grows the opaque
+- Added `ImageFilter::Morphology`, `ImageFilter::Offset` and
+  `ImageFilter::Crop`, the SVG `feMorphology` and `feOffset` primitives and
+  the subregion a primitive's result is clipped to: a dilation grows the opaque
   regions of an image by a whole-pixel radius per axis and an erosion
   shrinks them (the per-channel maximum or minimum within the radius, as
   two draws like the blur, a radius above the 24 pixels one draw covers
@@ -33,7 +38,9 @@ All notable changes to this project will be documented in this file.
   erosion reads that far beyond the store - and by an offset's shift, as it
   does by a blur's reach. Together with `SourceAlpha` as a color matrix they run the spread
   shadow chain Sketch exports (`feMorphology`, `feOffset`, `feGaussianBlur`,
-  `feColorMatrix`) as one layer filter.
+  `feColorMatrix`) as one layer filter. A crop leaves an image transparent
+  outside a rectangle; after another filter of a chain it is that filter's
+  pass drawn inside the rectangle, at no pass of its own.
 - A Gaussian blur whose standard deviation on an axis is above the 8 device
   pixels one shader pass covers now runs at a downsampled size, the way
   Skia's GPU blur does: a filter chain, a layer filter or a shadow halves
@@ -145,15 +152,25 @@ All notable changes to this project will be documented in this file.
   stop's color, as SVG's default `spreadMethod="pad"` and Canvas gradients
   render it. Showed as a wedge cut out of the Firefox logo's flame.
 - Added `Canvas::clip_path(path, fill_rule)`, which clips later drawing to any
-  path under the current transform - Canvas 2D `clip()` and SVG `clip-path`
-  with `clip-rule` - and is scoped by `save()`/`restore()`. Clips use a bit of
-  the stencil buffer both backends already have, so they add no textures or
-  render passes; a clip taken while drawing into a layer lives on the layer's
-  store and gates its content, while the clips underneath gate the composite.
-  `clear_rect()` stays a raw clear the clip does not affect; it clears the
-  stencil with the color so a winding count a cover pass missed cannot reach
-  the next frame - the whole stencil, or only the winding bits while a clip is
-  armed on the target. Clip edges are not antialiased yet.
+  path under the current transform - Canvas 2D `clip()` and SVG `clip-path` with
+  `clip-rule` - and is scoped by `save()`/`restore()`, and
+  `Canvas::clip_paths()`, which clips to the union of several paths, each under
+  its own rule, as an SVG `clipPath` with several children does. A clip's edge
+  is antialiased like a fill's and costs no render pass: a clip whose path
+  outlines a rectangle (under any transform), a rounded rectangle - rounded at
+  all four corners or at the two of one side - or an ellipse is evaluated by the
+  fragment shader of each draw under it, a rectangle that cuts such a shape
+  clips with it in the scissor's place, and any other clip is rasterized on the
+  CPU into a coverage mask of one byte a pixel that those shaders read - kept
+  while the clip does not change or moves by whole pixels, within a budget
+  (`Canvas::set_clip_mask_budget()`, 32 MiB by default). A clip the budget has
+  no room for uses a bit of the stencil buffer both backends already have, where
+  its edge is not antialiased. A clip taken while drawing into a layer lives on
+  the layer's store and gates its content, while the clips underneath gate the
+  composite. `clear_rect()` stays a raw clear the clip does not affect; it
+  clears the stencil with the color so a winding count a cover pass missed
+  cannot reach the next frame - the whole stencil, or only the winding bits
+  while a clip is armed on the target.
 - Added layer masks: `LayerEffects::with_mask()` multiplies a layer's alpha by
   a mask image placed in device space, using either its luminance times alpha
   (SVG `mask`'s default `mask-type`, via the new

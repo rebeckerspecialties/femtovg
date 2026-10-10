@@ -220,13 +220,28 @@ impl CompositeOperationState {
     }
 }
 
+impl CompositeOperationState {
+    /// Whether a source scaled by a coverage of zero leaves the destination
+    /// as it was: the destination factor is then one. `Copy`, `SourceIn`,
+    /// `SourceOut`, `DestinationIn` and `DestinationAtop` change it instead.
+    pub(crate) fn takes_coverage(&self) -> bool {
+        let kept = |factor| {
+            matches!(
+                factor,
+                BlendFactor::One | BlendFactor::OneMinusSrcAlpha | BlendFactor::OneMinusSrcColor
+            )
+        };
+        kept(self.dst_rgb) && kept(self.dst_alpha)
+    }
+}
+
 impl Default for CompositeOperationState {
     fn default() -> Self {
         Self::new(CompositeOperation::SourceOver)
     }
 }
 
-#[derive(Copy, Clone, Debug, Default)]
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
 struct Scissor {
     transform: Transform2D,
     extent: Option<[f32; 2]>,
@@ -416,6 +431,13 @@ pub struct Canvas<T: Renderer> {
     // draws into that target.
     clip_stack: Vec<ClipEntry>,
     clip_planes: HashMap<RenderTarget, ClipPlaneState>,
+    // The coverage masks of the clips that are no box.
+    clip_masks: ClipMasks,
+    // The scissor and clip shape the last draw met, as the boxes they make.
+    last_clip_boxes: Option<ClipBoxes>,
+    // Whether the last draw carried a clip shape: the shader variant the
+    // renderer has bound.
+    shape_carried: bool,
 }
 
 /// Returns the enabled text-decoration lines as `(offset, thickness)` pairs,
@@ -485,6 +507,9 @@ where
             turbulence_lattices: Vec::new(),
             clip_stack: Vec::new(),
             clip_planes: HashMap::new(),
+            clip_masks: ClipMasks::default(),
+            last_clip_boxes: None,
+            shape_carried: false,
         };
 
         canvas.save();
@@ -526,6 +551,9 @@ where
             turbulence_lattices: Vec::new(),
             clip_stack: Vec::new(),
             clip_planes: HashMap::new(),
+            clip_masks: ClipMasks::default(),
+            last_clip_boxes: None,
+            shape_carried: false,
         };
 
         canvas.save();
@@ -561,6 +589,8 @@ where
             if let Some(plane) = self.clip_planes.get_mut(&RenderTarget::Screen) {
                 plane.dirty = true;
             }
+            // Worked out for the fringe width before.
+            self.last_clip_boxes = None;
         }
         if let Some(image) = self.layers.last().and_then(|layer| layer.image) {
             // Same size at a frame boundary: the open layer keeps capturing
@@ -651,6 +681,9 @@ where
             std::mem::take(&mut self.commands),
         );
         self.verts.clear();
+        for image in self.clip_masks.end_frame() {
+            self.images.remove(&mut self.renderer, image);
+        }
         self.release_pending_images();
         self.gradients
             .release_old_gradients(&mut self.images, &mut self.renderer);
@@ -1250,6 +1283,7 @@ where
         }
 
         // The path cache saves a flattened and transformed version of the path.
+        let shared;
         let mut path_cache = path.cache(&transform, self.tess_tol, self.dist_tol);
 
         // Early out if path is outside the canvas bounds
@@ -1264,24 +1298,41 @@ where
         // Apply global alpha
         paint_flavor.mul_alpha(self.state().alpha);
 
-        let scissor = self.state().scissor;
+        let (clip, rect) = self.fill_clip(
+            || path_cache.bounds,
+            Some((&path_cache, 0.0)),
+            anti_alias.then_some((path, &transform)),
+        );
+        // An upright rect under an upright clip shape is filled as the rect
+        // the two share, or as the shape it covers: an edge they have in
+        // common is antialiased once, by the rect's fringe or by the shape.
+        let (rect, fringed) = match rect {
+            Some(RectFill::Shared(rect)) => (Some(rect), anti_alias),
+            Some(RectFill::Covered(rect)) => (Some(rect), false),
+            None => (None, anti_alias),
+        };
+        if let Some(rect) = rect {
+            drop(path_cache);
+            shared = rect.path();
+            path_cache = shared.cache(&rect.frame, self.tess_tol, self.dist_tol);
+        }
 
         // Calculate fill vertices.
         // expand_fill will fill path_cache.contours[].{stroke, fill} with vertex data for the GPU
         // fringe_with is the size of the strip of triangles generated at the path border used for AA
-        let fringe_width = if anti_alias { self.fringe_width } else { 0.0 };
+        let fringe_width = if fringed { self.fringe_width } else { 0.0 };
         path_cache.expand_fill(fringe_width, LineJoin::Miter, 2.4, fill_rule);
 
         // Detect if this path fill is in fact just an unclipped image copy
 
         if let (Some(path_rect), Some(scissor_rect), true, true) = (
             path_cache.path_fill_is_rect(),
-            scissor.as_rect(canvas_width as f32, canvas_height as f32),
+            clip.scissor.as_rect(canvas_width as f32, canvas_height as f32),
             paint_flavor.is_straight_tinted_image(anti_alias),
-            // The unclipped blit bypasses the stencil clip plane (the #292
-            // rounded-scissor precedent): route clipped blits through the
-            // normal masked path.
-            !self.clip_active(),
+            // The unclipped blit bypasses the stencil clip plane and the
+            // clip shape (the #292 rounded-scissor precedent): route clipped
+            // blits through the normal masked path.
+            !self.clip_active() && clip.shape.is_none() && clip.mask.is_none(),
         ) {
             if scissor_rect.contains_rect(&path_rect) {
                 self.render_unclipped_image_blit(&path_rect, &transform, &paint_flavor);
@@ -1299,11 +1350,12 @@ where
                 &transform,
                 &paint_flavor,
                 &GlyphTexture::default(),
-                &scissor,
+                &clip.scissor,
                 self.fringe_width,
                 self.fringe_width,
                 -1.0,
-            );
+            )
+            .with_clip(&clip);
 
             CommandType::ConvexFill { params }
         } else {
@@ -1314,11 +1366,12 @@ where
                 &transform,
                 &paint_flavor,
                 &GlyphTexture::default(),
-                &scissor,
+                &clip.scissor,
                 self.fringe_width,
                 self.fringe_width,
                 -1.0,
-            );
+            )
+            .with_clip(&clip);
 
             CommandType::ConcaveFill {
                 stencil_params,
@@ -1473,8 +1526,6 @@ where
             return;
         }
 
-        let scissor = self.state().scissor;
-
         // Scale stroke width by current transform scale.
         // Note: I don't know why the original author clamped the max stroke width to 200, but it didn't
         // look correct when zooming in. There was probably a good reson for doing so and I may have
@@ -1499,6 +1550,17 @@ where
         // Apply global alpha
         paint_flavor.mul_alpha(self.state().alpha);
 
+        let reach = stroke.reach(line_width);
+        let clip = self.draw_clip(
+            || Bounds {
+                minx: path_cache.bounds.minx - reach,
+                miny: path_cache.bounds.miny - reach,
+                maxx: path_cache.bounds.maxx + reach,
+                maxy: path_cache.bounds.maxy + reach,
+            },
+            Some((&path_cache, reach)),
+        );
+
         // Calculate stroke vertices.
         // expand_stroke will fill path_cache.contours[].stroke with vertex data for the GPU
         let fringe_with = if anti_alias { self.fringe_width } else { 0.0 };
@@ -1518,11 +1580,12 @@ where
             &transform,
             &paint_flavor,
             &GlyphTexture::default(),
-            &scissor,
+            &clip.scissor,
             line_width,
             self.fringe_width,
             -1.0,
-        );
+        )
+        .with_clip(&clip);
 
         let flavor = if stroke.stencil_strokes {
             let params2 = Params::new(
@@ -1530,11 +1593,12 @@ where
                 &transform,
                 &paint_flavor,
                 &GlyphTexture::default(),
-                &scissor,
+                &clip.scissor,
                 line_width,
                 self.fringe_width,
                 1.0 - 0.5 / 255.0,
-            );
+            )
+            .with_clip(&clip);
 
             CommandType::StencilStroke {
                 params1: params,
@@ -2323,18 +2387,29 @@ where
         glyph_texture: GlyphTexture,
     ) {
         self.reconcile_current_clip_plane();
-        let scissor = self.state().scissor;
+        let clip = self.draw_clip(
+            || {
+                verts.iter().fold(Bounds::default(), |bounds, vertex| Bounds {
+                    minx: bounds.minx.min(vertex.x),
+                    miny: bounds.miny.min(vertex.y),
+                    maxx: bounds.maxx.max(vertex.x),
+                    maxy: bounds.maxy.max(vertex.y),
+                })
+            },
+            None,
+        );
 
         let params = Params::new(
             &self.images,
             transform,
             paint_flavor,
             &glyph_texture,
-            &scissor,
+            &clip.scissor,
             1.0,
             self.fringe_width,
             -1.0,
-        );
+        )
+        .with_clip(&clip);
 
         let mut cmd = Command::new(CommandType::Triangles { params });
         cmd.composite_operation = self.state().composite_operation;
@@ -2406,6 +2481,9 @@ where
         self.renderer
             .render_surfaceless(&mut self.images, &self.verts, std::mem::take(&mut self.commands));
         self.verts.clear();
+        for image in self.clip_masks.end_frame() {
+            self.images.remove(&mut self.renderer, image);
+        }
         self.release_pending_images();
         self.gradients
             .release_old_gradients(&mut self.images, &mut self.renderer);
@@ -2456,6 +2534,8 @@ pub struct RecordingRenderer {
     pub max_texture_size: usize,
     /// Makes image allocation fail for resource-pressure tests.
     pub fail_image_allocations: bool,
+    /// Makes image updates fail for upload-failure tests.
+    pub fail_image_updates: bool,
     /// Number of image allocation attempts.
     pub image_allocation_attempts: usize,
     /// Number of backend images released.
@@ -2514,7 +2594,11 @@ impl Renderer for RecordingRenderer {
         x: usize,
         y: usize,
     ) -> Result<(), ErrorKind> {
-        data.check_update(&image.info, x, y)
+        data.check_update(&image.info, x, y)?;
+        if self.fail_image_updates {
+            return Err(ErrorKind::UnknownError);
+        }
+        Ok(())
     }
 
     fn delete_image(&mut self, _image: Self::Image, _image_id: crate::ImageId) {
@@ -2619,10 +2703,11 @@ fn assert_approx_eq(actual: f32, expected: f32) {
     );
 }
 
+/// Fills across the canvas with a path that is no rect, so that whatever
+/// scissor is set cuts the fill and the draw carries it.
 #[cfg(test)]
-fn fill_rect_with_current_scissor(canvas: &mut Canvas<RecordingRenderer>) {
-    let mut path = Path::new();
-    path.rect(0.0, 0.0, 100.0, 100.0);
+fn fill_across_current_scissor(canvas: &mut Canvas<RecordingRenderer>) {
+    let path = clip::notched_rect(0.0, 0.0, 100.0, 100.0);
     canvas.fill_path(&path, &Paint::color(Color::white()));
     canvas.flush_to_output(());
 }
@@ -2651,7 +2736,7 @@ fn rounded_scissor_radius_is_clamped_into_render_params() {
     canvas.set_size(100, 100, 1.0);
 
     canvas.rounded_scissor(10.0, 10.0, 40.0, 20.0, 100.0);
-    fill_rect_with_current_scissor(&mut canvas);
+    fill_across_current_scissor(&mut canvas);
 
     let commands = recorded_commands.borrow();
     let params = first_draw_params(&commands);
@@ -2699,7 +2784,7 @@ fn intersect_scissor_preserves_contained_rounded_clip() {
 
     canvas.rounded_scissor(10.0, 10.0, 40.0, 20.0, 8.0);
     canvas.intersect_scissor(0.0, 0.0, 100.0, 100.0);
-    fill_rect_with_current_scissor(&mut canvas);
+    fill_across_current_scissor(&mut canvas);
 
     let commands = recorded_commands.borrow();
     let params = first_draw_params(&commands);
@@ -2716,7 +2801,7 @@ fn intersect_scissor_inside_rounded_clip_uses_rectangular_inner_clip() {
 
     canvas.rounded_scissor(10.0, 10.0, 80.0, 80.0, 20.0);
     canvas.intersect_scissor(35.0, 35.0, 20.0, 20.0);
-    fill_rect_with_current_scissor(&mut canvas);
+    fill_across_current_scissor(&mut canvas);
 
     let commands = recorded_commands.borrow();
     let params = first_draw_params(&commands);
@@ -2735,7 +2820,7 @@ fn intersect_rounded_scissor_partial_overlap_falls_back_to_rectangular_intersect
 
     canvas.rounded_scissor(10.0, 10.0, 40.0, 40.0, 12.0);
     canvas.intersect_rounded_scissor(35.0, 35.0, 40.0, 40.0, 12.0);
-    fill_rect_with_current_scissor(&mut canvas);
+    fill_across_current_scissor(&mut canvas);
 
     let commands = recorded_commands.borrow();
     let params = first_draw_params(&commands);
@@ -2755,7 +2840,7 @@ fn rounded_scissor_captures_transform_at_clip_time() {
     canvas.scale(2.0, 3.0);
     canvas.rounded_scissor(10.0, 10.0, 20.0, 10.0, 4.0);
     canvas.reset_transform();
-    fill_rect_with_current_scissor(&mut canvas);
+    fill_across_current_scissor(&mut canvas);
 
     let commands = recorded_commands.borrow();
     let params = first_draw_params(&commands);
@@ -2776,7 +2861,7 @@ fn intersect_rounded_scissor_uses_inner_radius_when_contained() {
 
     canvas.scissor(0.0, 0.0, 100.0, 100.0);
     canvas.intersect_rounded_scissor(10.0, 10.0, 40.0, 20.0, 100.0);
-    fill_rect_with_current_scissor(&mut canvas);
+    fill_across_current_scissor(&mut canvas);
 
     let commands = recorded_commands.borrow();
     let params = first_draw_params(&commands);
@@ -4574,6 +4659,9 @@ fn random_api_sequences_keep_one_consistent_stack() {
         let mut rng = rand::rngs::StdRng::seed_from_u64(seed);
         let mut canvas = Canvas::new(RecordingRenderer::default()).unwrap();
         canvas.set_size(128, 128, 1.0);
+        if seed % 2 == 1 {
+            canvas.set_clip_mask_budget(0);
+        }
         let image = canvas
             .create_image_empty(64, 64, PixelFormat::Rgba8, ImageFlags::empty())
             .unwrap();
@@ -4632,10 +4720,20 @@ fn random_api_sequences_keep_one_consistent_stack() {
                     }
                 }
                 4 => {
-                    let mut clip = Path::new();
-                    clip.rect(rng.random_range(0.0..40.0), rng.random_range(0.0..40.0), 60.0, 60.0);
+                    // A box is taken as a shape - stacked, or dropped when it
+                    // contains the one in force - and a notched rect as a
+                    // mask, or on the stencil when the masks have no budget.
+                    let (x, y) = (rng.random_range(0.0..40.0), rng.random_range(0.0..40.0));
+                    let clip = if rng.random_bool(0.5) {
+                        let mut clip = Path::new();
+                        clip.rect(x, y, 60.0, 60.0);
+                        clip
+                    } else {
+                        notched_rect(x, y, 60.0, 60.0)
+                    };
+                    let before = canvas.clip_stack.len();
                     canvas.clip_path(&clip, FillRule::NonZero);
-                    model.last_mut().unwrap().clips += 1;
+                    model.last_mut().unwrap().clips += canvas.clip_stack.len() - before;
                 }
                 5 => canvas.fill_path(&rect, &Paint::color(Color::black())),
                 6 => canvas.flush_to_output(()),
@@ -4673,13 +4771,14 @@ fn random_api_sequences_keep_one_consistent_stack() {
                 let entries = canvas
                     .clip_stack
                     .iter()
-                    .filter(|entry| entry.target == *plane_target)
+                    .filter(|entry| entry.target == *plane_target && matches!(entry.kind, ClipKind::Stencil { .. }))
                     .count();
                 assert_eq!(plane.count, entries, "{at}: plane count for {plane_target:?}");
             }
             for entry in &canvas.clip_stack {
                 assert!(
-                    canvas.clip_planes.contains_key(&entry.target),
+                    matches!(entry.kind, ClipKind::Shape { .. } | ClipKind::Mask { .. })
+                        || canvas.clip_planes.contains_key(&entry.target),
                     "{at}: plane for {:?}",
                     entry.target
                 );
