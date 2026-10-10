@@ -1,5 +1,5 @@
-import sys
-sys.path.insert(0, '/Users/matt/src/femtovg-wt/runs/pr/tmp/flat')
+import os, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from analyze_flat import *
 cs = load(sys.argv[1:])
 print(len(cs), 'cubics')

@@ -6,7 +6,7 @@ import json, os, sys, subprocess
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 from PIL import Image
-sys.path.insert(0, os.path.expanduser('~/src/femtovg-wt/da/harness/corpus_run'))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'corpus_run'))
 from common import OUT, FRAMINGS, SWEEP_ENV, BIN, files
 
 VARIANTS = {
@@ -21,6 +21,10 @@ VARIANTS = {
     's125': {'_bin': 'fxs', 'FEMTOVG_TESS_TOL': '0.125', 'FEMTOVG_STRADDLE': '0.5', 'FEMTOVG_JOIN_TOL': '0.125'},
     's25m': {'_bin': 'fxs', 'FEMTOVG_TESS_TOL': '0.25', 'FEMTOVG_STRADDLE': '0.375', 'FEMTOVG_JOIN_TOL': '0.25'},
     's25j': {'_bin': 'fxs', 'FEMTOVG_TESS_TOL': '0.25', 'FEMTOVG_STRADDLE': '0.5', 'FEMTOVG_JOIN_TOL': '0.0625'},
+    'fc': {'_bin': 'fc'},   # option C on master (flatten-straddle-half 297bf9a)
+    'c2': {'_bin': 'c2'},
+    'm8': {'_bin': 'm8'},   # upstream master d70ffeb, all cfgs
+    'pr2': {'_bin': 'pr2'}, # straddled-chords (option C) on fill-point-costs, all cfgs   # option C v2 on savings v3 (point-costs-3-straddle 36f8a18): per-point straddle, grown gate
 }
 path = f'{OUT}/tmp/flat/eval.jsonl'
 done = set()

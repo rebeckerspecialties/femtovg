@@ -49,3 +49,18 @@ small shape that must leave neither winding nor scissor behind, in an image and 
 and `gl_crop_check.rs` are the same for coverage masks and for `ImageFilter::Crop`. `mask_cost.rs` is `draw_cost.rs`
 for a clip that is no box: what taking it and filling a rect under it costs the canvas once its mask exists, with
 masks and with the stencil.
+
+## The tools
+
+`../build.sh --gl TAG:SRC` builds `gl_fill_bench`, `gl_clip_check` and `gl_svg_dump` against the femtovg checkout
+SRC into `$HARNESS_BIN/<tool>_TAG` (`GL_EXAMPLES` names others, e.g. `gl_crop_check gl_mask_check`). Then, for two
+builds A and B:
+
+- `glpaired.py A B PAIRS FRAMES scene...`: frame time of `gl_fill_bench`, alternating, with the paired difference.
+- `gl_instr.py A B -- scene...`: instructions retired a frame (a long run minus a short one; macOS `/usr/bin/time -l`).
+- `gl_clip_check_A` and `gl_clip_check_B`: each prints the clip checks; diff the two outputs.
+- `gl_svg_dump_A OUT.ppm SCALE FILE.svg`: the OpenGL backend's pixels for an SVG's solid fills and strokes, to
+  compare two builds byte for byte.
+
+`paired.py` does the wgpu harness's pages the same way; `draw_cost.rs` and `mask_cost.rs` are Void-renderer
+benches of the canvas side.
