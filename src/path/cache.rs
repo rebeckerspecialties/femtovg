@@ -188,15 +188,25 @@ impl<'a> Iterator for PointPairsIter<'a> {
 /// distance from the chord at its middle, half the sagitta on a circular arc.
 const CHORD_SHIFT: f32 = 0.375;
 
+/// How near, in pixels, another contour's edge may come to the point a
+/// contour is sampled at: half a pixel, the band either side of an edge that
+/// a fill antialiases it in (`woff` in [`PathCache::expand_fill`]). Clear of
+/// the other edges by this much, the sample speaks for that band, and no
+/// contour along the edge narrower than a pixel can turn it; a wider one is
+/// a line of its own. As far as a fill reaches from an edge, a pixel and a
+/// half, would also hold for strips that wide, but every counter of a small
+/// glyph is nearer its outline than that and would try all four edges.
+const SAMPLE_CLEARANCE: f32 = 0.5;
+
 #[derive(Clone, Debug, Default)]
 pub struct PathCache {
     pub(crate) contours: Vec<Contour>,
     pub(crate) bounds: Bounds,
     points: Vec<Point>,
     // Per contour, the other contours' winding number and crossing count at
-    // a point just inside it, and its own orientation sign - what decides
-    // whether it bounds a hole under either fill rule. Computed once per
-    // cache (per transform), not per fill.
+    // a point on it clear of their edges, and its own orientation sign - what
+    // decides whether it bounds a hole under either fill rule. Computed once
+    // per cache (per transform), not per fill.
     contour_sides: Option<Vec<(i32, u32, i32)>>,
     // The square of the farthest a point between two chords was moved off the curve.
     straddle: f32,
@@ -641,15 +651,31 @@ impl PathCache {
         false
     }
 
-    /// The other contours' winding number and crossing count at the midpoint
-    /// of each contour's first edge, plus the contour's own orientation sign,
-    /// computed once per cache. A contour whose box misses the sample point
-    /// cannot wind around it (its crossings of the ray cancel), so only
-    /// overlapping boxes are walked: near-linear for the usual
-    /// many-disjoint-contours path. A degenerate contour draws nothing, so
-    /// it gets an empty box and counts nowhere: a sliver within the band
-    /// could otherwise wind once around a sample point on its line and turn
-    /// the contour that owns the point inside out.
+    /// The other contours' winding number and crossing count at a point on
+    /// each contour, plus the contour's own orientation sign, computed once
+    /// per cache.
+    ///
+    /// The point is the midpoint of one of the contour's edges: on the edge,
+    /// as near its interior as a point gets, whichever way the contour is
+    /// wound. But another contour that runs along that edge - a sliver over
+    /// it, a neighbour sharing it, the other side of an outline thinner than
+    /// a pixel that crosses it - can wind around such a point though not
+    /// around the interior beside it, or the other way round, and turn the
+    /// contour inside out. So no edge of another contour may come within
+    /// [`SAMPLE_CLEARANCE`] of the point. The first edge is tried, then the
+    /// edges halfway, a quarter and three quarters round, and the first whose
+    /// midpoint is clear is taken. If none is, the contour is about as small
+    /// as the clearance or crowded all round, no edge says more than another,
+    /// and the first edge's midpoint stands. Skia's path ops choose where to
+    /// take a span's winding much the same way (`SkOpSpan::sortableTop`): at
+    /// its middle, and while the ray from there meets another edge too close
+    /// to tell, at other fractions along it.
+    ///
+    /// A contour whose box, grown by the clearance, misses the point can
+    /// neither wind around it (its crossings of the ray cancel) nor come near
+    /// it, so only those boxes are walked: near-linear for the usual
+    /// many-disjoint-contours path. A degenerate contour draws nothing, so it
+    /// gets an empty box and counts nowhere.
     fn contour_sides(&mut self) -> &[(i32, u32, i32)] {
         if self.contour_sides.is_none() {
             let n = self.contours.len();
@@ -667,7 +693,12 @@ impl PathCache {
                         b.maxx = b.maxx.max(point.pos.x);
                         b.maxy = b.maxy.max(point.pos.y);
                     }
-                    b
+                    Bounds {
+                        minx: b.minx - SAMPLE_CLEARANCE,
+                        miny: b.miny - SAMPLE_CLEARANCE,
+                        maxx: b.maxx + SAMPLE_CLEARANCE,
+                        maxy: b.maxy + SAMPLE_CLEARANCE,
+                    }
                 })
                 .collect();
             let sides = (0..n)
@@ -676,33 +707,70 @@ impl PathCache {
                     if n < 2 || points.len() < 3 {
                         return (0, 0, 0);
                     }
-                    let (a, b) = (points[0].pos, points[1].pos);
-                    let (x, y) = ((a.x + b.x) * 0.5, (a.y + b.y) * 0.5);
                     // `is_left` winds the orientation `polygon_area` calls positive as -1.
                     let own = if Contour::polygon_area(points) > 0.0 { -1 } else { 1 };
-                    let (mut winding, mut crossings) = (0i32, 0u32);
-                    for (j, contour) in self.contours.iter().enumerate() {
-                        if j == i || !boxes[j].contains(x, y) {
-                            continue;
-                        }
-                        for (p0, p1) in contour.point_pairs(&self.points) {
-                            if p0.pos.y <= y {
-                                if p1.pos.y > y && Point::is_left(p0, p1, x, y) > 0.0 {
-                                    winding += 1;
-                                    crossings += 1;
-                                }
-                            } else if p1.pos.y <= y && Point::is_left(p0, p1, x, y) < 0.0 {
-                                winding -= 1;
-                                crossings += 1;
-                            }
-                        }
-                    }
+                    let count = points.len();
+                    let at_edge = |k: usize| {
+                        let (a, b) = (points[k].pos, points[(k + 1) % count].pos);
+                        let at = Position {
+                            x: (a.x + b.x) * 0.5,
+                            y: (a.y + b.y) * 0.5,
+                        };
+                        self.others_at(&boxes, i, at)
+                    };
+                    let clear = |(_, _, nearest): (i32, u32, f32)| nearest >= SAMPLE_CLEARANCE * SAMPLE_CLEARANCE;
+                    let first = at_edge(0);
+                    let (winding, crossings, _) = if clear(first) {
+                        first
+                    } else {
+                        // With three points, a quarter round is the first edge again.
+                        [count / 2, count / 4, 3 * count / 4]
+                            .into_iter()
+                            .filter(|&k| k != 0)
+                            .map(at_edge)
+                            .find(|&sample| clear(sample))
+                            .unwrap_or(first)
+                    };
                     (winding, crossings, own)
                 })
                 .collect();
             self.contour_sides = Some(sides);
         }
         self.contour_sides.as_deref().unwrap_or(&[])
+    }
+
+    /// The winding number and crossing count at `at` of every contour but
+    /// the `i`th whose box in `boxes` holds it, and the square of the nearest
+    /// any of their edges comes to it, or of [`SAMPLE_CLEARANCE`] if none
+    /// comes that near.
+    fn others_at(&self, boxes: &[Bounds], i: usize, at: Position) -> (i32, u32, f32) {
+        let (x, y) = (at.x, at.y);
+        let (mut winding, mut crossings) = (0i32, 0u32);
+        let mut nearest = SAMPLE_CLEARANCE * SAMPLE_CLEARANCE;
+        for (j, contour) in self.contours.iter().enumerate() {
+            if j == i || !boxes[j].contains(x, y) {
+                continue;
+            }
+            for (p0, p1) in contour.point_pairs(&self.points) {
+                if p0.pos.y <= y {
+                    if p1.pos.y > y && Point::is_left(p0, p1, x, y) > 0.0 {
+                        winding += 1;
+                        crossings += 1;
+                    }
+                } else if p1.pos.y <= y && Point::is_left(p0, p1, x, y) < 0.0 {
+                    winding -= 1;
+                    crossings += 1;
+                }
+                // Only an edge that reaches the rows within the clearance can come that near.
+                if p0.pos.y.min(p1.pos.y) < y + SAMPLE_CLEARANCE && p0.pos.y.max(p1.pos.y) > y - SAMPLE_CLEARANCE {
+                    // `dpos` is the unit direction from p0 to p1, `len` the distance.
+                    let to = at - p0.pos;
+                    let along = to.dot(p0.dpos).max(0.0).min(p0.len);
+                    nearest = nearest.min((to - p0.dpos * along).mag2());
+                }
+            }
+        }
+        (winding, crossings, nearest)
     }
 
     /// For each contour, whether the region just inside it is unfilled under
@@ -731,7 +799,7 @@ impl PathCache {
 
         // Which contours bound a hole: their interior is unfilled under the
         // fill rule, so the fringe must extrude away from it. Sampled at the
-        // midpoint of each contour's first edge, which is adjacent to its
+        // midpoint of one of each contour's edges, which is adjacent to its
         // interior, against every other contour of the path.
         let hole = self.hole_contours(fill_rule);
 
@@ -1562,6 +1630,40 @@ mod tests {
         cache.expand_fill(0.0, LineJoin::Miter, 10.0, FillRule::NonZero);
         let rect = cache.path_fill_is_rect().expect("a mirrored rect is still a rect");
         assert_eq!((rect.x, rect.y, rect.w, rect.h), (-40.0, 40.0, 30.0, 40.0));
+    }
+
+    /// A square with a hole, and a strip 0.001 units wide along the hole's
+    /// first edge, as an SVG writes them. From 16x up the strip is wider than
+    /// the collinear band, so it counts, and it used to wind once around the
+    /// midpoint of that edge, where the hole was sampled: the hole came out a
+    /// solid and its fringe was extruded into it.
+    #[test]
+    fn a_strip_along_a_holes_first_edge_leaves_it_a_hole() {
+        // M40 40 H160 V160 H40 Z  M70 70 V130 H130 V70 Z  M69.9995 70 H70.0005 V130 H69.9995 Z
+        let mut path = Path::new();
+        for contour in [
+            [(40.0, 40.0), (160.0, 40.0), (160.0, 160.0), (40.0, 160.0)],
+            [(70.0, 70.0), (70.0, 130.0), (130.0, 130.0), (130.0, 70.0)],
+            [(69.9995, 70.0), (70.0005, 70.0), (70.0005, 130.0), (69.9995, 130.0)],
+        ] {
+            path.move_to(contour[0].0, contour[0].1);
+            for (x, y) in &contour[1..] {
+                path.line_to(*x, *y);
+            }
+            path.close();
+        }
+
+        for zoom in [16.0, 32.0, 64.0] {
+            let mut cache = PathCache::new(path.verbs(), &Transform2D::scaling(zoom, zoom), 0.125, 0.01);
+            assert!(
+                !cache.contours[2].degenerate,
+                "the strip has to count for the test to mean anything"
+            );
+            for rule in [FillRule::NonZero, FillRule::EvenOdd] {
+                let hole = cache.hole_contours(rule);
+                assert_eq!(hole[..2], [false, true], "{rule:?} at {zoom}x");
+            }
+        }
     }
 
     #[test]
