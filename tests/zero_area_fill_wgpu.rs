@@ -126,8 +126,16 @@ fn shapes_that_enclose_area_still_fill() {
     assert!((square - 1600.0).abs() < 1.0, "{square:.2} px, expected 1600");
 }
 
-/// Fills the path under `rule` at scale 1 and returns the pixels.
-fn fill_with_rule(device: &wgpu::Device, queue: &wgpu::Queue, rule: FillRule, build: impl Fn(&mut Path)) -> Vec<u8> {
+/// Fills the path under `rule`, zoomed `zoom` times about `pivot`, which
+/// lands on the canvas's centre, and returns the pixels.
+fn fill_with_rule(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    rule: FillRule,
+    zoom: f32,
+    pivot: (f32, f32),
+    build: impl Fn(&mut Path),
+) -> Vec<u8> {
     common::render_rgba(
         device,
         queue,
@@ -135,6 +143,9 @@ fn fill_with_rule(device: &wgpu::Device, queue: &wgpu::Queue, rule: FillRule, bu
         H,
         Color::rgba(0, 0, 0, 0),
         |canvas: &mut Canvas<WGPURenderer>| {
+            canvas.translate(W as f32 / 2.0, H as f32 / 2.0);
+            canvas.scale(zoom, zoom);
+            canvas.translate(-pivot.0, -pivot.1);
             let mut path = Path::new();
             build(&mut path);
             let mut paint = Paint::color(Color::black());
@@ -143,6 +154,31 @@ fn fill_with_rule(device: &wgpu::Device, queue: &wgpu::Queue, rule: FillRule, bu
             canvas.fill_path(&path, &paint);
         },
     )
+}
+
+/// A square with a hole wound the other way; the hole's first edge runs down
+/// x = 40.
+fn square_with_hole(p: &mut Path) {
+    p.move_to(20.0, 20.0);
+    p.line_to(108.0, 20.0);
+    p.line_to(108.0, 108.0);
+    p.line_to(20.0, 108.0);
+    p.close();
+    p.move_to(40.0, 40.0);
+    p.line_to(40.0, 88.0);
+    p.line_to(88.0, 88.0);
+    p.line_to(88.0, 40.0);
+    p.close();
+}
+
+/// The same, and a strip 0.001 units wide along the hole's first edge.
+fn square_with_hole_and_strip(p: &mut Path) {
+    square_with_hole(p);
+    p.move_to(39.9995, 40.0);
+    p.line_to(40.0005, 40.0);
+    p.line_to(40.0005, 88.0);
+    p.line_to(39.9995, 88.0);
+    p.close();
 }
 
 /// A degenerate contour stays out of the hole classification as well: a
@@ -155,31 +191,42 @@ fn a_degenerate_strip_does_not_reclassify_a_hole() {
     let Some((device, queue)) = headless_device() else {
         return;
     };
-    let square_with_hole = |p: &mut Path| {
-        p.move_to(20.0, 20.0);
-        p.line_to(108.0, 20.0);
-        p.line_to(108.0, 108.0);
-        p.line_to(20.0, 108.0);
-        p.close();
-        // The hole, wound the other way; its first edge runs down x = 40.
-        p.move_to(40.0, 40.0);
-        p.line_to(40.0, 88.0);
-        p.line_to(88.0, 88.0);
-        p.line_to(88.0, 40.0);
-        p.close();
-    };
     for rule in [FillRule::NonZero, FillRule::EvenOdd] {
-        let plain = fill_with_rule(&device, &queue, rule, square_with_hole);
-        let with_strip = fill_with_rule(&device, &queue, rule, |p| {
-            square_with_hole(p);
-            p.move_to(39.9995, 40.0);
-            p.line_to(40.0005, 40.0);
-            p.line_to(40.0005, 88.0);
-            p.line_to(39.9995, 88.0);
-            p.close();
-        });
+        let plain = fill_with_rule(&device, &queue, rule, 1.0, (64.0, 64.0), square_with_hole);
+        let with_strip = fill_with_rule(&device, &queue, rule, 1.0, (64.0, 64.0), square_with_hole_and_strip);
         assert_eq!(alpha(&plain, 64, 64), 0.0, "{rule:?}: the hole is empty");
         assert_eq!(alpha(&plain, 30, 64), 1.0, "{rule:?}: the ring is inked");
         assert!(plain == with_strip, "{rule:?}: the strip changed the fill");
+    }
+}
+
+/// Zoomed in, the strip is wider than the collinear band and counts -
+/// 0.016 px at 16x - and it must still not decide which way the hole's
+/// fringe goes. The hole used to be sampled at the midpoint of its first
+/// edge, which the strip winds once around, so it came out a solid and its
+/// fringe went into it all round: here, at its far edge, a column of the
+/// hole inked. The strip's own edge is not compared: a fill that thin
+/// still draws its fringe a pixel wide, whichever way it is classified.
+#[test]
+fn a_strip_along_a_holes_edge_does_not_reclassify_it_zoomed_in() {
+    let Some((device, queue)) = headless_device() else {
+        return;
+    };
+    // The middle of the hole's far edge, x = 88: the strip, at x = 40, is
+    // off the canvas from 16x up.
+    let pivot = (88.0, 64.0);
+    for zoom in [16.0, 32.0, 64.0] {
+        for rule in [FillRule::NonZero, FillRule::EvenOdd] {
+            let plain = fill_with_rule(&device, &queue, rule, zoom, pivot, square_with_hole);
+            let with_strip = fill_with_rule(&device, &queue, rule, zoom, pivot, square_with_hole_and_strip);
+            assert_eq!(alpha(&plain, 63, 64), 0.0, "{rule:?} at {zoom}x: the hole is empty");
+            assert_eq!(alpha(&plain, 64, 64), 1.0, "{rule:?} at {zoom}x: the ring is inked");
+            let moved = plain
+                .chunks_exact(4)
+                .zip(with_strip.chunks_exact(4))
+                .filter(|(a, b)| a != b)
+                .count();
+            assert_eq!(moved, 0, "{rule:?} at {zoom}x: the strip moved {moved} px");
+        }
     }
 }
