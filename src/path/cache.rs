@@ -200,6 +200,8 @@ pub struct PathCache {
     contour_sides: Option<Vec<(i32, u32, i32)>>,
     // The square of the farthest a point between two chords was moved off the curve.
     straddle: f32,
+    // The outline's mean width, once a fill has asked for it.
+    mean_width: Option<f32>,
 }
 
 impl PathCache {
@@ -363,6 +365,35 @@ impl PathCache {
                 .map(|point| [point.pos.x, point.pos.y])
                 .collect()
         })
+    }
+
+    /// Twice the outline's area over its perimeter, in device pixels: a
+    /// sliver's width, a disc's radius. A hole wound the other way takes its
+    /// area off. Worked out once a cache, which a path keeps while its
+    /// transform does.
+    pub(crate) fn mean_width(&mut self) -> f32 {
+        if let Some(width) = self.mean_width {
+            return width;
+        }
+        let (mut area, mut perimeter) = (0.0, 0.0);
+        for contour in &self.contours {
+            let points = &self.points[contour.point_range.clone()];
+            let (Some(first), Some(last)) = (points.first(), points.last()) else {
+                continue;
+            };
+            // From the contour's first point, so that the products stay small.
+            let origin = first.pos;
+            let mut from = last.pos - origin;
+            for point in points {
+                let to = point.pos - origin;
+                area += from.x * to.y - to.x * from.y;
+                perimeter += (to - from).mag2().sqrt();
+                from = to;
+            }
+        }
+        let width = if perimeter > 0.0 { area.abs() / perimeter } else { 0.0 };
+        self.mean_width = Some(width);
+        width
     }
 
     /// The farthest a point between two chords stands off its curve (see

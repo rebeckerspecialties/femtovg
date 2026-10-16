@@ -8,8 +8,11 @@ use crate::path::PathCache;
 use rgb::FromSlice;
 
 mod coverage;
+mod fill;
 mod mask;
 mod shape;
+pub(crate) use fill::{FillMasks, THIN_FILL_SPAN, THIN_FILL_WIDTH};
+use fill::{PlacedMask, ATLAS_SIZE};
 use mask::MaskOutline;
 pub(crate) use mask::{ClipMasks, MaskImage};
 pub(crate) use shape::{ClipCoverage, RectFill, RoundedBox};
@@ -304,6 +307,16 @@ where
         self.clip_masks.set_budget(bytes);
     }
 
+    /// Whether an antialiased fill thinner than a pixel - twice its area
+    /// over its perimeter under one, its bounds at most 65,536 pixels - is
+    /// drawn through a coverage mask, as it is by default: the fringes of
+    /// its edges would over-ink it. The masks share an atlas of four
+    /// megabytes and at most 256 are made a frame; past either a thin fill
+    /// is filled as any other.
+    pub fn set_thin_fill_masks(&mut self, enabled: bool) {
+        self.fill_masks.set_enabled(enabled);
+    }
+
     /// Intersects the stencil clip plane of the current render target with
     /// `geometry`, the winding fans of a clip, under `fill_rule`.
     fn clip_to_stencil(&mut self, geometry: Rc<ClipGeometry>, bounds: Bounds, fill_rule: FillRule) {
@@ -457,6 +470,100 @@ where
         });
         self.state_mut().clip_depth = self.clip_stack.len();
         true
+    }
+
+    /// Draws a fill thinner than a pixel (see [`fill`]) as a quad over its
+    /// coverage mask in the atlas of fill masks. `false` - the frame has made
+    /// its share of masks, or the atlas has no room - leaves the fill to its
+    /// fringe.
+    pub(crate) fn fill_through_mask(
+        &mut self,
+        path: &Path,
+        transform: &Transform2D,
+        paint_flavor: &PaintFlavor,
+        fill_rule: FillRule,
+    ) -> bool {
+        // Flattened as finely as a clip's mask: the fill's own cache, made
+        // for its fringe, may sit a fifth of a pixel inside a curve.
+        let tolerance = self.tess_tol * MASK_TESSELLATION;
+        let (width, height) = self.render_target_size();
+        let within = [0, 0, width as i32, height as i32];
+        let mut request = vec![u32::from(fill_rule == FillRule::EvenOdd)];
+        path.words(&mut request);
+        request.extend(transform.0.map(f32::to_bits));
+        request.extend([tolerance.to_bits(), self.dist_tol.to_bits()]);
+        request.extend(within.map(|side| side as u32));
+        let mask = match self.fill_masks.asked(&request) {
+            Some(mask) => mask,
+            None => {
+                let path_cache = PathCache::new(path.verbs(), transform, tolerance, self.dist_tol);
+                let mut outline = MaskOutline::default();
+                outline.child(fill_rule, path_cache.outlines());
+                let rect = outline.rect(within);
+                let key = outline.key(rect, None);
+                let atlas = match self.fill_masks.get(&key) {
+                    Some(at) => at,
+                    None => {
+                        let Some(image) = self.fill_mask_atlas() else {
+                            return false;
+                        };
+                        let [mask_width, mask_height] = key.size();
+                        let Some(at) = self.fill_masks.place(key.size()) else {
+                            return false;
+                        };
+                        let pixels = key.rasterize(&mut self.fill_masks.coverage);
+                        let source = ImageSource::Gray(imgref::Img::new(pixels.as_gray(), mask_width, mask_height));
+                        let [x, y] = at.map(|side| side as usize);
+                        if self.images.update(&mut self.renderer, image, source, x, y).is_err() {
+                            return false;
+                        }
+                        self.fill_masks.keep(key, at);
+                        at
+                    }
+                };
+                let mask = PlacedMask { atlas, rect };
+                self.fill_masks.remember(request, mask);
+                mask
+            }
+        };
+        let Some(image) = self.fill_masks.image else {
+            return false;
+        };
+        // The quad covers the mask's pixels exactly, each fragment reading
+        // the texel of its own pixel.
+        let [x0, y0, x1, y1] = mask.rect.map(|side| side as f32);
+        let side = ATLAS_SIZE as f32;
+        let [s0, t0] = mask.atlas.map(|at| at as f32 / side);
+        let (s1, t1) = (s0 + (x1 - x0) / side, t0 + (y1 - y0) / side);
+        let verts = [
+            Vertex::new(x0, y0, s0, t0),
+            Vertex::new(x1, y1, s1, t1),
+            Vertex::new(x1, y0, s1, t0),
+            Vertex::new(x0, y0, s0, t0),
+            Vertex::new(x0, y1, s0, t1),
+            Vertex::new(x1, y1, s1, t1),
+        ];
+        self.render_triangles(&verts, transform, paint_flavor, GlyphTexture::AlphaMask(image));
+        true
+    }
+
+    /// The atlas of fill masks, made when the first thin fill asks for it
+    /// and uploaded whole, as a clip mask's image is, so that no backend
+    /// clears it before each use.
+    fn fill_mask_atlas(&mut self) -> Option<ImageId> {
+        if let Some(image) = self.fill_masks.image {
+            return Some(image);
+        }
+        let info = ImageInfo::new(ImageFlags::NEAREST, ATLAS_SIZE, ATLAS_SIZE, PixelFormat::Gray8);
+        let image = self.images.alloc(&mut self.renderer, info).ok()?;
+        let zeros = vec![0; ATLAS_SIZE * ATLAS_SIZE];
+        let source = ImageSource::Gray(imgref::Img::new(zeros.as_gray(), ATLAS_SIZE, ATLAS_SIZE));
+        if self.images.update(&mut self.renderer, image, source, 0, 0).is_err() {
+            self.images.remove(&mut self.renderer, image);
+            return None;
+        }
+        self.fill_masks.image = Some(image);
+        Some(image)
     }
 
     /// Takes the clip as a shape for the fragment shader, if `path` outlines
@@ -2676,4 +2783,82 @@ fn a_draw_coverage_cannot_bound_takes_a_mask_whole() {
     assert_eq!(stencil_clip_commands(&commands), 0);
     let hard: Vec<bool> = drawn_masks(&commands).iter().map(|mask| mask.unwrap().hard).collect();
     assert_eq!(hard, [false, true, false]);
+}
+
+/// A strip `width` across along (10, 10) to (60, 40), shifted by `dx`.
+#[cfg(test)]
+fn thin_strip(dx: f32, width: f32) -> Path {
+    let (x0, y0, x1, y1) = (10.0 + dx, 10.0, 60.0 + dx, 40.0);
+    let length = f32::hypot(x1 - x0, y1 - y0);
+    let (nx, ny) = (-(y1 - y0) / length * width / 2.0, (x1 - x0) / length * width / 2.0);
+    let mut path = Path::new();
+    path.move_to(x0 + nx, y0 + ny);
+    path.line_to(x1 + nx, y1 + ny);
+    path.line_to(x1 - nx, y1 - ny);
+    path.line_to(x0 - nx, y0 - ny);
+    path.close();
+    path
+}
+
+#[cfg(test)]
+fn mask_quads(commands: &[Command], atlas: Option<ImageId>) -> usize {
+    commands
+        .iter()
+        .filter(|command| matches!(command.glyph_texture, GlyphTexture::AlphaMask(id) if Some(id) == atlas))
+        .count()
+}
+
+/// A thin fill that has not changed, or has moved by whole pixels, finds its
+/// mask again: the second frame rasterizes nothing.
+#[test]
+fn a_thin_fill_is_rasterized_once() {
+    let renderer = RecordingRenderer::default();
+    let recorded = renderer.last_commands.clone();
+    let mut canvas = Canvas::new(renderer).unwrap();
+    canvas.set_size(100, 100, 1.0);
+    let paint = Paint::color(Color::black());
+    for dx in [0.0, 0.0, 3.0] {
+        canvas.fill_path(&thin_strip(dx, 0.3), &paint);
+        canvas.flush_to_output(());
+        assert_eq!(mask_quads(&recorded.borrow(), canvas.fill_masks.image), 1);
+    }
+    assert_eq!(canvas.fill_masks.rasterized, 1);
+
+    // A fraction of a pixel over is another mask.
+    canvas.fill_path(&thin_strip(0.5, 0.3), &paint);
+    canvas.flush_to_output(());
+    assert_eq!(canvas.fill_masks.rasterized, 2);
+}
+
+/// At most 256 masks are made a frame; past them a thin fill is filled.
+#[test]
+fn a_frame_makes_its_share_of_masks() {
+    let renderer = RecordingRenderer::default();
+    let recorded = renderer.last_commands.clone();
+    let mut canvas = Canvas::new(renderer).unwrap();
+    canvas.set_size(100, 100, 1.0);
+    let paint = Paint::color(Color::black());
+    // Each strip a tenth of a pixel longer than the last: its own outline.
+    for i in 0..300 {
+        let mut strip = Path::new();
+        strip.move_to(10.0, 10.0);
+        strip.line_to(30.0 + i as f32 * 0.1, 10.2);
+        strip.line_to(30.0 + i as f32 * 0.1, 10.5);
+        strip.line_to(10.0, 10.3);
+        strip.close();
+        canvas.fill_path(&strip, &paint);
+    }
+    canvas.flush_to_output(());
+    let commands = recorded.borrow();
+    assert_eq!(mask_quads(&commands, canvas.fill_masks.image), 256);
+    let fills = commands
+        .iter()
+        .filter(|command| {
+            matches!(
+                command.cmd_type,
+                CommandType::ConvexFill { .. } | CommandType::ConcaveFill { .. }
+            )
+        })
+        .count();
+    assert_eq!(fills, 44);
 }

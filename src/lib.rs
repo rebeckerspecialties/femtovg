@@ -442,6 +442,8 @@ pub struct Canvas<T: Renderer> {
     clip_planes: HashMap<RenderTarget, ClipPlaneState>,
     // The coverage masks of the clips that are no box.
     clip_masks: ClipMasks,
+    // The coverage masks of the fills thinner than a pixel.
+    fill_masks: FillMasks,
     // The scissor and clip shape the last draw met, as the boxes they make.
     last_clip_boxes: Option<ClipBoxes>,
     // Whether the last draw carried a clip shape: the shader variant the
@@ -517,6 +519,7 @@ where
             clip_stack: Vec::new(),
             clip_planes: HashMap::new(),
             clip_masks: ClipMasks::default(),
+            fill_masks: FillMasks::default(),
             last_clip_boxes: None,
             shape_carried: false,
         };
@@ -561,6 +564,7 @@ where
             clip_stack: Vec::new(),
             clip_planes: HashMap::new(),
             clip_masks: ClipMasks::default(),
+            fill_masks: FillMasks::default(),
             last_clip_boxes: None,
             shape_carried: false,
         };
@@ -693,6 +697,7 @@ where
         for image in self.clip_masks.end_frame() {
             self.images.remove(&mut self.renderer, image);
         }
+        self.fill_masks.end_frame();
         self.release_pending_images();
         self.gradients
             .release_old_gradients(&mut self.images, &mut self.renderer);
@@ -1306,6 +1311,22 @@ where
 
         // Apply global alpha
         paint_flavor.mul_alpha(self.state().alpha);
+
+        // A fill thinner than a pixel, which the fringe would over-ink, is
+        // drawn through a coverage mask instead.
+        // An operation that coverage cannot bound would change the whole quad.
+        if anti_alias && self.fill_masks.enabled() && self.state().composite_operation.takes_coverage() {
+            let bounds = path_cache.bounds;
+            if (bounds.maxx - bounds.minx) * (bounds.maxy - bounds.miny) <= THIN_FILL_SPAN
+                && path_cache.mean_width() < THIN_FILL_WIDTH
+            {
+                drop(path_cache);
+                if self.fill_through_mask(path, &transform, &paint_flavor, fill_rule) {
+                    return;
+                }
+                path_cache = path.cache(&transform, self.tess_tol, self.dist_tol);
+            }
+        }
 
         let (clip, rect) = self.fill_clip(
             || path_cache.bounds,
@@ -2508,6 +2529,7 @@ where
         for image in self.clip_masks.end_frame() {
             self.images.remove(&mut self.renderer, image);
         }
+        self.fill_masks.end_frame();
         self.release_pending_images();
         self.gradients
             .release_old_gradients(&mut self.images, &mut self.renderer);
@@ -3158,8 +3180,14 @@ fn fill_text_selects_atlas_or_path_rendering() {
         // Atlas rendering blits glyphs from a glyph texture; outline rendering only
         // ever emits plain path fills (note: atlas cache misses also emit path fills
         // while rasterizing into the atlas, so the glyph texture is the reliable
-        // discriminator, not the absence of fills).
-        let used_atlas = commands.iter().any(|c| !matches!(c.glyph_texture, GlyphTexture::None));
+        // discriminator, not the absence of fills). An outline thinner than a pixel
+        // reads the atlas of fill masks, which is no glyph atlas.
+        let fill_masks = canvas.fill_masks.image;
+        let used_atlas = commands.iter().any(|c| match c.glyph_texture {
+            GlyphTexture::None => false,
+            GlyphTexture::AlphaMask(id) => Some(id) != fill_masks,
+            GlyphTexture::ColorTexture(_) => true,
+        });
         let filled_outlines = commands.iter().any(|c| {
             matches!(c.glyph_texture, GlyphTexture::None)
                 && matches!(
