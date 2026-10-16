@@ -50,6 +50,10 @@ pub(crate) struct FillMasks {
     /// words, the transform and the target's size.
     asked: HashMap<Vec<u32>, PlacedMask>,
     made: usize,
+    /// Masks the frame found again, by request or by outline.
+    found: usize,
+    /// Masks the frame before made that the atlas still holds.
+    made_before: usize,
     full: bool,
     pub(crate) coverage: super::coverage::Coverage,
     /// The atlas's pixels, which the masks a frame makes are written into
@@ -70,6 +74,8 @@ impl Default for FillMasks {
             masks: HashMap::new(),
             asked: HashMap::new(),
             made: 0,
+            found: 0,
+            made_before: 0,
             full: false,
             coverage: Default::default(),
             pixels: Vec::new(),
@@ -89,8 +95,10 @@ impl FillMasks {
         self.enabled = enabled;
     }
 
-    pub(crate) fn asked(&self, request: &[u32]) -> Option<PlacedMask> {
-        self.asked.get(request).copied()
+    pub(crate) fn asked(&mut self, request: &[u32]) -> Option<PlacedMask> {
+        let mask = self.asked.get(request).copied();
+        self.found += usize::from(mask.is_some());
+        mask
     }
 
     pub(crate) fn remember(&mut self, request: Vec<u32>, mask: PlacedMask) {
@@ -102,8 +110,10 @@ impl FillMasks {
         self.asked.insert(request, mask);
     }
 
-    pub(crate) fn get(&self, key: &MaskKey) -> Option<[u32; 2]> {
-        self.masks.get(key).copied()
+    pub(crate) fn get(&mut self, key: &MaskKey) -> Option<[u32; 2]> {
+        let at = self.masks.get(key).copied();
+        self.found += usize::from(at.is_some());
+        at
     }
 
     /// A place in the atlas for a new mask of `size`, if the frame has not
@@ -138,6 +148,12 @@ impl FillMasks {
         self.masks.insert(key, at);
     }
 
+    /// The masks the atlas holds, for the tests.
+    #[cfg(test)]
+    pub(crate) fn held(&self) -> usize {
+        self.masks.len()
+    }
+
     /// The rows written since the last upload: one rectangle, the atlas wide.
     pub(crate) fn take_dirty(&mut self) -> Option<[usize; 2]> {
         self.dirty.take()
@@ -150,11 +166,20 @@ impl FillMasks {
     }
 
     /// The frame is drawn: an atlas that filled starts over, its masks made
-    /// again as the frames that follow ask for them.
+    /// again as the frames that follow ask for them. So does one whose frame
+    /// found none of the masks the frame before made, making its own - a
+    /// scene in motion, whose masks no frame asks for again - so that the
+    /// atlas does not grow slower to pack into frame after frame.
     pub(crate) fn end_frame(&mut self) {
+        if self.made > 0 && self.made_before > 0 && self.found == 0 {
+            self.full = true;
+        }
+        self.made_before = self.made;
         self.made = 0;
+        self.found = 0;
         if self.full {
             self.full = false;
+            self.made_before = 0;
             self.packer.reset(ATLAS_SIZE, ATLAS_SIZE);
             self.masks.clear();
             self.asked.clear();

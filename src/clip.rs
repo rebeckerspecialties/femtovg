@@ -2875,3 +2875,23 @@ fn a_frame_makes_its_share_of_masks() {
         .count();
     assert_eq!(fills, 44);
 }
+
+/// A scene in motion makes masks that no later frame asks for: the atlas
+/// starts over after each such frame instead of filling with them, and a
+/// still one keeps its mask.
+#[test]
+fn a_moving_thin_fill_does_not_fill_the_atlas() {
+    let mut canvas = Canvas::new(RecordingRenderer::default()).unwrap();
+    canvas.set_size(100, 100, 1.0);
+    let paint = Paint::color(Color::black());
+    for frame in 0..10 {
+        canvas.fill_path(&thin_strip(frame as f32 * 0.37, 0.3), &paint);
+        canvas.flush_to_output(());
+    }
+    assert_eq!(canvas.fill_masks.held(), 0);
+    for _ in 0..3 {
+        canvas.fill_path(&thin_strip(0.0, 0.3), &paint);
+        canvas.flush_to_output(());
+    }
+    assert_eq!(canvas.fill_masks.held(), 1);
+}
