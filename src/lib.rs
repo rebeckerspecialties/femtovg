@@ -687,6 +687,7 @@ where
     ///
     /// Call this at the end of each frame.
     pub fn flush_to_output(&mut self, output: impl Into<T::RenderOutput>) -> T::CommandBuffer {
+        self.upload_fill_masks();
         let command_buffer = self.renderer.render(
             output,
             &mut self.images,
@@ -2523,6 +2524,7 @@ where
     ///
     /// Call this at the end of each frame.
     pub fn flush(&mut self) {
+        self.upload_fill_masks();
         self.renderer
             .render_surfaceless(&mut self.images, &self.verts, std::mem::take(&mut self.commands));
         self.verts.clear();

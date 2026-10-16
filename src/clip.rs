@@ -504,20 +504,14 @@ where
                 let atlas = match self.fill_masks.get(&key) {
                     Some(at) => at,
                     None => {
-                        let Some(image) = self.fill_mask_atlas() else {
+                        if self.fill_mask_atlas().is_none() {
                             return false;
-                        };
-                        let [mask_width, mask_height] = key.size();
+                        }
                         let Some(at) = self.fill_masks.place(key.size()) else {
                             return false;
                         };
                         let pixels = key.rasterize(&mut self.fill_masks.coverage);
-                        let source = ImageSource::Gray(imgref::Img::new(pixels.as_gray(), mask_width, mask_height));
-                        let [x, y] = at.map(|side| side as usize);
-                        if self.images.update(&mut self.renderer, image, source, x, y).is_err() {
-                            return false;
-                        }
-                        self.fill_masks.keep(key, at);
+                        self.fill_masks.keep(key, at, &pixels);
                         at
                     }
                 };
@@ -556,14 +550,32 @@ where
         }
         let info = ImageInfo::new(ImageFlags::NEAREST, ATLAS_SIZE, ATLAS_SIZE, PixelFormat::Gray8);
         let image = self.images.alloc(&mut self.renderer, info).ok()?;
-        let zeros = vec![0; ATLAS_SIZE * ATLAS_SIZE];
-        let source = ImageSource::Gray(imgref::Img::new(zeros.as_gray(), ATLAS_SIZE, ATLAS_SIZE));
+        self.fill_masks.pixels = vec![0; ATLAS_SIZE * ATLAS_SIZE];
+        let source = ImageSource::Gray(imgref::Img::new(
+            self.fill_masks.pixels.as_gray(),
+            ATLAS_SIZE,
+            ATLAS_SIZE,
+        ));
         if self.images.update(&mut self.renderer, image, source, 0, 0).is_err() {
             self.images.remove(&mut self.renderer, image);
             return None;
         }
         self.fill_masks.image = Some(image);
         Some(image)
+    }
+
+    /// Uploads the fill masks made since the last flush: the rows they span,
+    /// in one update, before the commands that read them are drawn.
+    pub(crate) fn upload_fill_masks(&mut self) {
+        let (Some(image), Some([top, bottom])) = (self.fill_masks.image, self.fill_masks.take_dirty()) else {
+            return;
+        };
+        let rows = &self.fill_masks.pixels[top * ATLAS_SIZE..bottom * ATLAS_SIZE];
+        let source = ImageSource::Gray(imgref::Img::new(rows.as_gray(), ATLAS_SIZE, bottom - top));
+        // A failed upload leaves the masks blank; the atlas starts over.
+        if self.images.update(&mut self.renderer, image, source, 0, top).is_err() {
+            self.fill_masks.mark_full();
+        }
     }
 
     /// Takes the clip as a shape for the fragment shader, if `path` outlines

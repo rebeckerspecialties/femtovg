@@ -52,6 +52,10 @@ pub(crate) struct FillMasks {
     made: usize,
     full: bool,
     pub(crate) coverage: super::coverage::Coverage,
+    /// The atlas's pixels, which the masks a frame makes are written into
+    /// and uploaded from once, as the rows they span, when it is drawn.
+    pub(crate) pixels: Vec<u8>,
+    dirty: Option<[usize; 2]>,
     /// Every mask rasterized, for the tests.
     #[cfg(test)]
     pub(crate) rasterized: usize,
@@ -68,6 +72,8 @@ impl Default for FillMasks {
             made: 0,
             full: false,
             coverage: Default::default(),
+            pixels: Vec::new(),
+            dirty: None,
             #[cfg(test)]
             rasterized: 0,
         }
@@ -119,8 +125,28 @@ impl FillMasks {
         Some([x as u32, y as u32])
     }
 
-    pub(crate) fn keep(&mut self, key: MaskKey, at: [u32; 2]) {
+    /// Keeps the mask of `key`, its rows `pixels`, at `at`.
+    pub(crate) fn keep(&mut self, key: MaskKey, at: [u32; 2], pixels: &[u8]) {
+        let [width, height] = key.size();
+        let [x, y] = at.map(|side| side as usize);
+        for (row, line) in pixels.chunks_exact(width).enumerate() {
+            let start = (y + row) * ATLAS_SIZE + x;
+            self.pixels[start..start + width].copy_from_slice(line);
+        }
+        let [top, bottom] = self.dirty.unwrap_or([y, y + height]);
+        self.dirty = Some([top.min(y), bottom.max(y + height)]);
         self.masks.insert(key, at);
+    }
+
+    /// The rows written since the last upload: one rectangle, the atlas wide.
+    pub(crate) fn take_dirty(&mut self) -> Option<[usize; 2]> {
+        self.dirty.take()
+    }
+
+    /// The atlas starts over once the frame is drawn: what it holds cannot
+    /// be relied on.
+    pub(crate) fn mark_full(&mut self) {
+        self.full = true;
     }
 
     /// The frame is drawn: an atlas that filled starts over, its masks made
