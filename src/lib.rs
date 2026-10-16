@@ -1321,11 +1321,9 @@ where
             if (bounds.maxx - bounds.minx) * (bounds.maxy - bounds.miny) <= THIN_FILL_SPAN
                 && path_cache.mean_width() < THIN_FILL_WIDTH
             {
-                drop(path_cache);
-                if self.fill_through_mask(path, &transform, &paint_flavor, fill_rule) {
+                if self.fill_through_mask(path, &path_cache, &transform, &paint_flavor, fill_rule) {
                     return;
                 }
-                path_cache = path.cache(&transform, self.tess_tol, self.dist_tol);
             }
         }
 
