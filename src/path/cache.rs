@@ -200,8 +200,8 @@ pub struct PathCache {
     contour_sides: Option<Vec<(i32, u32, i32)>>,
     // The square of the farthest a point between two chords was moved off the curve.
     straddle: f32,
-    // The outline's mean width, once a fill has asked for it.
-    mean_width: Option<f32>,
+    // The outline's mean width under a fill rule, once a fill has asked for it.
+    mean_width: Option<(FillRule, f32)>,
 }
 
 impl PathCache {
@@ -356,27 +356,53 @@ impl PathCache {
         vertices
     }
 
-    /// Each contour's points in order: its outline, closed from the last
-    /// point to the first.
-    pub(crate) fn outlines(&self) -> impl Iterator<Item = Vec<[f32; 2]>> + '_ {
-        self.contours.iter().map(|contour| {
-            self.points[contour.point_range.clone()]
+    /// Each contour's points in order, closed from the last point to the
+    /// first: the outline a mask of a fill under `fill_rule` is rasterized
+    /// from. A mask adds up the winding over each pixel before the rule
+    /// folds it, exact where the pixel sees at most two windings, one apart:
+    /// a ring thinner than a pixel, both circles wound alike, sees 0, 1 and
+    /// 2, and its hole counted as ink. Even-odd does not ask which way a
+    /// contour is wound, so a hole's contour is wound against those around
+    /// it, and nested contours wind 0 or 1.
+    pub(crate) fn outlines(&mut self, fill_rule: FillRule) -> impl Iterator<Item = Vec<[f32; 2]>> + '_ {
+        let reverse: Vec<bool> = if fill_rule == FillRule::EvenOdd && self.contours.len() > 1 {
+            let hole = self.hole_contours(fill_rule);
+            // As `expand_fill` winds them: what is filled as `polygon_area`
+            // calls positive (own -1), a hole the other way.
+            self.contour_sides()
                 .iter()
-                .map(|point| [point.pos.x, point.pos.y])
+                .zip(hole)
+                .map(|(&(_, _, own), hole)| own == if hole { -1 } else { 1 })
                 .collect()
+        } else {
+            Vec::new()
+        };
+        let cache = &*self;
+        cache.contours.iter().enumerate().map(move |(i, contour)| {
+            let points = cache.points[contour.point_range.clone()].iter();
+            let outline = points.map(|point| [point.pos.x, point.pos.y]);
+            if reverse.get(i) == Some(&true) {
+                outline.rev().collect()
+            } else {
+                outline.collect()
+            }
         })
     }
 
-    /// Twice the outline's area over its perimeter, in device pixels: a
-    /// sliver's width, a disc's radius. A hole wound the other way takes its
-    /// area off. Worked out once a cache, which a path keeps while its
-    /// transform does.
-    pub(crate) fn mean_width(&mut self) -> f32 {
-        if let Some(width) = self.mean_width {
-            return width;
+    /// Twice the area a fill of the outline under `fill_rule` covers, over
+    /// the outline's perimeter, in device pixels: a sliver's width, a disc's
+    /// radius. Each contour adds the area inside it, or takes it off if it
+    /// bounds a hole, however it is wound. Worked out once a cache, which a
+    /// path keeps while its transform does.
+    pub(crate) fn mean_width(&mut self, fill_rule: FillRule) -> f32 {
+        if let Some((rule, width)) = self.mean_width {
+            if rule == fill_rule {
+                return width;
+            }
         }
+        let hole = self.hole_contours(fill_rule);
         let (mut area, mut perimeter) = (0.0, 0.0);
-        for contour in &self.contours {
+        for (contour, hole) in self.contours.iter().zip(hole) {
             let points = &self.points[contour.point_range.clone()];
             let (Some(first), Some(last)) = (points.first(), points.last()) else {
                 continue;
@@ -384,15 +410,17 @@ impl PathCache {
             // From the contour's first point, so that the products stay small.
             let origin = first.pos;
             let mut from = last.pos - origin;
+            let mut twice = 0.0f32;
             for point in points {
                 let to = point.pos - origin;
-                area += from.x * to.y - to.x * from.y;
+                twice += from.x * to.y - to.x * from.y;
                 perimeter += (to - from).mag2().sqrt();
                 from = to;
             }
+            area += if hole { -twice.abs() } else { twice.abs() };
         }
         let width = if perimeter > 0.0 { area.abs() / perimeter } else { 0.0 };
-        self.mean_width = Some(width);
+        self.mean_width = Some((fill_rule, width));
         width
     }
 

@@ -403,8 +403,8 @@ where
         }
         let mut outline = MaskOutline::default();
         for &(path, fill_rule) in paths {
-            let path_cache = path::PathCache::new(path.verbs(), &transform, tolerance, self.dist_tol);
-            outline.child(fill_rule, path_cache.outlines());
+            let mut path_cache = path::PathCache::new(path.verbs(), &transform, tolerance, self.dist_tol);
+            outline.child(fill_rule, path_cache.outlines(fill_rule));
         }
         let rect = outline.rect(within);
         let origin = [rect[0], rect[1]];
@@ -479,7 +479,7 @@ where
     pub(crate) fn fill_through_mask(
         &mut self,
         path: &Path,
-        path_cache: &PathCache,
+        path_cache: &mut PathCache,
         transform: &Transform2D,
         paint_flavor: &PaintFlavor,
         fill_rule: FillRule,
@@ -499,7 +499,7 @@ where
                 // thin fills came 0.7 % nearer the exact area, for a second
                 // flattening each frame a scene moves.
                 let mut outline = MaskOutline::default();
-                outline.child(fill_rule, path_cache.outlines());
+                outline.child(fill_rule, path_cache.outlines(fill_rule));
                 let rect = outline.rect(within);
                 let key = outline.key(rect, None);
                 let atlas = match self.fill_masks.get(&key) {
@@ -2894,4 +2894,36 @@ fn a_moving_thin_fill_does_not_fill_the_atlas() {
         canvas.flush_to_output(());
     }
     assert_eq!(canvas.fill_masks.held(), 1);
+}
+
+/// A ring thinner than a pixel, both circles wound alike, holds the ring's
+/// area under even-odd, as a thin fill's mask and as a clip's: added up
+/// before the rule folds it, the winding counted the hole into each pixel
+/// the ring crosses.
+#[test]
+fn an_even_odd_ring_wound_alike_holds_its_area() {
+    let mut canvas = Canvas::new(RecordingRenderer::default()).unwrap();
+    canvas.set_size(100, 100, 1.0);
+    let mut ring = Path::new();
+    ring.circle(50.0, 50.0, 30.0);
+    ring.circle(50.0, 50.0, 29.6);
+    let area = std::f32::consts::PI * (30.0f32.powi(2) - 29.6f32.powi(2));
+    let ink = |pixels: &[u8]| pixels.iter().map(|&p| f32::from(p) / 255.0).sum::<f32>();
+
+    canvas.fill_path(&ring, &Paint::color(Color::black()).with_fill_rule(FillRule::EvenOdd));
+    let filled = ink(&canvas.fill_masks.pixels);
+    assert!(
+        (filled - area).abs() < 0.02 * area,
+        "the fill's mask: {filled:.1} for {area:.1}"
+    );
+
+    canvas.clip_path(&ring, FillRule::EvenOdd);
+    let ClipKind::Mask { mask, .. } = &canvas.clip_stack[0].kind else {
+        panic!("a ring is a mask");
+    };
+    let clipped = ink(&mask.pixels);
+    assert!(
+        (clipped - area).abs() < 0.02 * area,
+        "the clip's mask: {clipped:.1} for {area:.1}"
+    );
 }

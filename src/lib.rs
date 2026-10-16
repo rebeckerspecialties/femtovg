@@ -1319,9 +1319,9 @@ where
         if anti_alias && self.fill_masks.enabled() && self.state().composite_operation.takes_coverage() {
             let bounds = path_cache.bounds;
             if (bounds.maxx - bounds.minx) * (bounds.maxy - bounds.miny) <= THIN_FILL_SPAN
-                && path_cache.mean_width() < THIN_FILL_WIDTH
+                && path_cache.mean_width(fill_rule) < THIN_FILL_WIDTH
             {
-                if self.fill_through_mask(path, &path_cache, &transform, &paint_flavor, fill_rule) {
+                if self.fill_through_mask(path, &mut path_cache, &transform, &paint_flavor, fill_rule) {
                     return;
                 }
             }

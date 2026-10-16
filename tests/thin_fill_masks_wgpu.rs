@@ -84,23 +84,30 @@ fn a_sliver_holds_its_area_where_its_fringes_overink_it() {
     }
 }
 
-/// A ring 0.4 px wide, its hole wound against the outer circle, holds the
-/// ring's area.
+/// A ring 0.4 px wide holds the ring's area: its hole wound against the
+/// outer circle under non-zero, or both circles wound alike under even-odd,
+/// where the hole's area adds to the outer one's if signs alone decide.
 #[test]
 fn a_thin_ring_holds_its_area() {
     let Some((device, queue)) = headless_device() else {
         return;
     };
-    let mut ring = Path::new();
-    ring.circle(48.0, 48.0, 30.0);
-    ring.circle(48.0, 48.0, 29.6);
-    ring.solidity(Solidity::Hole);
     let area = std::f32::consts::PI * (30.0f32.powi(2) - 29.6f32.powi(2));
-    let masked = ink(&render(&device, &queue, true, |canvas| canvas.fill_path(&ring, &red())));
-    assert!(
-        (masked - area).abs() < 0.03 * area,
-        "{masked:.1} px of ink, the ring's area {area:.1}"
-    );
+    let mut wound_against = Path::new();
+    wound_against.circle(48.0, 48.0, 30.0);
+    wound_against.circle(48.0, 48.0, 29.6);
+    wound_against.solidity(Solidity::Hole);
+    let mut wound_alike = Path::new();
+    wound_alike.circle(48.0, 48.0, 30.0);
+    wound_alike.circle(48.0, 48.0, 29.6);
+    for (ring, rule) in [(wound_against, FillRule::NonZero), (wound_alike, FillRule::EvenOdd)] {
+        let paint = red().with_fill_rule(rule);
+        let masked = ink(&render(&device, &queue, true, |canvas| canvas.fill_path(&ring, &paint)));
+        assert!(
+            (masked - area).abs() < 0.03 * area,
+            "{rule:?}: {masked:.1} px of ink, the ring's area {area:.1}"
+        );
+    }
 }
 
 /// The scissor and a clip to a path bound the mask's quad: the sliver's
