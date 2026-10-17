@@ -102,6 +102,26 @@ impl MaskOutline {
         self.children.push((rule, contours));
     }
 
+    /// Moves the outlines by at most half a `1 / steps` of a pixel each way,
+    /// so that their bounds' corner lies on a multiple of it.
+    pub(crate) fn snap(&mut self, steps: f32) {
+        let [minx, miny, maxx, maxy] = self.bounds;
+        if !(minx.is_finite() && miny.is_finite()) {
+            return;
+        }
+        let off = |v: f32| (v * steps).round() / steps - v;
+        let (dx, dy) = (off(minx), off(miny));
+        for point in self
+            .children
+            .iter_mut()
+            .flat_map(|(_, contours)| contours.iter_mut().flatten())
+        {
+            point[0] += dx;
+            point[1] += dy;
+        }
+        self.bounds = [minx + dx, miny + dy, maxx + dx, maxy + dy];
+    }
+
     /// Swaps the outlines' x and y.
     pub(crate) fn transpose(&mut self) {
         for point in self

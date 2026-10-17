@@ -550,6 +550,10 @@ where
         // clip's is, the corpus's thin fills came only 0.7 % nearer.
         let mut outline = MaskOutline::default();
         outline.child(fill_rule, path_cache.outlines(fill_rule));
+        // Experiment: the mask's position snapped to 1 / FEMTOVG_MASK_SNAP of a pixel.
+        if let Some(steps) = mask_snap_steps() {
+            outline.snap(steps);
+        }
         let rect = outline.rect(within);
         // A mask taller than it is wide is rasterized and kept transposed, so
         // that the rows written, copied and uploaded one at a time are long.
@@ -3236,4 +3240,15 @@ fn a_tall_mask_is_kept_transposed() {
         (72.0 / 512.0, corner.v),
         "down the target, across the atlas"
     );
+}
+
+/// Experiment: FEMTOVG_MASK_SNAP=n snaps a fill mask's position to 1/n of a pixel; unset or 0 keeps it exact.
+fn mask_snap_steps() -> Option<f32> {
+    static STEPS: std::sync::OnceLock<Option<f32>> = std::sync::OnceLock::new();
+    *STEPS.get_or_init(|| {
+        std::env::var("FEMTOVG_MASK_SNAP")
+            .ok()
+            .and_then(|v| v.parse::<f32>().ok())
+            .filter(|&steps| steps > 0.0)
+    })
 }
