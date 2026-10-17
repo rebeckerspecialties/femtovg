@@ -66,6 +66,11 @@ pub(crate) struct FillMasks {
     made: usize,
     /// Masks the frame found again, by request or by outline.
     found: usize,
+    /// Experiment: masks the frame found by request, whether the frame
+    /// before found none, and the bytes uploaded since the last frame.
+    asked_found: usize,
+    asked_missed: bool,
+    uploaded: usize,
     /// Masks the frame before made that the atlas still holds.
     made_before: usize,
     full: bool,
@@ -101,6 +106,9 @@ impl Default for FillMasks {
             request: Vec::new(),
             made: 0,
             found: 0,
+            asked_found: 0,
+            asked_missed: false,
+            uploaded: 0,
             made_before: 0,
             full: false,
             size: [ATLAS_FIRST; 2],
@@ -144,6 +152,7 @@ impl FillMasks {
     pub(crate) fn asked(&mut self, request: &[u32]) -> Option<PlacedMask> {
         let mask = self.asked.get(request).copied();
         self.found += usize::from(mask.is_some());
+        self.asked_found += usize::from(mask.is_some());
         mask
     }
 
@@ -256,6 +265,7 @@ impl FillMasks {
     /// remade each frame of a moving scene would upload two megabytes.
     pub(crate) fn take_upload(&mut self) -> Option<([usize; 2], [usize; 2], &[u8])> {
         let [x0, y0, x1, y1] = self.dirty.take()?;
+        self.uploaded += (x1 - x0) * (y1 - y0);
         self.upload.clear();
         for row in y0..y1 {
             let start = row * self.size[0];
@@ -281,6 +291,31 @@ impl FillMasks {
         if self.made > 0 && self.made_before > 0 && self.found == 0 && super::mask_snap_steps().is_none() {
             self.full = true;
         }
+        if super::mask_snap_steps().is_some() {
+            // Experiment: a moving scene asks for nothing twice, so the
+            // requests of two frames that found none by request are let go.
+            let missed = self.asked_found == 0;
+            if missed && self.asked_missed {
+                self.asked.clear();
+            }
+            self.asked_missed = missed;
+        }
+        if mask_stats() {
+            eprintln!(
+                "fill masks: made {} found {} by request {} held {} asked {} atlas {}x{} uploaded {} full {}",
+                self.made,
+                self.found,
+                self.asked_found,
+                self.masks.len(),
+                self.asked.len(),
+                self.size[0],
+                self.size[1],
+                self.uploaded,
+                self.full
+            );
+        }
+        self.asked_found = 0;
+        self.uploaded = 0;
         self.made_before = self.made;
         self.made = 0;
         self.found = 0;
@@ -293,4 +328,10 @@ impl FillMasks {
         }
         std::mem::take(&mut self.retired)
     }
+}
+
+/// Experiment: a line a frame on stderr about the atlas when FEMTOVG_MASK_STATS is set.
+fn mask_stats() -> bool {
+    static STATS: std::sync::OnceLock<bool> = std::sync::OnceLock::new();
+    *STATS.get_or_init(|| std::env::var_os("FEMTOVG_MASK_STATS").is_some())
 }
