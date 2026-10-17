@@ -277,7 +277,8 @@ impl FillMasks {
     /// atlas does not grow slower to pack into frame after frame. Returns the
     /// images of the atlases the frame outgrew, to be freed.
     pub(crate) fn end_frame(&mut self) -> Vec<ImageId> {
-        if self.made > 0 && self.made_before > 0 && self.found == 0 {
+        // Experiment: snapped masks come back as a scene moves, so a frame that found none starts no atlas over.
+        if self.made > 0 && self.made_before > 0 && self.found == 0 && super::mask_snap_steps().is_none() {
             self.full = true;
         }
         self.made_before = self.made;
