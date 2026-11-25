@@ -148,6 +148,9 @@ fn fs_main_clip_mask(vertex: VertexOutput) -> @location(0) vec4<f32> {
     return shade(vertex, clipMask(vertex.fpos) * clipMaskCoverage(vertex.fpos));
 }
 
+// Set at pipeline creation. A basic paint never needs the filter sampling loops.
+override image_effects: bool = true;
+
 fn shade(vertex: VertexOutput, clip: f32) -> vec4<f32> {
     var result: vec4<f32>;
     let shader_type_int: i32 = i32(params.shader_type);
@@ -187,7 +190,7 @@ fn shade(vertex: VertexOutput, clip: f32) -> vec4<f32> {
         }
         case SHADER_TYPE_FilterImage: {
             // Filter Image
-            return renderFilteredImage(vertex, params);
+            if (image_effects) { return renderFilteredImage(vertex, params); }
         }
         case SHADER_TYPE_FillColorUnclipped: {
             // Plain color fill
@@ -206,7 +209,7 @@ fn shade(vertex: VertexOutput, clip: f32) -> vec4<f32> {
             result = ditherGradient(textureSample(image_texture, image_sampler, lutCoord(d)), vertex.position.xy);
         }
         case SHADER_TYPE_FilterImageColorMatrix: {
-            return renderColorMatrix(vertex, params);
+            if (image_effects) { return renderColorMatrix(vertex, params); }
         }
         case SHADER_TYPE_FillGradientTwoPointRadial: {
             // Set `result` and fall through to the scissor + stroke-AA multiply.
@@ -216,22 +219,22 @@ fn shade(vertex: VertexOutput, clip: f32) -> vec4<f32> {
             result = renderImageGradientTwoPointRadial(vertex, params);
         }
         case SHADER_TYPE_FilterImageTurbulence: {
-            return renderTurbulence(vertex, params);
+            if (image_effects) { return renderTurbulence(vertex, params); }
         }
         case SHADER_TYPE_FilterImageTransfer: {
-            return renderTransfer(vertex, params);
+            if (image_effects) { return renderTransfer(vertex, params); }
         }
         case SHADER_TYPE_FilterImageBlend: {
-            return renderBlend(vertex, params);
+            if (image_effects) { return renderBlend(vertex, params); }
         }
         case SHADER_TYPE_FilterImageMorphology: {
-            return renderMorphology(vertex, params);
+            if (image_effects) { return renderMorphology(vertex, params); }
         }
         case SHADER_TYPE_FilterImageOffset: {
-            return renderOffset(vertex, params);
+            if (image_effects) { return renderOffset(vertex, params); }
         }
         case SHADER_TYPE_FillBlur: {
-            result = renderFillBlur(vertex, params);
+            if (image_effects) { result = renderFillBlur(vertex, params); }
         }
         default: {
             result = vec4<f32>(0.0, 0.0, 1.0, 1.0);
