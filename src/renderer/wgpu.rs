@@ -2868,6 +2868,7 @@ fn clip_guard(active: bool) -> StencilTest {
 // Only what materialize() reads belongs in the key; anything else would split the cache for nothing.
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]
 struct PipelineState {
+    image_effects: bool,
     render_to_texture: bool,
     color_target_state: wgpu::ColorTargetState,
     primitive_topology: wgpu::PrimitiveTopology,
@@ -2917,6 +2918,7 @@ impl PipelineState {
             ),
         };
         Self {
+            image_effects: false,
             render_to_texture,
             color_target_state,
             primitive_topology,
@@ -2936,6 +2938,7 @@ impl PipelineState {
     ) -> wgpu::RenderPipeline {
         // Exhaustively bind the key so adding a field or leaving one unused here is a compile error.
         let Self {
+            image_effects,
             render_to_texture,
             color_target_state,
             primitive_topology,
@@ -2972,7 +2975,10 @@ impl PipelineState {
             fragment: Some(wgpu::FragmentState {
                 module: shader_module,
                 entry_point: Some(fragment_entry_point),
-                compilation_options: Default::default(),
+                compilation_options: wgpu::PipelineCompilationOptions {
+                    constants: &[("image_effects", f64::from(u8::from(*image_effects)))],
+                    ..Default::default()
+                },
                 targets: &[Some(color_target_state.clone())],
             }),
             primitive: wgpu::PrimitiveState {
@@ -3989,6 +3995,22 @@ impl CommandToPipelineAndBindGroupMapper {
         // to hash, by 1.3 % of the time 600 unclipped fills take to encode.
         pipeline_state.clip_shape = params.clip.is_some();
         pipeline_state.clip_mask = params.clip_mask.is_some();
+        // Share one ordinary-paint program across text, images, gradients and stencil draws.
+        // The filter program remains the full shader and handles future paint modes by default.
+        pipeline_state.image_effects = !matches!(
+            params.shader_type,
+            ShaderType::FillColor
+                | ShaderType::FillColorUnclipped
+                | ShaderType::FillImage
+                | ShaderType::TextureCopyUnclipped
+                | ShaderType::Stencil
+                | ShaderType::FillGradient
+                | ShaderType::FillImageGradient
+                | ShaderType::FillGradientConic
+                | ShaderType::FillImageGradientConic
+                | ShaderType::FillGradientTwoPointRadial
+                | ShaderType::FillImageGradientTwoPointRadial
+        );
 
         // An unchanged pipeline was looked up, and stamped with this flush, when it was bound.
         if render_pass_builder.current_pipeline_state.as_ref() != Some(&pipeline_state) {
