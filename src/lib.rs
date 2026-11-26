@@ -975,9 +975,9 @@ where
     ) -> Result<ImageId, ErrorKind> {
         let src = src.into();
         let size = src.dimensions();
-        let id = self.create_image_empty(size.width, size.height, src.format(), flags)?;
-        self.images.update(&mut self.renderer, id, src, 0, 0)?;
-        Ok(id)
+        // Renderers that override `alloc_image_with` create the texture with the pixels, saving an upload.
+        let info = ImageInfo::new(flags, size.width, size.height, src.format());
+        self.images.alloc_from(&mut self.renderer, info, src)
     }
 
     /// Returns the native texture of an image given its ID.
